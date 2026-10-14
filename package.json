@@ -1,0 +1,11 @@
+{
+  "name": "tarjetas-digitales",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Una página por negocio generada desde Google Sheets",
+  "scripts": {
+    "build": "node generar.mjs"
+  },
+  "engines": { "node": ">=20" }
+}

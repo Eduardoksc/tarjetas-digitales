@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="{{COLOR}}">
+<title>{{TITULO}}</title>
+<style>
+  :root {
+    --marca: {{COLOR}};
+    --sobre-marca: {{COLOR_TEXTO}};
+    --tinta: #16181a;
+    --suave: #5d6368;
+    --fondo: #f6f6f4;
+    --borde: #c9ccce;
+    color-scheme: light;
+  }
+  @supports (color: color-mix(in srgb, red 10%, white)) {
+    :root {
+      --fondo: color-mix(in srgb, var(--marca) 9%, #fff);
+      --borde: color-mix(in srgb, var(--marca) 45%, #fff);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    justify-content: center;
+    background: var(--fondo);
+    color: var(--tinta);
+    font-family: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  main {
+    width: 100%;
+    max-width: 440px;
+    padding: max(28px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+  }
+  .cabecera { text-align: center; padding: 12px 0 28px; }
+  .logo {
+    width: 112px;
+    height: 112px;
+    margin: 0 auto 18px;
+    border-radius: 28px;
+    background: #fff;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, .06);
+  }
+  .logo img { width: 100%; height: 100%; object-fit: contain; padding: 10px; }
+  .logo.inicial {
+    background: var(--marca);
+    color: var(--sobre-marca);
+    font-size: 48px;
+    font-weight: 800;
+    box-shadow: none;
+  }
+  h1 {
+    margin: 0;
+    font-size: 1.7rem;
+    line-height: 1.15;
+    letter-spacing: -.01em;
+    font-weight: 800;
+    text-wrap: balance;
+  }
+  .slogan { margin: 8px 0 0; color: var(--suave); font-size: 1.02rem; line-height: 1.4; }
+  nav { display: flex; flex-direction: column; gap: 14px; }
+  .boton {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 68px;
+    padding: 14px 18px;
+    border-radius: 18px;
+    border: 2px solid var(--borde);
+    background: #fff;
+    color: var(--tinta);
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform .08s ease;
+  }
+  .boton:active { transform: scale(.98); }
+  .boton:focus-visible { outline: 3px solid var(--tinta); outline-offset: 3px; }
+  .boton svg {
+    flex: none;
+    width: 28px;
+    height: 28px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .boton.principal {
+    min-height: 78px;
+    background: var(--marca);
+    border-color: var(--marca);
+    color: var(--sobre-marca);
+    font-size: 1.2rem;
+  }
+  .pie { margin-top: auto; padding-top: 36px; text-align: center; font-size: .8rem; color: var(--suave); }
+  .pie a { color: inherit; }
+  @media (prefers-reduced-motion: reduce) { .boton { transition: none; } }
+</style>
+</head>
+<body>
+  <main>
+    <header class="cabecera">
+      {{LOGO_HTML}}
+      <h1>{{NOMBRE}}</h1>
+      {{SLOGAN_HTML}}
+    </header>
+    <nav>
+      {{BOTONES}}
+    </nav>
+    {{PIE_HTML}}
+  </main>
+</body>
+</html>

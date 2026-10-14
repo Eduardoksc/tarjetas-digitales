@@ -1,0 +1,54 @@
+# Robot que publica las tarjetas.
+# Se activa solo cuando:
+#   1) subes cambios al repositorio (push)
+#   2) pasa cada hora (por si olvidas publicar)
+#   3) lo pides a mano (pestaña Actions → "Publicar tarjetas" → Run workflow)
+#   4) presionas "Publicar cambios ahora" en tu hoja de Google (opcional)
+name: Publicar tarjetas
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+  repository_dispatch:
+    types: [actualizar-hoja]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  construir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Crear las páginas desde la hoja
+        run: node generar.mjs
+        env:
+          SHEET_CSV_URL: ${{ vars.SHEET_CSV_URL }}
+          PIE_TEXTO: ${{ vars.PIE_TEXTO }}
+          PIE_URL: ${{ vars.PIE_URL }}
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  publicar:
+    needs: construir
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
+      - id: despliegue
+        uses: actions/deploy-pages@v4
