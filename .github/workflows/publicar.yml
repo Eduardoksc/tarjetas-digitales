@@ -1,16 +1,19 @@
 # Robot que publica las tarjetas.
 # Se activa solo cuando:
 #   1) subes cambios al repositorio (push)
-#   2) pasa cada hora (por si olvidas publicar)
+#   2) pasan 10 minutos (lee la hoja y publica si hay cambios)
 #   3) lo pides a mano (pestaña Actions → "Publicar tarjetas" → Run workflow)
+#   4) presionas "Tarjetas → Publicar ahora" en tu hoja de Google (opcional, ver la guía)
 name: Publicar tarjetas
 
 on:
   push:
     branches: [main]
   schedule:
-    - cron: '17 * * * *'
+    - cron: '*/10 * * * *'
   workflow_dispatch:
+  repository_dispatch:
+    types: [actualizar-hoja]
 
 permissions:
   contents: read
@@ -35,6 +38,8 @@ jobs:
       - name: Crear las páginas desde la hoja
         run: node generar.mjs
         env:
+          SHEET_ID: ${{ vars.SHEET_ID }}
+          SHEET_GID: ${{ vars.SHEET_GID }}
           SHEET_CSV_URL: ${{ vars.SHEET_CSV_URL }}
           PIE_TEXTO: ${{ vars.PIE_TEXTO }}
           PIE_URL: ${{ vars.PIE_URL }}

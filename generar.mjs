@@ -8,6 +8,7 @@ import { readFile, writeFile, mkdir, rm, copyFile } from 'node:fs/promises';
 import { existsSync, readdirSync } from 'node:fs';
 import { extname } from 'node:path';
 import { createHash } from 'node:crypto';
+import { MARCAS } from './iconos.mjs';
 
 // ---------- Ajustes que puedes cambiar ----------
 const SALIDA = 'dist';
@@ -117,6 +118,12 @@ const rgbAHex = (rgb) => '#' + rgb.map((c) => Math.round(c).toString(16).padStar
 // Mezcla un color con blanco: cantidad 0 = color puro, 1 = blanco
 const aclarar = (hex, cantidad) => rgbAHex(hexARgb(hex).map((c) => c + (255 - c) * cantidad));
 
+// Mezcla un color con negro: cantidad 0 = color puro, 1 = negro
+const oscurecer = (hex, cantidad) => rgbAHex(hexARgb(hex).map((c) => c * (1 - cantidad)));
+
+// Tono del primer botón: un poco más profundo que el fondo (menos en colores claros, para que no se vean apagados)
+const tonoFuerte = (hex) => oscurecer(hex, textoSobre(hex) === '#111111' ? 0.1 : 0.22);
+
 // Elige texto blanco u oscuro según qué tan claro es el color del negocio
 function textoSobre(hex) {
   const [r, g, b] = hexARgb(hex)
@@ -142,8 +149,6 @@ const ICONOS = {
     '<polygon points="12 2 15.1 8.3 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 8.9 8.3"/>',
   catalogo:
     '<line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>',
-  whatsapp:
-    '<path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20l1.2-5.2A8.5 8.5 0 1 1 21 11.5z"/>',
   enlace:
     '<path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>',
   camara:
@@ -152,13 +157,42 @@ const ICONOS = {
   web: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/>',
 };
 
-// El ícono de los botones extra se elige según el enlace
+// Los botones extra eligen su ícono según el enlace (o según la columna botonN_icono)
+const ICONOS_EXTRA = ['instagram', 'facebook', 'tiktok', 'youtube', 'x', 'telegram', 'maps', 'waze', 'web', 'enlace'];
+const ALIAS_ICONO = { twitter: 'x', mapa: 'maps', ubicacion: 'maps', google_maps: 'maps', pagina: 'web', sitio: 'web', link: 'enlace' };
+const TEXTO_ICONO = {
+  instagram: 'Síguenos en Instagram',
+  facebook: 'Síguenos en Facebook',
+  tiktok: 'Síguenos en TikTok',
+  youtube: 'Mira nuestro YouTube',
+  x: 'Síguenos en X',
+  telegram: 'Escríbenos por Telegram',
+  maps: 'Cómo llegar',
+  waze: 'Llegar con Waze',
+  web: 'Visita nuestra página',
+  enlace: 'Más información',
+};
+
 function iconoExtra(url) {
-  const host = new URL(url).hostname;
-  if (/instagram/.test(host)) return 'camara';
-  if (/maps|waze|goo\.gl/.test(host)) return 'pin';
-  if (/facebook|fb\.com|tiktok|youtube|x\.com|twitter/.test(host)) return 'enlace';
+  const u = new URL(url);
+  const host = u.hostname.replace(/^www\./, '');
+  if (/(^|\.)instagram\.com$/.test(host)) return 'instagram';
+  if (/(^|\.)(facebook\.com|fb\.com|fb\.me)$/.test(host)) return 'facebook';
+  if (/(^|\.)tiktok\.com$/.test(host)) return 'tiktok';
+  if (/(^|\.)(youtube\.com|youtu\.be)$/.test(host)) return 'youtube';
+  if (/^(x\.com|twitter\.com)$/.test(host)) return 'x';
+  if (/^(t\.me|telegram\.me)$/.test(host)) return 'telegram';
+  if (/(^|\.)waze\.com$/.test(host)) return 'waze';
+  if (host === 'maps.app.goo.gl' || host === 'maps.google.com') return 'maps';
+  if ((host === 'goo.gl' || /(^|\.)google\.[a-z.]+$/.test(host)) && u.pathname.startsWith('/maps')) return 'maps';
   return 'web';
+}
+
+function svgIcono(clave) {
+  if (MARCAS[clave]) {
+    return `<svg class="relleno" viewBox="0 0 24 24" aria-hidden="true"><path d="${MARCAS[clave]}"/></svg>`;
+  }
+  return `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONOS[clave] ?? ICONOS.enlace}</svg>`;
 }
 
 // ---------- Logos ----------
@@ -271,14 +305,16 @@ async function prepararLogo(id, valor, etiqueta) {
     }
 
     // 2) Ajustar a un tamaño estándar, sin agrandar
-    const final = await sharp(recortado)
-      .resize({ width: LOGO_MAX_PX, height: LOGO_MAX_PX, fit: 'inside', withoutEnlargement: true })
-      .webp({ quality: 92, alphaQuality: 100 })
-      .toBuffer({ resolveWithObject: true });
+    // PNG si el logo tiene transparencia, JPG si no: formatos que abren en cualquier celular (WebP falla en algunos viejos)
+    const conTransparencia = (await sharp(recortado).metadata()).hasAlpha === true;
+    const ajustado = sharp(recortado).resize({ width: LOGO_MAX_PX, height: LOGO_MAX_PX, fit: 'inside', withoutEnlargement: true });
+    const final = conTransparencia
+      ? await ajustado.png({ palette: true, quality: 92, compressionLevel: 9 }).toBuffer({ resolveWithObject: true })
+      : await ajustado.flatten({ background: '#ffffff' }).jpeg({ quality: 90, mozjpeg: true }).toBuffer({ resolveWithObject: true });
 
     const { width: w, height: h } = final.info;
-    const nombreWebp = `${id}-${huella(final.data)}.webp`;
-    await writeFile(`${SALIDA}/logos/${nombreWebp}`, final.data);
+    const nombreFinal = `${id}-${huella(final.data)}.${conTransparencia ? 'png' : 'jpg'}`;
+    await writeFile(`${SALIDA}/logos/${nombreFinal}`, final.data);
 
     // 3) Avisos de calidad
     const mayor = Math.max(meta.width ?? 0, meta.height ?? 0);
@@ -295,7 +331,7 @@ async function prepararLogo(id, valor, etiqueta) {
     }
 
     const caja = ajustarACaja(w, h, false);
-    return { src: `../logos/${nombreWebp}`, w: caja.w, h: caja.h, claro: await esLogoClaro(final.data), mayor };
+    return { src: `../logos/${nombreFinal}`, w: caja.w, h: caja.h, claro: await esLogoClaro(final.data), mayor };
   } catch (e) {
     avisar(`${etiqueta}: no se pudo procesar el logo "${v}" (${e.message}). Se usará la inicial del negocio.`);
     return 'error';
@@ -303,33 +339,59 @@ async function prepararLogo(id, valor, etiqueta) {
 }
 
 // ---------- Lectura de la hoja ----------
+const SHEETS_BASE = process.env.SHEETS_BASE ?? 'https://docs.google.com'; // solo se cambia para pruebas
+
+async function descargarCSV(base) {
+  const url = base + (base.includes('?') ? '&' : '?') + 'nocache=' + Date.now();
+  const res = await fetch(url, { redirect: 'follow' });
+  const texto = await res.text();
+  if (!res.ok) throw new Error('Google respondió ' + res.status + '.');
+  if (/^\s*</.test(texto)) throw new Error('Google devolvió una página web en vez de datos.');
+  return texto;
+}
+
 async function leerCSV() {
   if (process.env.SHEET_CSV_FILE) {
     return readFile(process.env.SHEET_CSV_FILE, 'utf8');
   }
-  const base = process.env.SHEET_CSV_URL;
-  if (!base) {
+  const id = (process.env.SHEET_ID ?? '').trim();
+  const gid = (process.env.SHEET_GID ?? '').trim() || '0';
+  const publicada = (process.env.SHEET_CSV_URL ?? '').trim();
+  if (!id && !publicada) {
     fallar(
-      'Falta la dirección de la hoja. Crea la variable SHEET_CSV_URL en GitHub (Settings → Secrets and variables → Actions → Variables).'
+      'Falta la dirección de la hoja. Crea la variable SHEET_ID (o SHEET_CSV_URL) en GitHub: Settings → Secrets and variables → Actions → Variables.'
     );
   }
+
+  const fuentes = [];
+  if (id) {
+    fuentes.push({
+      nombre: 'lectura directa de la hoja',
+      url: `${SHEETS_BASE}/spreadsheets/d/${encodeURIComponent(id)}/export?format=csv&gid=${encodeURIComponent(gid)}`,
+      ayuda: 'Revisa que la hoja esté compartida como "Cualquier persona con el enlace" (Lector) y que SHEET_GID sea el de la pestaña Negocios.',
+    });
+  }
+  if (publicada) {
+    fuentes.push({
+      nombre: 'enlace publicado en la web',
+      url: publicada,
+      ayuda: 'Revisa que la hoja esté "Publicada en la web" en formato CSV.',
+    });
+  }
+
   let ultimoError = '';
-  for (let intento = 1; intento <= 3; intento++) {
-    try {
-      const url = base + (base.includes('?') ? '&' : '?') + 'nocache=' + Date.now();
-      const res = await fetch(url, { redirect: 'follow' });
-      const texto = await res.text();
-      if (!res.ok) throw new Error('Google respondió ' + res.status);
-      if (/^\s*</.test(texto)) {
-        throw new Error(
-          'Google devolvió una página web en vez de datos. Revisa que la hoja esté "Publicada en la web" en formato CSV.'
-        );
+  for (const [i, fuente] of fuentes.entries()) {
+    for (let intento = 1; intento <= 3; intento++) {
+      try {
+        const texto = await descargarCSV(fuente.url);
+        console.log(`  Fuente de datos: ${fuente.nombre}.`);
+        if (i > 0) avisar(`Se usó el ${fuente.nombre} porque la lectura directa falló. Los cambios pueden tardar unos minutos más en verse.`);
+        return texto;
+      } catch (e) {
+        ultimoError = `${fuente.nombre}: ${e.message} ${fuente.ayuda}`;
+        console.warn(`  Intento ${intento} falló (${fuente.nombre}): ${e.message}`);
+        await new Promise((r) => setTimeout(r, 1500 * intento));
       }
-      return texto;
-    } catch (e) {
-      ultimoError = e.message;
-      console.warn(`  Intento ${intento} falló: ${ultimoError}`);
-      await new Promise((r) => setTimeout(r, 2000 * intento));
     }
   }
   fallar('No se pudo leer la hoja. ' + ultimoError);
@@ -443,7 +505,16 @@ async function prepararNegocio(fila, num) {
   for (const n of ['4', '5']) {
     const url = urlSegura(g(`boton${n}_url`));
     if (url === null) avisar(`${etiqueta}: el enlace del botón ${n} no es válido. Se omite.`);
-    else if (url) disponibles['boton' + n] = { icono: iconoExtra(url), texto: texto(`boton${n}_texto`, 'Más información'), url };
+    else if (url) {
+      let icono = iconoExtra(url);
+      const forzado = normalizar(g(`boton${n}_icono`));
+      if (forzado) {
+        const clave = ALIAS_ICONO[forzado] ?? forzado;
+        if (ICONOS_EXTRA.includes(clave)) icono = clave;
+        else avisar(`${etiqueta}: el ícono "${g(`boton${n}_icono`)}" no existe. Usa: ${ICONOS_EXTRA.join(', ')}. Se elige automático.`);
+      }
+      disponibles['boton' + n] = { icono, texto: texto(`boton${n}_texto`, TEXTO_ICONO[icono]), url };
+    }
   }
 
   const botones = ordenarBotones(g('orden_botones'), etiqueta)
@@ -473,7 +544,7 @@ function htmlBotones(botones) {
     .map(
       (b, i) =>
         `<a class="boton${i === 0 ? ' principal' : ''}" href="${esc(b.url)}" rel="noopener">` +
-        `<span class="chip"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONOS[b.icono]}</svg></span>` +
+        `<span class="chip">${svgIcono(b.icono)}</span>` +
         `<span class="texto">${esc(b.texto)}</span></a>`
     )
     .join('\n      ');
@@ -503,6 +574,8 @@ function htmlPagina(plantilla, n) {
     .replaceAll('{{ESTILO}}', n.estilo)
     .replaceAll('{{COLOR}}', n.color)
     .replaceAll('{{COLOR_TEXTO}}', textoSobre(n.color))
+    .replaceAll('{{COLOR_FUERTE}}', tonoFuerte(n.color))
+    .replaceAll('{{COLOR_FUERTE_TEXTO}}', textoSobre(tonoFuerte(n.color)))
     .replaceAll('{{FONDO_SUAVE}}', aclarar(n.color, 0.9))
     .replaceAll('{{BORDE_SUAVE}}', aclarar(n.color, 0.55))
     .replaceAll('{{NOMBRE}}', esc(n.nombre))

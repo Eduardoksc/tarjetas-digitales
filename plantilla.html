@@ -10,6 +10,8 @@
   :root {
     --marca: {{COLOR}};
     --sobre: {{COLOR_TEXTO}};
+    --fuerte: {{COLOR_FUERTE}};
+    --sobre-fuerte: {{COLOR_FUERTE_TEXTO}};
     --tinte: {{FONDO_SUAVE}};
     --borde: {{BORDE_SUAVE}};
     --tinta: #16181a;
@@ -35,6 +37,7 @@
   main {
     width: 100%;
     max-width: 440px;
+    padding: 28px 20px 24px; /* respaldo para celulares viejos */
     padding: max(28px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
     display: flex;
     flex-direction: column;
@@ -44,6 +47,7 @@
   /* ---------- Logo: la tarjeta se adapta a la forma del logo ---------- */
   .logo {
     display: flex;
+    width: -webkit-fit-content;
     width: fit-content;
     max-width: 100%;
     margin: 0 auto 20px;
@@ -87,11 +91,10 @@
   body.suave .slogan { color: var(--suave); }
 
   /* ---------- Botones ---------- */
-  nav { display: flex; flex-direction: column; gap: 14px; }
+  nav .boton + .boton { margin-top: 14px; }
   .boton {
     display: flex;
     align-items: center;
-    gap: 14px;
     min-height: 68px;
     padding: 12px 18px 12px 12px;
     border-radius: 20px;
@@ -114,9 +117,11 @@
     flex: none;
     width: 46px;
     height: 46px;
+    margin-right: 14px;
     border-radius: 15px;
-    display: grid;
-    place-items: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: var(--marca);
     color: var(--sobre);
     box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .1);
@@ -131,10 +136,20 @@
     stroke-linejoin: round;
   }
 
+  /* Íconos de marca (WhatsApp, Instagram…): silueta rellena */
+  .chip svg.relleno { fill: currentColor; stroke: none; }
+
   /* El primer botón es el más grande */
   .boton.principal { min-height: 82px; font-size: 1.2rem; }
   .boton.principal .chip { width: 54px; height: 54px; border-radius: 17px; }
   .boton.principal .chip svg { width: 30px; height: 30px; }
+  /* En estilo completo el primer botón lleva el color del negocio (un tono más profundo) con borde blanco para distinguirse del fondo */
+  body.completo .boton.principal {
+    background: var(--fuerte);
+    color: var(--sobre-fuerte);
+    box-shadow: 0 0 0 3px #fff, 0 14px 26px -12px rgba(0, 0, 0, .6);
+  }
+  body.completo .boton.principal .chip { background: var(--sobre-fuerte); color: var(--fuerte); box-shadow: none; }
   /* En estilo suave el primer botón lleva el color del negocio */
   body.suave .boton.principal { background: var(--marca); color: var(--sobre); }
   body.suave .boton.principal .chip { background: var(--sobre); color: var(--marca); box-shadow: none; }
