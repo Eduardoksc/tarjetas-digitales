@@ -9,18 +9,12 @@
 <style>
   :root {
     --marca: {{COLOR}};
-    --sobre-marca: {{COLOR_TEXTO}};
+    --sobre: {{COLOR_TEXTO}};
+    --tinte: {{FONDO_SUAVE}};
+    --borde: {{BORDE_SUAVE}};
     --tinta: #16181a;
     --suave: #5d6368;
-    --fondo: #f6f6f4;
-    --borde: #c9ccce;
     color-scheme: light;
-  }
-  @supports (color: color-mix(in srgb, red 10%, white)) {
-    :root {
-      --fondo: color-mix(in srgb, var(--marca) 9%, #fff);
-      --borde: color-mix(in srgb, var(--marca) 45%, #fff);
-    }
   }
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }
@@ -30,10 +24,14 @@
     min-height: 100dvh;
     display: flex;
     justify-content: center;
-    background: var(--fondo);
-    color: var(--tinta);
     font-family: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   }
+
+  /* Estilo "completo": toda la página lleva el color del negocio */
+  body.completo { background: var(--marca); color: var(--sobre); --texto-pie: var(--sobre); }
+  /* Estilo "suave": fondo claro con un toque del color */
+  body.suave { background: var(--tinte); color: var(--tinta); --texto-pie: var(--suave); }
+
   main {
     width: 100%;
     max-width: 440px;
@@ -41,77 +39,112 @@
     display: flex;
     flex-direction: column;
   }
-  .cabecera { text-align: center; padding: 12px 0 28px; }
+  .cabecera { text-align: center; padding: 8px 0 28px; }
+
+  /* ---------- Logo: la tarjeta se adapta a la forma del logo ---------- */
   .logo {
+    display: flex;
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 auto 20px;
+    padding: 16px 20px;
+    border-radius: 22px;
+    align-items: center;
+    justify-content: center;
+  }
+  .logo img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
+  }
+  .logo.fondo-blanco { background: #fff; box-shadow: 0 1px 0 rgba(0, 0, 0, .06), 0 12px 28px -16px rgba(0, 0, 0, .45); }
+  .logo.fondo-oscuro { background: var(--tinta); box-shadow: 0 12px 28px -16px rgba(0, 0, 0, .55); }
+  .logo.fondo-sin { padding: 0; background: none; }
+
+  /* Sin logo: inicial del negocio */
+  .logo.inicial {
     width: 112px;
     height: 112px;
-    margin: 0 auto 18px;
+    padding: 0;
     border-radius: 28px;
-    background: transparent;
-    display: grid;
-    place-items: center;
-    overflow: hidden;
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, .06);
-  }
-  .logo img { width: 100%; height: 100%; object-fit: cover; padding: 0px; }
-  .logo.inicial {
-    background: var(--marca);
-    color: var(--sobre-marca);
     font-size: 48px;
     font-weight: 800;
-    box-shadow: none;
   }
+  body.completo .logo.inicial { background: var(--sobre); color: var(--marca); }
+  body.suave .logo.inicial { background: var(--marca); color: var(--sobre); }
+
   h1 {
     margin: 0;
-    font-size: 1.7rem;
+    font-size: 1.75rem;
     line-height: 1.15;
     letter-spacing: -.01em;
     font-weight: 800;
     text-wrap: balance;
   }
-  .slogan { margin: 8px 0 0; color: var(--suave); font-size: 1.02rem; line-height: 1.4; }
+  .slogan { margin: 8px 0 0; font-size: 1.02rem; line-height: 1.4; }
+  body.completo .slogan { opacity: .9; }
+  body.suave .slogan { color: var(--suave); }
+
+  /* ---------- Botones ---------- */
   nav { display: flex; flex-direction: column; gap: 14px; }
   .boton {
     display: flex;
     align-items: center;
     gap: 14px;
     min-height: 68px;
-    padding: 14px 18px;
-    border-radius: 18px;
-    border: 2px solid var(--borde);
+    padding: 12px 18px 12px 12px;
+    border-radius: 20px;
     background: #fff;
     color: var(--tinta);
     font-size: 1.1rem;
     font-weight: 700;
+    line-height: 1.2;
     text-decoration: none;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, .08), 0 12px 24px -16px rgba(0, 0, 0, .55);
     -webkit-tap-highlight-color: transparent;
     transition: transform .08s ease;
   }
   .boton:active { transform: scale(.98); }
-  .boton:focus-visible { outline: 3px solid var(--tinta); outline-offset: 3px; }
-  .boton svg {
+  body.completo .boton:focus-visible { outline: 3px solid var(--sobre); outline-offset: 3px; }
+  body.suave .boton:focus-visible { outline: 3px solid var(--tinta); outline-offset: 3px; }
+  .boton .texto { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+
+  .chip {
     flex: none;
-    width: 28px;
-    height: 28px;
+    width: 46px;
+    height: 46px;
+    border-radius: 15px;
+    display: grid;
+    place-items: center;
+    background: var(--marca);
+    color: var(--sobre);
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .1);
+  }
+  .chip svg {
+    width: 26px;
+    height: 26px;
     fill: none;
     stroke: currentColor;
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
   }
-  .boton.principal {
-    min-height: 78px;
-    background: var(--marca);
-    border-color: var(--marca);
-    color: var(--sobre-marca);
-    font-size: 1.2rem;
-  }
-  .pie { margin-top: auto; padding-top: 36px; text-align: center; font-size: .8rem; color: var(--suave); }
+
+  /* El primer botón es el más grande */
+  .boton.principal { min-height: 82px; font-size: 1.2rem; }
+  .boton.principal .chip { width: 54px; height: 54px; border-radius: 17px; }
+  .boton.principal .chip svg { width: 30px; height: 30px; }
+  /* En estilo suave el primer botón lleva el color del negocio */
+  body.suave .boton.principal { background: var(--marca); color: var(--sobre); }
+  body.suave .boton.principal .chip { background: var(--sobre); color: var(--marca); box-shadow: none; }
+
+  .pie { margin-top: auto; padding-top: 36px; text-align: center; font-size: .8rem; color: var(--texto-pie); opacity: .8; }
   .pie a { color: inherit; }
   @media (prefers-reduced-motion: reduce) { .boton { transition: none; } }
 </style>
 </head>
-<body>
+<body class="{{ESTILO}}">
   <main>
     <header class="cabecera">
       {{LOGO_HTML}}

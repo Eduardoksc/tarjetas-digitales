@@ -1,19 +1,24 @@
 // generar.mjs
 // Lee la hoja de Google Sheets (publicada como CSV) y crea UNA página lista por cada negocio.
-// No necesita instalar nada: solo Node 20 o superior.
 //
 // Uso local:   SHEET_CSV_FILE=ejemplo-negocios.csv node generar.mjs
 // En GitHub:   lo ejecuta solo el robot (ver .github/workflows/publicar.yml)
 
-import { readFile, writeFile, mkdir, rm, cp } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { readFile, writeFile, mkdir, rm, copyFile } from 'node:fs/promises';
+import { existsSync, readdirSync } from 'node:fs';
+import { extname } from 'node:path';
+import { createHash } from 'node:crypto';
 
 // ---------- Ajustes que puedes cambiar ----------
 const SALIDA = 'dist';
+const LOGOS_DIR = process.env.LOGOS_DIR ?? 'logos';
 const COLOR_DEFECTO = '#1f6f5c';
 const MENSAJE_DEFECTO = 'Hola, vi su tarjeta y quisiera más información.';
 const PIE_TEXTO = process.env.PIE_TEXTO ?? ''; // ej: "Tarjeta digital por E.S.C"
 const PIE_URL = process.env.PIE_URL ?? ''; // ej: "https://tudominio.co"
+const CAJA_LOGO = { w: 300, h: 120 }; // tamaño máximo en pantalla (px) donde se ajusta cada logo
+const LOGO_MAX_PX = 800; // tamaño máximo del archivo de logo que se publica
+const LOGO_MIN_PX = 300; // por debajo de esto se avisa que se verá borroso
 // ------------------------------------------------
 
 const advertencias = [];
@@ -25,6 +30,14 @@ const fallar = (msg) => {
   console.error('\n✖ ' + msg + '\n');
   process.exit(1);
 };
+
+// sharp recorta y ajusta los logos. Si no está instalado, el sistema sigue funcionando sin él.
+let sharp = null;
+try {
+  sharp = (await import('sharp')).default;
+} catch {
+  console.warn('  ⚠ No se encontró "sharp": los logos se publicarán sin recorte automático (npm install lo instala).');
+}
 
 // ---------- Utilidades ----------
 const esc = (s) =>
@@ -40,7 +53,7 @@ const normalizar = (s) =>
     .trim()
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9]+/g, '_')
     .replace(/^_|_$/g, '');
 
@@ -91,6 +104,7 @@ function urlSegura(valor) {
   }
 }
 
+// ---------- Colores ----------
 function colorHex(valor) {
   const v = (valor ?? '').trim();
   if (!v) return COLOR_DEFECTO;
@@ -98,10 +112,15 @@ function colorHex(valor) {
   return m ? '#' + m[1].toLowerCase() : null;
 }
 
+const hexARgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+const rgbAHex = (rgb) => '#' + rgb.map((c) => Math.round(c).toString(16).padStart(2, '0')).join('');
+// Mezcla un color con blanco: cantidad 0 = color puro, 1 = blanco
+const aclarar = (hex, cantidad) => rgbAHex(hexARgb(hex).map((c) => c + (255 - c) * cantidad));
+
 // Elige texto blanco u oscuro según qué tan claro es el color del negocio
 function textoSobre(hex) {
-  const [r, g, b] = [1, 3, 5]
-    .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+  const [r, g, b] = hexARgb(hex)
+    .map((c) => c / 255)
     .map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
   const L = 0.2126 * r + 0.7152 * g + 0.0722 * b;
   return L > 0.179 ? '#111111' : '#ffffff';
@@ -113,14 +132,6 @@ function telefono(valor) {
   if (d.length === 10 && d.startsWith('3')) d = '57' + d; // celular colombiano sin indicativo
   if (d.length < 11 || d.length > 15) return null;
   return d;
-}
-
-function rutaLogo(valor) {
-  const v = (valor ?? '').trim();
-  if (!v) return '';
-  if (/^https?:\/\//i.test(v)) return urlSegura(v);
-  if (/^[\w.-]+$/.test(v) && existsSync(`logos/${v}`)) return `../logos/${encodeURIComponent(v)}`;
-  return null;
 }
 
 const slugValido = (s) => /^[a-z0-9][a-z0-9-]*$/.test(s);
@@ -135,7 +146,161 @@ const ICONOS = {
     '<path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20l1.2-5.2A8.5 8.5 0 1 1 21 11.5z"/>',
   enlace:
     '<path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>',
+  camara:
+    '<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".6"/>',
+  pin: '<path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+  web: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/>',
 };
+
+// El ícono de los botones extra se elige según el enlace
+function iconoExtra(url) {
+  const host = new URL(url).hostname;
+  if (/instagram/.test(host)) return 'camara';
+  if (/maps|waze|goo\.gl/.test(host)) return 'pin';
+  if (/facebook|fb\.com|tiktok|youtube|x\.com|twitter/.test(host)) return 'enlace';
+  return 'web';
+}
+
+// ---------- Logos ----------
+// Huella corta del contenido: si cambias el logo, cambia el nombre y nadie ve el viejo guardado en su celular
+const huella = (contenido) => createHash('md5').update(contenido).digest('hex').slice(0, 8);
+
+function dimensionesSvg(txt) {
+  const vb = txt.match(/viewBox\s*=\s*["']\s*[-\d.]+[ ,]+[-\d.]+[ ,]+([\d.]+)[ ,]+([\d.]+)/i);
+  if (vb) return { w: +vb[1], h: +vb[2] };
+  const w = txt.match(/<svg[^>]*\swidth\s*=\s*["']([\d.]+)/i);
+  const h = txt.match(/<svg[^>]*\sheight\s*=\s*["']([\d.]+)/i);
+  return w && h ? { w: +w[1], h: +h[1] } : null;
+}
+
+// Calcula el tamaño final en pantalla: lo más grande posible dentro de la caja, sin deformar
+function ajustarACaja(w, h, esVector) {
+  const tope = esVector ? 4 : 2; // un logo pequeño se agranda como mucho al doble
+  const k = Math.min(CAJA_LOGO.w / w, CAJA_LOGO.h / h, tope);
+  return { w: Math.max(1, Math.round(w * k)), h: Math.max(1, Math.round(h * k)) };
+}
+
+// ¿El logo es claro y transparente (por ejemplo, blanco)? Entonces se perdería sobre una tarjeta blanca.
+async function esLogoClaro(buffer) {
+  const { data, info } = await sharp(buffer)
+    .ensureAlpha()
+    .resize(48, 48, { fit: 'inside' })
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  let suma = 0;
+  let opacos = 0;
+  let transparentes = 0;
+  const total = info.width * info.height;
+  for (let i = 0; i < data.length; i += 4) {
+    const a = data[i + 3];
+    if (a < 250) transparentes++;
+    if (a > 128) {
+      suma += (0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2]) / 255;
+      opacos++;
+    }
+  }
+  return opacos > 0 && suma / opacos > 0.8 && transparentes / total > 0.1;
+}
+
+function sugerirArchivos() {
+  try {
+    const lista = readdirSync(LOGOS_DIR).filter((f) => !f.startsWith('.'));
+    return lista.length ? ` Archivos que sí hay en logos/: ${lista.slice(0, 6).join(', ')}.` : ' La carpeta logos/ está vacía.';
+  } catch {
+    return '';
+  }
+}
+
+// Devuelve { src, w, h, claro } o null (sin logo) o 'error'
+async function prepararLogo(id, valor, etiqueta) {
+  const v = (valor ?? '').trim();
+  if (!v) return null;
+
+  if (/^https?:\/\//i.test(v)) {
+    const u = urlSegura(v);
+    if (!u) {
+      avisar(`${etiqueta}: el enlace del logo no es válido. Se usará la inicial del negocio.`);
+      return 'error';
+    }
+    return { src: u, w: 0, h: 0, claro: false };
+  }
+
+  if (!/^[\w. -]+$/.test(v) || !existsSync(`${LOGOS_DIR}/${v}`)) {
+    avisar(`${etiqueta}: no encontré el logo "${v}" en la carpeta logos/. Revisa mayúsculas y la extensión.${sugerirArchivos()} Se usará la inicial del negocio.`);
+    return 'error';
+  }
+
+  const ruta = `${LOGOS_DIR}/${v}`;
+  const ext = extname(v).toLowerCase();
+  await mkdir(`${SALIDA}/logos`, { recursive: true });
+
+  // Logo vectorial: se publica tal cual (nítido a cualquier tamaño)
+  if (ext === '.svg') {
+    const txt = await readFile(ruta, 'utf8');
+    const dim = dimensionesSvg(txt);
+    if (!dim) avisar(`${etiqueta}: el SVG del logo no indica su tamaño (viewBox); puede verse mal ajustado.`);
+    const nombreSvg = `${id}-${huella(txt)}.svg`;
+    await copyFile(ruta, `${SALIDA}/logos/${nombreSvg}`);
+    const caja = ajustarACaja(dim?.w || 200, dim?.h || 100, true);
+    return { src: `../logos/${nombreSvg}`, w: caja.w, h: caja.h, claro: false };
+  }
+
+  if (!['.png', '.jpg', '.jpeg', '.webp'].includes(ext)) {
+    avisar(`${etiqueta}: el logo "${v}" debe ser PNG, JPG, WEBP o SVG. Se usará la inicial del negocio.`);
+    return 'error';
+  }
+
+  // Sin sharp: se publica tal cual
+  if (!sharp) {
+    const nombreCopia = `${id}-${huella(await readFile(ruta))}${ext}`;
+    await copyFile(ruta, `${SALIDA}/logos/${nombreCopia}`);
+    return { src: `../logos/${nombreCopia}`, w: 0, h: 0, claro: false };
+  }
+
+  try {
+    const original = await readFile(ruta);
+    const base = sharp(original).rotate(); // respeta la orientación de la foto
+    const meta = await sharp(await base.clone().toBuffer()).metadata();
+
+    // 1) Quitar márgenes vacíos (blancos o transparentes) alrededor del logo
+    let recortado;
+    try {
+      recortado = await sharp(await base.clone().toBuffer()).trim({ threshold: 14 }).toBuffer();
+    } catch {
+      recortado = await base.clone().toBuffer(); // imagen de un solo color o sin márgenes
+    }
+
+    // 2) Ajustar a un tamaño estándar, sin agrandar
+    const final = await sharp(recortado)
+      .resize({ width: LOGO_MAX_PX, height: LOGO_MAX_PX, fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 92, alphaQuality: 100 })
+      .toBuffer({ resolveWithObject: true });
+
+    const { width: w, height: h } = final.info;
+    const nombreWebp = `${id}-${huella(final.data)}.webp`;
+    await writeFile(`${SALIDA}/logos/${nombreWebp}`, final.data);
+
+    // 3) Avisos de calidad
+    const mayor = Math.max(meta.width ?? 0, meta.height ?? 0);
+    if (Math.max(w, h) < LOGO_MIN_PX) {
+      avisar(`${etiqueta}: el logo mide solo ${w}×${h} px después de recortar; se verá borroso. Pide uno de al menos ${LOGO_MIN_PX} px de ancho (mejor PNG transparente o SVG).`);
+    }
+    const proporcion = Math.max(w / h, h / w);
+    if (proporcion > 5) {
+      avisar(`${etiqueta}: el logo es muy ${w > h ? 'alargado' : 'alto'} (${w}×${h}); se verá pequeño. Si tiene una versión más compacta, úsala.`);
+    }
+    const recorte = meta.width && meta.height ? 1 - (w * h) / (meta.width * meta.height) : 0;
+    if (recorte > 0.05) {
+      console.log(`  · ${id}: logo recortado (${meta.width}×${meta.height} → ${w}×${h}), sin márgenes vacíos.`);
+    }
+
+    const caja = ajustarACaja(w, h, false);
+    return { src: `../logos/${nombreWebp}`, w: caja.w, h: caja.h, claro: await esLogoClaro(final.data), mayor };
+  } catch (e) {
+    avisar(`${etiqueta}: no se pudo procesar el logo "${v}" (${e.message}). Se usará la inicial del negocio.`);
+    return 'error';
+  }
+}
 
 // ---------- Lectura de la hoja ----------
 async function leerCSV() {
@@ -171,7 +336,34 @@ async function leerCSV() {
 }
 
 // ---------- Construcción de cada negocio ----------
-function prepararNegocio(fila, num) {
+const ORDEN_DEFECTO = ['resenas', 'catalogo', 'whatsapp', 'boton4', 'boton5'];
+const NOMBRES_CLAVE = {
+  resenas: 'resenas',
+  resena: 'resenas',
+  google: 'resenas',
+  catalogo: 'catalogo',
+  menu: 'catalogo',
+  whatsapp: 'whatsapp',
+  wa: 'whatsapp',
+  boton4: 'boton4',
+  extra: 'boton4',
+  extra1: 'boton4',
+  boton5: 'boton5',
+  extra2: 'boton5',
+};
+
+function ordenarBotones(texto, etiqueta) {
+  const pedidos = [];
+  for (const parte of (texto ?? '').split(/[,;\s]+/).filter(Boolean)) {
+    const clave = NOMBRES_CLAVE[normalizar(parte)];
+    if (!clave) {
+      avisar(`${etiqueta}: "${parte}" no es un botón válido en orden_botones. Usa: resenas, catalogo, whatsapp, boton4, boton5.`);
+    } else if (!pedidos.includes(clave)) pedidos.push(clave);
+  }
+  return [...pedidos, ...ORDEN_DEFECTO.filter((c) => !pedidos.includes(c))];
+}
+
+async function prepararNegocio(fila, num) {
   const g = (k) => (fila[k] ?? '').trim();
   const etiqueta = `Fila ${num} (${g('id') || 'sin id'})`;
 
@@ -192,50 +384,71 @@ function prepararNegocio(fila, num) {
     avisar(`${etiqueta}: falta el nombre. Se omite.`);
     return null;
   }
+
+  // Color y estilo de fondo
   const color = colorHex(g('color'));
-  if (!color) {
-    avisar(`${etiqueta}: color inválido "${g('color')}". Usa 6 letras/números como #1F6F5C.`);
-  }
+  if (!color) avisar(`${etiqueta}: color inválido "${g('color')}". Usa 6 letras/números como #1F6F5C.`);
   const colorFinal = color ?? COLOR_DEFECTO;
 
-  const alias = g('alias').toLowerCase();
-  if (alias && !slugValido(alias)) {
-    avisar(`${etiqueta}: el alias "${alias}" no es válido; se ignora.`);
+  let estilo = normalizar(g('estilo')) || 'completo';
+  if (!['completo', 'suave'].includes(estilo)) {
+    avisar(`${etiqueta}: estilo "${g('estilo')}" no existe. Usa "completo" (fondo del color del negocio) o "suave". Se usa "completo".`);
+    estilo = 'completo';
   }
+
+  const alias = g('alias').toLowerCase();
+  if (alias && !slugValido(alias)) avisar(`${etiqueta}: el alias "${alias}" no es válido; se ignora.`);
 
   // Logo
-  let logo = rutaLogo(g('logo'));
-  if (logo === null) {
-    avisar(`${etiqueta}: no encontré el logo "${g('logo')}" en la carpeta logos/. Se usará la inicial del negocio.`);
-    logo = '';
+  const logoRes = await prepararLogo(id, g('logo'), etiqueta);
+  const logo = logoRes && logoRes !== 'error' ? logoRes : null;
+
+  let fondoLogo = normalizar(g('logo_fondo'));
+  if (fondoLogo && !['blanco', 'oscuro', 'sin'].includes(fondoLogo)) {
+    avisar(`${etiqueta}: logo_fondo "${g('logo_fondo')}" no existe. Usa blanco, oscuro o sin. Se elige automático.`);
+    fondoLogo = '';
+  }
+  if (!fondoLogo) {
+    fondoLogo = logo?.claro ? 'oscuro' : 'blanco';
+    if (logo?.claro) console.log(`  · ${id}: el logo es claro; se pone sobre una tarjeta oscura para que se vea.`);
   }
 
-  // Botones, en orden de importancia
-  const botones = [];
+  // Botones disponibles (solo los que tienen datos válidos)
+  const disponibles = {};
+  const texto = (campo, defecto) => {
+    const t = g(campo) || defecto;
+    if (t.length > 40) avisar(`${etiqueta}: el texto del botón "${t.slice(0, 20)}…" es largo (${t.length} letras); intenta que sea más corto.`);
+    return t;
+  };
+
   const resenas = urlSegura(g('google_resenas'));
   if (resenas === null) avisar(`${etiqueta}: el enlace de reseñas no es válido. Se omite ese botón.`);
-  else if (resenas) botones.push({ icono: 'resenas', texto: 'Califícanos en Google', url: resenas });
+  else if (resenas) disponibles.resenas = { icono: 'resenas', texto: texto('texto_resenas', 'Califícanos en Google'), url: resenas };
 
   const catalogo = urlSegura(g('catalogo'));
   if (catalogo === null) avisar(`${etiqueta}: el enlace del catálogo no es válido. Se omite ese botón.`);
-  else if (catalogo) botones.push({ icono: 'catalogo', texto: 'Ver catálogo', url: catalogo });
+  else if (catalogo) disponibles.catalogo = { icono: 'catalogo', texto: texto('texto_catalogo', 'Ver catálogo'), url: catalogo };
 
   const tel = telefono(g('whatsapp'));
   if (tel === null) avisar(`${etiqueta}: el número de WhatsApp no parece válido. Se omite ese botón.`);
   else if (tel) {
     const msg = g('mensaje_whatsapp') || MENSAJE_DEFECTO;
-    botones.push({
+    disponibles.whatsapp = {
       icono: 'whatsapp',
-      texto: 'Escríbenos por WhatsApp',
+      texto: texto('texto_whatsapp', 'Escríbenos por WhatsApp'),
       url: `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`,
-    });
+    };
   }
 
-  const extraUrl = urlSegura(g('boton4_url'));
-  if (extraUrl === null) avisar(`${etiqueta}: el enlace del botón extra no es válido. Se omite.`);
-  else if (extraUrl) {
-    botones.push({ icono: 'enlace', texto: g('boton4_texto') || 'Más información', url: extraUrl });
+  for (const n of ['4', '5']) {
+    const url = urlSegura(g(`boton${n}_url`));
+    if (url === null) avisar(`${etiqueta}: el enlace del botón ${n} no es válido. Se omite.`);
+    else if (url) disponibles['boton' + n] = { icono: iconoExtra(url), texto: texto(`boton${n}_texto`, 'Más información'), url };
   }
+
+  const botones = ordenarBotones(g('orden_botones'), etiqueta)
+    .map((clave) => disponibles[clave])
+    .filter(Boolean);
 
   if (botones.length === 0) {
     avisar(`${etiqueta}: no tiene ningún botón con datos válidos. Se omite.`);
@@ -248,7 +461,9 @@ function prepararNegocio(fila, num) {
     nombre,
     slogan: g('slogan'),
     color: colorFinal,
+    estilo,
     logo,
+    fondoLogo,
     botones,
   };
 }
@@ -258,16 +473,25 @@ function htmlBotones(botones) {
     .map(
       (b, i) =>
         `<a class="boton${i === 0 ? ' principal' : ''}" href="${esc(b.url)}" rel="noopener">` +
-        `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONOS[b.icono]}</svg>` +
-        `<span>${esc(b.texto)}</span></a>`
+        `<span class="chip"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONOS[b.icono]}</svg></span>` +
+        `<span class="texto">${esc(b.texto)}</span></a>`
     )
     .join('\n      ');
 }
 
+function htmlLogo(n) {
+  if (!n.logo) {
+    return `<div class="logo inicial" aria-hidden="true">${esc([...n.nombre][0].toUpperCase())}</div>`;
+  }
+  const medidas = n.logo.w ? ` width="${n.logo.w}" height="${n.logo.h}" style="width:${n.logo.w}px"` : '';
+  return (
+    `<div class="logo fondo-${n.fondoLogo}">` +
+    `<img src="${esc(n.logo.src)}" alt="Logo de ${esc(n.nombre)}"${medidas} decoding="async" fetchpriority="high">` +
+    `</div>`
+  );
+}
+
 function htmlPagina(plantilla, n) {
-  const logoHtml = n.logo
-    ? `<div class="logo"><img src="${esc(n.logo)}" alt="Logo de ${esc(n.nombre)}" width="112" height="112"></div>`
-    : `<div class="logo inicial" aria-hidden="true">${esc([...n.nombre][0].toUpperCase())}</div>`;
   const sloganHtml = n.slogan ? `<p class="slogan">${esc(n.slogan)}</p>` : '';
   let pie = '';
   if (PIE_TEXTO) {
@@ -276,10 +500,13 @@ function htmlPagina(plantilla, n) {
   }
   return plantilla
     .replaceAll('{{TITULO}}', esc(n.nombre))
+    .replaceAll('{{ESTILO}}', n.estilo)
     .replaceAll('{{COLOR}}', n.color)
     .replaceAll('{{COLOR_TEXTO}}', textoSobre(n.color))
+    .replaceAll('{{FONDO_SUAVE}}', aclarar(n.color, 0.9))
+    .replaceAll('{{BORDE_SUAVE}}', aclarar(n.color, 0.55))
     .replaceAll('{{NOMBRE}}', esc(n.nombre))
-    .replaceAll('{{LOGO_HTML}}', logoHtml)
+    .replaceAll('{{LOGO_HTML}}', htmlLogo(n))
     .replaceAll('{{SLOGAN_HTML}}', sloganHtml)
     .replaceAll('{{BOTONES}}', htmlBotones(n.botones))
     .replaceAll('{{PIE_HTML}}', pie);
@@ -305,25 +532,28 @@ for (const obligatoria of ['id', 'estado', 'nombre']) {
 }
 
 const plantilla = await readFile('plantilla.html', 'utf8');
+await rm(SALIDA, { recursive: true, force: true });
+await mkdir(SALIDA, { recursive: true });
+
 const negocios = [];
 const vistos = new Set();
 let pausados = 0;
 
-filas.slice(1).forEach((celdas, i) => {
+for (const [i, celdas] of filas.slice(1).entries()) {
   const fila = Object.fromEntries(encabezados.map((h, j) => [h, celdas[j] ?? '']));
-  const n = prepararNegocio(fila, i + 2);
-  if (!n) return;
+  const n = await prepararNegocio(fila, i + 2);
+  if (!n) continue;
   if (vistos.has(n.id)) {
     avisar(`Fila ${i + 2}: el id "${n.id}" está repetido. Se usa solo la primera fila.`);
-    return;
+    continue;
   }
   vistos.add(n.id);
   if (n.pausado) {
     pausados++;
-    return;
+    continue;
   }
   negocios.push(n);
-});
+}
 
 if (negocios.length === 0) {
   fallar('No hay ningún negocio activo con datos válidos. No se publica nada para no borrar el sitio actual.');
@@ -340,17 +570,13 @@ for (const n of negocios) {
   }
 }
 
-await rm(SALIDA, { recursive: true, force: true });
-await mkdir(SALIDA, { recursive: true });
-if (existsSync('logos')) await cp('logos', `${SALIDA}/logos`, { recursive: true });
-
 for (const n of negocios) {
   const html = htmlPagina(plantilla, n);
   for (const carpeta of [n.id, n.alias].filter(Boolean)) {
     await mkdir(`${SALIDA}/${carpeta}`, { recursive: true });
     await writeFile(`${SALIDA}/${carpeta}/index.html`, html);
   }
-  console.log(`  ✔ ${n.id}${n.alias ? ' / ' + n.alias : ''} — ${n.nombre} (${n.botones.length} botones)`);
+  console.log(`  ✔ ${n.id}${n.alias ? ' / ' + n.alias : ''} — ${n.nombre} (${n.botones.length} botones, fondo ${n.estilo})`);
 }
 
 await writeFile(`${SALIDA}/index.html`, paginaSimple('Tarjeta digital', 'Escanea la tarjeta de un negocio para ver su página.'));

@@ -1,6 +1,6 @@
-id,estado,nombre,slogan,color,logo,google_resenas,catalogo,whatsapp,mensaje_whatsapp,boton4_texto,boton4_url,alias
-001,activo,Peluquería Estilo Norte,"Corte, color y buen trato",#B83A5B,estilo-norte.svg,https://g.page/r/EjemploReseña/review,,300 123 4567,"Hola, quiero agendar una cita",Síguenos en Instagram,instagram.com/estilonorte,estilonorte
-002,activo,Panadería La Esquina,Pan caliente todos los días,#C9822B,,https://g.page/r/OtroEjemplo/review,https://tudominio.co/catalogos/la-esquina,3109876543,,,,
-003,pausado,Restaurante El Fogón,,#2F5D3A,,https://g.page/r/Fogon/review,,3001112233,,,,
-004,activo,Barbería Don Carlos,Estilo clásico desde 1998,#F2C230,,https://g.page/r/Carlos/review,,+57 320 555 0000,,,,
-005,activo,Fila con error,,rojo,,no es un enlace,,123,,,,
+id,estado,nombre,slogan,color,estilo,logo,logo_fondo,google_resenas,texto_resenas,catalogo,texto_catalogo,whatsapp,mensaje_whatsapp,texto_whatsapp,boton4_texto,boton4_url,boton5_texto,boton5_url,orden_botones,alias
+001,activo,Peluquería Estilo Norte,"Corte, color y buen trato",#B83A5B,completo,estilo-norte.svg,,https://g.page/r/EjemploReseña/review,Cuéntanos qué tal te fue,,,300 123 4567,"Hola, quiero agendar una cita",Agenda tu cita,Síguenos en Instagram,instagram.com/estilonorte,Cómo llegar,https://maps.app.goo.gl/ejemplo,"whatsapp, resenas",estilonorte
+002,activo,Panadería La Esquina,Pan caliente todos los días,#C9822B,completo,,,https://g.page/r/OtroEjemplo/review,,https://tudominio.co/catalogos/la-esquina,Ver nuestro menú,3109876543,,,,,,,,
+003,pausado,Restaurante El Fogón,,#2F5D3A,suave,,,https://g.page/r/Fogon/review,,,,3001112233,,,,,,,,
+004,activo,Barbería Don Carlos,Estilo clásico desde 1998,#F2C230,suave,,,https://g.page/r/Carlos/review,,,,+57 320 555 0000,,,,,,,,
+005,activo,Fila con error,,rojo,,,,no es un enlace,,,,123,,,,,,,,

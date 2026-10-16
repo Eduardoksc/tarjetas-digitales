@@ -3,7 +3,6 @@
 #   1) subes cambios al repositorio (push)
 #   2) pasa cada hora (por si olvidas publicar)
 #   3) lo pides a mano (pestaña Actions → "Publicar tarjetas" → Run workflow)
-#   4) presionas "Publicar cambios ahora" en tu hoja de Google (opcional)
 name: Publicar tarjetas
 
 on:
@@ -12,8 +11,6 @@ on:
   schedule:
     - cron: '17 * * * *'
   workflow_dispatch:
-  repository_dispatch:
-    types: [actualizar-hoja]
 
 permissions:
   contents: read
@@ -32,6 +29,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
+      - name: Instalar la herramienta de imágenes (recorta y ajusta los logos)
+        run: npm ci --no-audit --no-fund
       - name: Crear las páginas desde la hoja
         run: node generar.mjs
         env:
