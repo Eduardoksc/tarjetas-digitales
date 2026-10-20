@@ -9,18 +9,21 @@ Hoja de Google  ──(robot de GitHub)──►  Una página por negocio  ─�
 
 ---
 
-## Qué trae esta versión
+## Qué trae esta versión (diseño "Tecla")
 
-1. **Logos estandarizados.** El robot recorta los márgenes vacíos, los deja en un tamaño estándar y la tarjeta se adapta a su forma.
-2. **El color cambia toda la página.** El primer botón (por defecto el de reseñas) lleva el color del negocio, un poco más profundo, con un borde blanco para que se distinga.
-3. **Íconos de marca en cada botón:** el de WhatsApp, Instagram, Facebook, TikTok, YouTube, Google Maps, etc. El ícono se elige solo según el enlace.
-4. **Botones personalizables:** nombre, orden y un botón extra más.
-5. **Actualizaciones rápidas:** el robot lee la hoja directamente (sin esperar a que Google "publique") y corre cada 10 minutos. Hay además un botón opcional "Publicar ahora" en la hoja.
-6. **Mejor compatibilidad con celulares viejos:** logos en PNG/JPG (no WebP) y un diseño que no depende de funciones recientes del navegador.
+1. **Las estrellas son el botón de reseña.** Arriba va el mensaje "Nos encantó verte." y debajo un bloque con el logo de Google y cinco estrellas que se llenan al abrir. Tocarlas lleva a la reseña.
+2. **Botones cuadrados con relieve** (WhatsApp, catálogo, redes…): tienen grosor, como teclas, y se hunden al tocarlos. Cada uno lleva el ícono de su servicio.
+3. **Todo el fondo es del color del negocio**, y el texto cambia solo a blanco u oscuro según qué tan claro sea el color.
+4. **Logos que siempre se ven bien.** El robot recorta márgenes y pone el logo en una placa que se adapta a su forma. Si el logo trae su propio fondo liso (como un JPG con fondo crema), la placa toma ese color. Si trae un fondo con degradado, se muestra tal cual con las esquinas redondeadas.
+5. **Textos editables desde la hoja:** el titular, el nombre de cada botón y la nota debajo de las estrellas.
+6. **Actualizaciones rápidas:** el robot lee la hoja directamente y corre cada 10 minutos.
+7. **Compatibilidad con celulares viejos:** logos en PNG/JPG, sin funciones recientes del navegador, y se le pide al navegador que no oscurezca la página por su cuenta.
 
 ### Cómo actualizar tu repositorio
 
-Reemplaza o agrega estos archivos (en VS Code, o en GitHub con **Add file → Upload files**) y confirma el cambio:
+### Cómo actualizar tu repositorio
+
+Reemplaza o agrega estos archivos (en VS Code, o en GitHub con **Add file → Upload files**) y confirma el cambio. Después de reemplazar `package.json`, ejecuta `npm install` una vez en tu computador (instala la tipografía del titular) y sube también `package-lock.json`:
 
 | Archivo | Qué hacer |
 |---|---|
@@ -43,22 +46,25 @@ Pestaña **Negocios**, fila 1 con estos encabezados (el orden no importa; solo a
 | `id` | Número único: 001, 002, 003… **Nunca se cambia** | Sí |
 | `estado` | `activo` o `pausado` (ver valores abajo) | Sí |
 | `nombre` | Nombre del negocio | Sí |
-| `slogan` | Frase corta | No |
+| `slogan` | Frase corta bajo el nombre | No |
 | `color` | Color del negocio, ej. `#B83A5B` | No |
-| `estilo` | `completo` o `suave` | No |
 | `logo` | Nombre del archivo en la carpeta `logos`, ej. `logo004.png` | No |
 | `logo_fondo` | `blanco`, `oscuro` o `sin` | No |
+| `titular` | Frase grande de arriba. Vacío = "Nos encantó verte." (máx. unas 30 letras) | No |
 | `google_resenas` | Enlace para dejar reseña | Recomendada |
-| `texto_resenas` | Nombre del botón. Vacío = "Califícanos en Google" | No |
+| `texto_resenas` | Texto junto al logo de Google. Vacío = "Toca las estrellas y cuéntale a Google" | No |
+| `nota_resenas` | Línea bajo las estrellas. Vacío = "20 segundos. Ayudas a que más gente nos encuentre." | No |
 | `catalogo` | Enlace al catálogo | No |
 | `texto_catalogo` | Nombre del botón. Vacío = "Ver catálogo" | No |
 | `whatsapp` | Número, ej. `300 123 4567` | Recomendada |
 | `mensaje_whatsapp` | Mensaje que aparece escrito al abrir el chat | No |
-| `texto_whatsapp` | Nombre del botón. Vacío = "Escríbenos por WhatsApp" | No |
-| `boton4_texto`, `boton4_url`, `boton4_icono` | Un botón extra (redes, web, ubicación…) | No |
-| `boton5_texto`, `boton5_url`, `boton5_icono` | Otro botón extra | No |
-| `orden_botones` | El orden de los botones | No |
+| `texto_whatsapp` | Nombre del botón. Vacío = "Escríbenos" | No |
+| `boton4_url`, `boton4_texto`, `boton4_icono` | Un botón extra (redes, web, ubicación…) | No |
+| `boton5_url`, `boton5_texto`, `boton5_icono` | Otro botón extra | No |
+| `orden_botones` | El orden de los botones cuadrados | No |
 | `alias` | Nombre corto extra para el enlace, ej. `estilonorte` | No |
+
+La columna `estilo` que ya tengas en la hoja no estorba: el robot la ignora.
 
 Mira `ejemplo-negocios.csv`: tiene filas de ejemplo con todo esto.
 
@@ -68,13 +74,12 @@ Mira `ejemplo-negocios.csv`: tiene filas de ejemplo con todo esto.
 
 | Columna | Valores | Si lo dejas vacío |
 |---|---|---|
-| `estado` | `activo` (también vale `si` o `activa`). Cualquier otra cosa, por ejemplo `pausado`, oculta la página | La página se oculta |
-| `estilo` | `completo` (toda la página del color del negocio) o `suave` (fondo claro con un toque de color y el primer botón en el color del negocio) | `completo` |
-| `logo_fondo` | `blanco` (tarjeta blanca), `oscuro` (tarjeta oscura, para logos blancos) o `sin` (sin tarjeta, directo sobre el color) | Se elige solo: tarjeta blanca, u oscura si el logo es claro |
-| `orden_botones` | Nombres separados por coma: `resenas`, `catalogo`, `whatsapp`, `boton4`, `boton5` | `resenas, catalogo, whatsapp, boton4, boton5` |
+| `estado` | `activo` (también `si` o `activa`). Cualquier otra cosa, por ejemplo `pausado`, oculta la página | La página se oculta |
+| `logo_fondo` | `blanco` (placa blanca), `oscuro` (placa oscura, para logos blancos) o `sin` (el logo va directo sobre el color) | Se elige solo (ver abajo) |
+| `orden_botones` | Nombres separados por coma: `catalogo`, `whatsapp`, `boton4`, `boton5`. La reseña siempre va arriba, no hace falta ponerla | `catalogo, whatsapp, boton4, boton5` |
 | `boton4_icono`, `boton5_icono` | `instagram`, `facebook`, `tiktok`, `youtube`, `x`, `telegram`, `maps`, `waze`, `web`, `enlace` | Se elige solo según el enlace |
 
-Consejo: en `estado`, `estilo` y `logo_fondo` pon una lista desplegable en **Datos → Validación de datos**, así no te equivocas al escribir.
+Consejo: en `estado` y `logo_fondo` pon una lista desplegable en **Datos → Validación de datos**, así no te equivocas al escribir.
 
 ---
 
@@ -92,8 +97,8 @@ Qué hace el robot con cada logo:
 
 1. **Recorta** los márgenes vacíos (blancos o transparentes).
 2. **Reduce** el archivo y lo convierte a PNG (si tiene transparencia) o JPG, que abren en cualquier celular.
-3. **Lo ajusta** al espacio disponible sin deformarlo: uno ancho ocupa el ancho, uno cuadrado se ve más grande y uno alto se acomoda a lo alto.
-4. **Si el logo es blanco o muy claro**, lo pone solo sobre una tarjeta oscura.
+3. **Lo ajusta** al espacio disponible sin deformarlo. Un logo muy ancho se pone arriba del nombre; uno cuadrado o redondo, al lado.
+4. **Elige la placa solo** (si `logo_fondo` está vacío): logo transparente = placa blanca (oscura si el logo es blanco o muy claro); logo con fondo liso = placa de ese mismo color, sin bordes visibles; logo con fondo degradado = se muestra tal cual, con esquinas redondeadas.
 5. **Te avisa** (⚠) si es muy pequeño, muy alargado o no se encuentra. Si te equivocas en el nombre, el aviso te muestra los archivos que sí existen.
 
 Los SVG no se tocan: se ven nítidos a cualquier tamaño.
@@ -102,36 +107,33 @@ Los SVG no se tocan: se ven nítidos a cualquier tamaño.
 
 ## Botones: íconos, nombres y orden
 
-**Íconos.** Cada botón muestra el ícono del servicio al que lleva:
+**Reseña.** El bloque de estrellas aparece si hay `google_resenas`. Siempre va arriba.
+
+**Botones cuadrados.** Cada uno muestra el ícono del servicio:
 
 | Botón | Ícono |
 |---|---|
-| Reseñas | Estrella |
 | Catálogo | Lista |
 | WhatsApp | Logo de WhatsApp |
 | Extras (`boton4`, `boton5`) | Se elige según el enlace: Instagram, Facebook, TikTok, YouTube, X, Telegram, Google Maps, Waze; cualquier otra página muestra un globo |
 
 Si el ícono automático no es el que quieres, escribe el que prefieras en `boton4_icono` o `boton5_icono`.
 
-**Nombres.** Escribe el texto en su columna (`texto_resenas`, `texto_catalogo`, `texto_whatsapp`, `boton4_texto`, `boton5_texto`). Si un extra no tiene texto, usa uno según su ícono: "Síguenos en Instagram", "Cómo llegar", etc. Procura que sea corto (menos de 40 letras).
+**Nombres.** Escribe el texto en su columna. En un botón cuadrado caben **unas 16 letras** ("Ver catálogo", "Escríbenos", "Cómo llegar"). Si te pasas, el robot lo avisa con un ⚠.
 
-**Orden.** En `orden_botones` escribe los nombres separados por comas. El primero queda arriba, más grande y resaltado con el color del negocio.
+**Cantidad.** Con 1 botón queda ancho; con 2 o 4, en parejas; con 3, en fila; con 5, tres arriba y dos abajo.
 
-| Negocio | `orden_botones` |
-|---|---|
-| Restaurante con domicilios | `catalogo, whatsapp, resenas` |
-| Peluquería o barbería | `whatsapp, resenas` |
-
-Los botones que no estén en la lista van al final, y un botón sin datos simplemente no aparece.
+**Orden.** En `orden_botones` escribe los nombres separados por comas, por ejemplo `whatsapp, catalogo`. Un botón sin datos simplemente no aparece.
 
 ---
 
 ## Colores y fondo
 
-- `completo` (por defecto): toda la página lleva el color del negocio. El texto se vuelve blanco u oscuro solo, según qué tan claro sea el color. Los botones son blancos con un ícono del color del negocio, y el primero va resaltado con el color del negocio y un borde blanco.
-- `suave`: fondo claro con un toque del color, y el primer botón lleva el color completo.
+Toda la página lleva el color del negocio. El texto se vuelve blanco u oscuro solo, según qué tan claro sea el color. Los botones y el bloque de estrellas son color papel, con un ícono del color del negocio (más oscuro si el color es muy claro).
 
 Escribe el color como `#B83A5B` (6 letras o números después del `#`). Si es incorrecto, el robot avisa y usa uno por defecto.
+
+**Por qué el color puede verse distinto en cada celular.** La pantalla de cada aparato muestra los colores a su manera, y algunos navegadores de Android oscurecen las páginas por su cuenta. La página ya le pide al navegador que no lo haga, pero la diferencia de pantalla a pantalla no se puede eliminar.
 
 ---
 
@@ -274,7 +276,9 @@ Crea la carpeta `dist` con las páginas y muestra los avisos en español. Abre `
 | Un negocio no aparece | Estado distinto de `activo`, o la fila tiene errores | Mira los ⚠ en el paso "Crear las páginas desde la hoja" |
 | El logo no se ve, sale la inicial | El nombre del archivo no coincide con la columna `logo` | El aviso lista los archivos que existen; corrige mayúsculas y extensión |
 | El logo se ve borroso | El archivo es muy pequeño | Pide un SVG o un PNG de más de 800 px |
-| Un logo blanco no se ve | El fondo es claro | Pon `oscuro` en `logo_fondo` |
+| Un logo blanco no se ve | La placa es clara | Pon `oscuro` en `logo_fondo` |
+| El titular se sale o queda enorme | Es demasiado largo | Usa menos de 30 letras en `titular` |
+| Un logo trae marca de agua (por ejemplo, de una herramienta de IA) | El archivo original ya la tenía | Pide al cliente el logo original sin marca de agua |
 | En el celular se ve distinto que en el computador | El celular guarda la versión anterior de la página | Abre el enlace en una ventana privada o borra los datos del navegador; espera unos minutos después de publicar. Si persiste, mándame una captura y el modelo del celular |
 | El cambio no se ve | Falta publicar, o el robot aún no corrió | Espera hasta 10 minutos, presiona **Publicar ahora**, o ejecuta el robot a mano en **Actions** |
 | El robot por hora dejó de correr | GitHub pausa tareas programadas tras 60 días sin actividad en el repositorio | Haz un cambio pequeño o ejecútalo a mano |

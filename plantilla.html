@@ -4,169 +4,166 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
+<meta name="color-scheme" content="light only">
 <meta name="theme-color" content="{{COLOR}}">
 <title>{{TITULO}}</title>
+<link rel="preload" href="../fonts/unbounded-800.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+  @font-face {
+    font-family: "Unbounded";
+    font-weight: 800;
+    font-style: normal;
+    font-display: swap;
+    src: url("../fonts/unbounded-800.woff2") format("woff2");
+  }
   :root {
     --marca: {{COLOR}};
     --sobre: {{COLOR_TEXTO}};
-    --fuerte: {{COLOR_FUERTE}};
-    --sobre-fuerte: {{COLOR_FUERTE_TEXTO}};
-    --tinte: {{FONDO_SUAVE}};
-    --borde: {{BORDE_SUAVE}};
-    --tinta: #16181a;
-    --suave: #5d6368;
+    --icono: {{COLOR_ICONO}};
+    --papel: #fffdf8;
+    --canto: #cfc8b6;      /* grosor de la "tecla": un tono más oscuro del papel, se ve sobre cualquier color */
+    --tinta: #17150f;
+    --vacia: #e4e0d4;      /* estrella sin llenar */
+    --amarillo: #ffc21a;
     color-scheme: light;
   }
   * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; }
+  html { -webkit-text-size-adjust: 100%; background: var(--marca); }
   body {
     margin: 0;
     min-height: 100vh;
     min-height: 100dvh;
     display: flex;
     justify-content: center;
-    font-family: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--marca);
+    color: var(--sobre);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   }
-
-  /* Estilo "completo": toda la página lleva el color del negocio */
-  body.completo { background: var(--marca); color: var(--sobre); --texto-pie: var(--sobre); }
-  /* Estilo "suave": fondo claro con un toque del color */
-  body.suave { background: var(--tinte); color: var(--tinta); --texto-pie: var(--suave); }
-
   main {
     width: 100%;
     max-width: 440px;
-    padding: 28px 20px 24px; /* respaldo para celulares viejos */
+    padding: 28px 20px 24px;
     padding: max(28px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
     display: flex;
     flex-direction: column;
   }
-  .cabecera { text-align: center; padding: 8px 0 28px; }
+  a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; }
+  a:focus-visible { outline: 3px solid var(--sobre); outline-offset: 3px; }
 
-  /* ---------- Logo: la tarjeta se adapta a la forma del logo ---------- */
+  /* ---------- Cabecera: logo + nombre ---------- */
+  .cab { display: flex; align-items: center; margin-bottom: 20px; }
+  .cab.apilada { display: block; }
+  .cab.apilada .logo { margin: 0 0 12px; }
   .logo {
     display: flex;
-    width: -webkit-fit-content;
-    width: fit-content;
-    max-width: 100%;
-    margin: 0 auto 20px;
-    padding: 16px 20px;
-    border-radius: 22px;
     align-items: center;
     justify-content: center;
+    flex: none;
+    max-width: 62%;
+    margin-right: 14px;
+    border-radius: 16px;
+    overflow: hidden;
   }
-  .logo img {
-    display: block;
-    max-width: 100%;
-    height: auto;
-    object-fit: contain;
-  }
-  .logo.fondo-blanco { background: #fff; box-shadow: 0 1px 0 rgba(0, 0, 0, .06), 0 12px 28px -16px rgba(0, 0, 0, .45); }
-  .logo.fondo-oscuro { background: var(--tinta); box-shadow: 0 12px 28px -16px rgba(0, 0, 0, .55); }
-  .logo.fondo-sin { padding: 0; background: none; }
-
-  /* Sin logo: inicial del negocio */
+  .cab.apilada .logo { max-width: 100%; }
+  .logo img { display: block; max-width: 100%; height: auto; }
+  .logo.placa { padding: 8px 12px; box-shadow: 0 5px 0 rgba(0, 0, 0, .22), 0 14px 18px -10px rgba(0, 0, 0, .4); }
+  .logo.fondo-blanco { background: #fff; }
+  .logo.fondo-oscuro { background: var(--tinta); }
+  .logo.tal { box-shadow: 0 5px 0 rgba(0, 0, 0, .22), 0 14px 18px -10px rgba(0, 0, 0, .4); }
+  .logo.sin { border-radius: 0; overflow: visible; }
   .logo.inicial {
-    width: 112px;
-    height: 112px;
-    padding: 0;
-    border-radius: 28px;
-    font-size: 48px;
-    font-weight: 800;
+    width: 64px; height: 64px; font-size: 30px; font-weight: 800;
+    background: var(--papel); color: var(--icono);
+    box-shadow: 0 5px 0 rgba(0, 0, 0, .22);
   }
-  body.completo .logo.inicial { background: var(--sobre); color: var(--marca); }
-  body.suave .logo.inicial { background: var(--marca); color: var(--sobre); }
+  .nom { min-width: 0; margin: 0; font-size: 1.05rem; line-height: 1.2; font-weight: 700; overflow-wrap: anywhere; }
+  .slogan { display: block; margin-top: 3px; font-size: .86rem; font-weight: 500; line-height: 1.3; opacity: .85; }
 
-  h1 {
-    margin: 0;
-    font-size: 1.75rem;
-    line-height: 1.15;
-    letter-spacing: -.01em;
+  /* ---------- Titular ---------- */
+  h2 {
+    margin: 6px 0 22px;
+    font-family: "Unbounded", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
     font-weight: 800;
-    text-wrap: balance;
+    font-size: 30px;
+    font-size: clamp(27px, 9vw, 40px);
+    line-height: 1.04;
+    letter-spacing: -.035em;
+    overflow-wrap: anywhere;
   }
-  .slogan { margin: 8px 0 0; font-size: 1.02rem; line-height: 1.4; }
-  body.completo .slogan { opacity: .9; }
-  body.suave .slogan { color: var(--suave); }
 
-  /* ---------- Botones ---------- */
-  nav .boton + .boton { margin-top: 14px; }
-  .boton {
-    display: flex;
-    align-items: center;
-    min-height: 68px;
-    padding: 12px 18px 12px 12px;
-    border-radius: 20px;
-    background: #fff;
+  /* ---------- Reseña: las estrellas son el botón ---------- */
+  .res {
+    display: block;
+    margin: 0 0 18px;
+    padding: 16px 16px 14px;
+    border-radius: 26px;
+    background: var(--papel);
     color: var(--tinta);
-    font-size: 1.1rem;
+    box-shadow: 0 7px 0 var(--canto), 0 22px 30px -14px rgba(0, 0, 0, .5);
+    transition: transform .1s ease, box-shadow .1s ease;
+  }
+  .res:active { transform: translateY(5px); box-shadow: 0 2px 0 var(--canto); }
+  .res .arr { display: flex; align-items: center; margin-bottom: 12px; font-size: .97rem; font-weight: 700; line-height: 1.25; }
+  .res .g { width: 36px; height: 36px; margin-right: 10px; flex: none; padding: 5px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .08); }
+  .res .est { display: flex; justify-content: space-between; }
+  .res .est svg { width: 17.5%; max-width: 64px; height: auto; }
+  .res .est path { fill: var(--vacia); stroke: none; animation: llena .35s ease-out forwards; }
+  .res .est svg:nth-child(2) path { animation-delay: .12s; }
+  .res .est svg:nth-child(3) path { animation-delay: .24s; }
+  .res .est svg:nth-child(4) path { animation-delay: .36s; }
+  .res .est svg:nth-child(5) path { animation-delay: .48s; }
+  @keyframes llena { to { fill: var(--amarillo); } }
+  .res .nota { display: block; margin-top: 12px; text-align: center; font-size: .86rem; line-height: 1.35; opacity: .75; }
+
+  /* ---------- Botones tipo tecla ---------- */
+  .rej { display: grid; grid-template-columns: repeat(6, 1fr); grid-gap: 12px; }
+  .tl {
+    grid-column: span 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 112px;
+    padding: 14px 6px 12px;
+    border-radius: 22px;
+    text-align: center;
+    background: var(--papel);
+    color: var(--tinta);
+    font-size: .88rem;
     font-weight: 700;
     line-height: 1.2;
-    text-decoration: none;
-    box-shadow: 0 1px 0 rgba(0, 0, 0, .08), 0 12px 24px -16px rgba(0, 0, 0, .55);
-    -webkit-tap-highlight-color: transparent;
-    transition: transform .08s ease;
+    box-shadow: 0 6px 0 var(--canto), 0 16px 20px -10px rgba(0, 0, 0, .45);
+    transition: transform .1s ease, box-shadow .1s ease;
   }
-  .boton:active { transform: scale(.98); }
-  body.completo .boton:focus-visible { outline: 3px solid var(--sobre); outline-offset: 3px; }
-  body.suave .boton:focus-visible { outline: 3px solid var(--tinta); outline-offset: 3px; }
-  .boton .texto { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .tl:active { transform: translateY(5px); box-shadow: 0 1px 0 var(--canto); }
+  .tl .ic { display: block; margin-bottom: 9px; color: var(--icono); }
+  .tl svg { display: block; width: 34px; height: 34px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .tl svg.relleno { fill: currentColor; stroke: none; }
+  .tl .tx { display: block; max-width: 100%; overflow-wrap: anywhere; }
+  /* Reparto según cuántos botones hay */
+  .rej.n1 .tl { grid-column: span 6; flex-direction: row; min-height: 74px; }
+  .rej.n1 .tl .ic { margin: 0 12px 0 0; }
+  .rej.n2 .tl, .rej.n4 .tl { grid-column: span 3; }
+  .rej.n5 .tl:nth-child(n+4) { grid-column: span 3; }
+  .rej { padding-bottom: 8px; }
 
-  .chip {
-    flex: none;
-    width: 46px;
-    height: 46px;
-    margin-right: 14px;
-    border-radius: 15px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--marca);
-    color: var(--sobre);
-    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .1);
+  .pie { margin-top: auto; padding-top: 34px; text-align: center; font-size: .8rem; opacity: .8; }
+  .pie a { text-decoration: underline; }
+  @media (prefers-reduced-motion: reduce) {
+    .res, .tl { transition: none; }
+    .res .est path { animation: none; fill: var(--amarillo); }
   }
-  .chip svg {
-    width: 26px;
-    height: 26px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  /* Íconos de marca (WhatsApp, Instagram…): silueta rellena */
-  .chip svg.relleno { fill: currentColor; stroke: none; }
-
-  /* El primer botón es el más grande */
-  .boton.principal { min-height: 82px; font-size: 1.2rem; }
-  .boton.principal .chip { width: 54px; height: 54px; border-radius: 17px; }
-  .boton.principal .chip svg { width: 30px; height: 30px; }
-  /* En estilo completo el primer botón lleva el color del negocio (un tono más profundo) con borde blanco para distinguirse del fondo */
-  body.completo .boton.principal {
-    background: var(--fuerte);
-    color: var(--sobre-fuerte);
-    box-shadow: 0 0 0 3px #fff, 0 14px 26px -12px rgba(0, 0, 0, .6);
-  }
-  body.completo .boton.principal .chip { background: var(--sobre-fuerte); color: var(--fuerte); box-shadow: none; }
-  /* En estilo suave el primer botón lleva el color del negocio */
-  body.suave .boton.principal { background: var(--marca); color: var(--sobre); }
-  body.suave .boton.principal .chip { background: var(--sobre); color: var(--marca); box-shadow: none; }
-
-  .pie { margin-top: auto; padding-top: 36px; text-align: center; font-size: .8rem; color: var(--texto-pie); opacity: .8; }
-  .pie a { color: inherit; }
-  @media (prefers-reduced-motion: reduce) { .boton { transition: none; } }
 </style>
 </head>
-<body class="{{ESTILO}}">
+<body>
   <main>
-    <header class="cabecera">
+    <header class="cab{{CAB_CLASE}}">
       {{LOGO_HTML}}
-      <h1>{{NOMBRE}}</h1>
-      {{SLOGAN_HTML}}
+      <h1 class="nom">{{NOMBRE}}{{SLOGAN_HTML}}</h1>
     </header>
-    <nav>
+    <h2>{{TITULAR}}</h2>
+    {{RESENA_HTML}}
+    <nav class="rej n{{N_BOTONES}}">
       {{BOTONES}}
     </nav>
     {{PIE_HTML}}

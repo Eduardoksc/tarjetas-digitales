@@ -14,10 +14,14 @@ import { MARCAS } from './iconos.mjs';
 const SALIDA = 'dist';
 const LOGOS_DIR = process.env.LOGOS_DIR ?? 'logos';
 const COLOR_DEFECTO = '#1f6f5c';
+const TITULAR_DEFECTO = 'Nos encantó verte.';
+const TEXTO_RESENAS_DEFECTO = 'Toca las estrellas y cuéntale a Google';
+const NOTA_RESENAS_DEFECTO = '20 segundos. Ayudas a que más gente nos encuentre.';
+const MAX_TEXTO_BOTON = 16; // los botones cuadrados tienen poco espacio
 const MENSAJE_DEFECTO = 'Hola, vi su tarjeta y quisiera más información.';
 const PIE_TEXTO = process.env.PIE_TEXTO ?? ''; // ej: "Tarjeta digital por E.S.C"
 const PIE_URL = process.env.PIE_URL ?? ''; // ej: "https://tudominio.co"
-const CAJA_LOGO = { w: 300, h: 120 }; // tamaño máximo en pantalla (px) donde se ajusta cada logo
+const CAJA_LOGO = { w: 200, h: 80 }; // tamaño máximo en pantalla (px) donde se ajusta cada logo
 const LOGO_MAX_PX = 800; // tamaño máximo del archivo de logo que se publica
 const LOGO_MIN_PX = 300; // por debajo de esto se avisa que se verá borroso
 // ------------------------------------------------
@@ -161,16 +165,16 @@ const ICONOS = {
 const ICONOS_EXTRA = ['instagram', 'facebook', 'tiktok', 'youtube', 'x', 'telegram', 'maps', 'waze', 'web', 'enlace'];
 const ALIAS_ICONO = { twitter: 'x', mapa: 'maps', ubicacion: 'maps', google_maps: 'maps', pagina: 'web', sitio: 'web', link: 'enlace' };
 const TEXTO_ICONO = {
-  instagram: 'Síguenos en Instagram',
-  facebook: 'Síguenos en Facebook',
-  tiktok: 'Síguenos en TikTok',
-  youtube: 'Mira nuestro YouTube',
-  x: 'Síguenos en X',
-  telegram: 'Escríbenos por Telegram',
+  instagram: 'Instagram',
+  facebook: 'Facebook',
+  tiktok: 'TikTok',
+  youtube: 'YouTube',
+  x: 'X',
+  telegram: 'Telegram',
   maps: 'Cómo llegar',
-  waze: 'Llegar con Waze',
-  web: 'Visita nuestra página',
-  enlace: 'Más información',
+  waze: 'Waze',
+  web: 'Nuestra web',
+  enlace: 'Más info',
 };
 
 function iconoExtra(url) {
@@ -236,6 +240,42 @@ async function esLogoClaro(buffer) {
   return opacos > 0 && suma / opacos > 0.8 && transparentes / total > 0.1;
 }
 
+// Qué parte del logo es transparente (0 a 1)
+async function fraccionTransparente(buffer) {
+  const { data } = await sharp(buffer).ensureAlpha().resize(64, 64, { fit: 'inside' }).raw().toBuffer({ resolveWithObject: true });
+  let t = 0;
+  for (let i = 3; i < data.length; i += 4) if (data[i] < 250) t++;
+  return t / (data.length / 4);
+}
+
+// Si el logo trae su propio fondo liso (como un JPG con fondo crema), devuelve ese color para usarlo en la placa.
+// Se mira el borde de la imagen ya recortada: si la mayoría de sus píxeles son de un mismo color, ese es el fondo.
+// Si el borde tiene degradado o foto, devuelve null y el logo se muestra tal cual.
+async function colorFondoLiso(buffer) {
+  const { data, info } = await sharp(buffer).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+  const { width: w, height: h } = info;
+  const borde = [];
+  const tomar = (x, y) => {
+    const i = (y * w + x) * 3;
+    borde.push([data[i], data[i + 1], data[i + 2]]);
+  };
+  for (let x = 0; x < w; x++) { tomar(x, 0); tomar(x, h - 1); }
+  for (let y = 1; y < h - 1; y++) { tomar(0, y); tomar(w - 1, y); }
+  // color más repetido (agrupando tonos parecidos)
+  const grupos = new Map();
+  for (const p of borde) {
+    const k = p.map((c) => c >> 4).join(',');
+    const g = grupos.get(k) ?? { n: 0, suma: [0, 0, 0] };
+    g.n++;
+    p.forEach((c, i) => (g.suma[i] += c));
+    grupos.set(k, g);
+  }
+  const mejor = [...grupos.values()].sort((a, b) => b.n - a.n)[0];
+  const medio = mejor.suma.map((c) => c / mejor.n);
+  const cercanos = borde.filter((p) => p.every((c, i) => Math.abs(c - medio[i]) <= 24)).length;
+  return cercanos / borde.length >= 0.7 ? rgbAHex(medio) : null;
+}
+
 function sugerirArchivos() {
   try {
     const lista = readdirSync(LOGOS_DIR).filter((f) => !f.startsWith('.'));
@@ -256,7 +296,7 @@ async function prepararLogo(id, valor, etiqueta) {
       avisar(`${etiqueta}: el enlace del logo no es válido. Se usará la inicial del negocio.`);
       return 'error';
     }
-    return { src: u, w: 0, h: 0, claro: false };
+    return { src: u, w: 0, h: 0, claro: false, opaco: false, fondoEsquina: null };
   }
 
   if (!/^[\w. -]+$/.test(v) || !existsSync(`${LOGOS_DIR}/${v}`)) {
@@ -276,7 +316,7 @@ async function prepararLogo(id, valor, etiqueta) {
     const nombreSvg = `${id}-${huella(txt)}.svg`;
     await copyFile(ruta, `${SALIDA}/logos/${nombreSvg}`);
     const caja = ajustarACaja(dim?.w || 200, dim?.h || 100, true);
-    return { src: `../logos/${nombreSvg}`, w: caja.w, h: caja.h, claro: false };
+    return { src: `../logos/${nombreSvg}`, w: caja.w, h: caja.h, claro: false, opaco: false, fondoEsquina: null };
   }
 
   if (!['.png', '.jpg', '.jpeg', '.webp'].includes(ext)) {
@@ -288,7 +328,7 @@ async function prepararLogo(id, valor, etiqueta) {
   if (!sharp) {
     const nombreCopia = `${id}-${huella(await readFile(ruta))}${ext}`;
     await copyFile(ruta, `${SALIDA}/logos/${nombreCopia}`);
-    return { src: `../logos/${nombreCopia}`, w: 0, h: 0, claro: false };
+    return { src: `../logos/${nombreCopia}`, w: 0, h: 0, claro: false, opaco: false, fondoEsquina: null };
   }
 
   try {
@@ -306,7 +346,11 @@ async function prepararLogo(id, valor, etiqueta) {
 
     // 2) Ajustar a un tamaño estándar, sin agrandar
     // PNG si el logo tiene transparencia, JPG si no: formatos que abren en cualquier celular (WebP falla en algunos viejos)
-    const conTransparencia = (await sharp(recortado).metadata()).hasAlpha === true;
+    // Un PNG puede traer canal de transparencia sin tener nada transparente: en ese caso se trata como logo con fondo propio
+    let conTransparencia = (await sharp(recortado).metadata()).hasAlpha === true;
+    if (conTransparencia && (await fraccionTransparente(recortado)) < 0.01) conTransparencia = false;
+    // Fondo propio del logo: si el borde es de un solo color, la placa usará ese color
+    const fondoEsquina = conTransparencia ? null : await colorFondoLiso(await sharp(recortado).flatten({ background: '#ffffff' }).toBuffer());
     const ajustado = sharp(recortado).resize({ width: LOGO_MAX_PX, height: LOGO_MAX_PX, fit: 'inside', withoutEnlargement: true });
     const final = conTransparencia
       ? await ajustado.png({ palette: true, quality: 92, compressionLevel: 9 }).toBuffer({ resolveWithObject: true })
@@ -331,7 +375,7 @@ async function prepararLogo(id, valor, etiqueta) {
     }
 
     const caja = ajustarACaja(w, h, false);
-    return { src: `../logos/${nombreFinal}`, w: caja.w, h: caja.h, claro: await esLogoClaro(final.data), mayor };
+    return { src: `../logos/${nombreFinal}`, w: caja.w, h: caja.h, claro: await esLogoClaro(final.data), mayor, opaco: !conTransparencia, fondoEsquina };
   } catch (e) {
     avisar(`${etiqueta}: no se pudo procesar el logo "${v}" (${e.message}). Se usará la inicial del negocio.`);
     return 'error';
@@ -452,12 +496,6 @@ async function prepararNegocio(fila, num) {
   if (!color) avisar(`${etiqueta}: color inválido "${g('color')}". Usa 6 letras/números como #1F6F5C.`);
   const colorFinal = color ?? COLOR_DEFECTO;
 
-  let estilo = normalizar(g('estilo')) || 'completo';
-  if (!['completo', 'suave'].includes(estilo)) {
-    avisar(`${etiqueta}: estilo "${g('estilo')}" no existe. Usa "completo" (fondo del color del negocio) o "suave". Se usa "completo".`);
-    estilo = 'completo';
-  }
-
   const alias = g('alias').toLowerCase();
   if (alias && !slugValido(alias)) avisar(`${etiqueta}: el alias "${alias}" no es válido; se ignora.`);
 
@@ -466,26 +504,38 @@ async function prepararNegocio(fila, num) {
   const logo = logoRes && logoRes !== 'error' ? logoRes : null;
 
   let fondoLogo = normalizar(g('logo_fondo'));
+  let colorPlaca = '';
   if (fondoLogo && !['blanco', 'oscuro', 'sin'].includes(fondoLogo)) {
     avisar(`${etiqueta}: logo_fondo "${g('logo_fondo')}" no existe. Usa blanco, oscuro o sin. Se elige automático.`);
     fondoLogo = '';
   }
   if (!fondoLogo) {
-    fondoLogo = logo?.claro ? 'oscuro' : 'blanco';
-    if (logo?.claro) console.log(`  · ${id}: el logo es claro; se pone sobre una tarjeta oscura para que se vea.`);
+    if (!logo) fondoLogo = 'blanco';
+    else if (logo.opaco && logo.fondoEsquina) {
+      // El logo trae un fondo liso: la placa toma ese color y no se nota ningún borde
+      fondoLogo = 'color';
+      colorPlaca = logo.fondoEsquina;
+      console.log(`  · ${id}: el logo trae fondo propio (${colorPlaca}); la placa usa ese color.`);
+    } else if (logo.opaco) {
+      fondoLogo = 'tal'; // fondo degradado o foto: se muestra tal cual, con esquinas redondeadas
+      console.log(`  · ${id}: el logo trae un fondo no liso; se muestra tal cual.`);
+    } else {
+      fondoLogo = logo.claro ? 'oscuro' : 'blanco';
+      if (logo.claro) console.log(`  · ${id}: el logo es claro; se pone sobre una placa oscura para que se vea.`);
+    }
   }
 
   // Botones disponibles (solo los que tienen datos válidos)
   const disponibles = {};
-  const texto = (campo, defecto) => {
+  const texto = (campo, defecto, maximo = MAX_TEXTO_BOTON) => {
     const t = g(campo) || defecto;
-    if (t.length > 40) avisar(`${etiqueta}: el texto del botón "${t.slice(0, 20)}…" es largo (${t.length} letras); intenta que sea más corto.`);
+    if (t.length > maximo) avisar(`${etiqueta}: el texto "${t.slice(0, 24)}…" de ${campo} tiene ${t.length} letras; en el botón cuadrado caben unas ${maximo}. Acórtalo.`);
     return t;
   };
 
   const resenas = urlSegura(g('google_resenas'));
   if (resenas === null) avisar(`${etiqueta}: el enlace de reseñas no es válido. Se omite ese botón.`);
-  else if (resenas) disponibles.resenas = { icono: 'resenas', texto: texto('texto_resenas', 'Califícanos en Google'), url: resenas };
+  else if (resenas) disponibles.resenas = { icono: 'resenas', texto: texto('texto_resenas', TEXTO_RESENAS_DEFECTO, 45), url: resenas };
 
   const catalogo = urlSegura(g('catalogo'));
   if (catalogo === null) avisar(`${etiqueta}: el enlace del catálogo no es válido. Se omite ese botón.`);
@@ -497,7 +547,7 @@ async function prepararNegocio(fila, num) {
     const msg = g('mensaje_whatsapp') || MENSAJE_DEFECTO;
     disponibles.whatsapp = {
       icono: 'whatsapp',
-      texto: texto('texto_whatsapp', 'Escríbenos por WhatsApp'),
+      texto: texto('texto_whatsapp', 'Escríbenos'),
       url: `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`,
     };
   }
@@ -526,28 +576,49 @@ async function prepararNegocio(fila, num) {
     return null;
   }
 
+  const titular = g('titular') || TITULAR_DEFECTO;
+  if (titular.length > 32) avisar(`${etiqueta}: el titular tiene ${titular.length} letras; en letra grande se verá muy largo. Acórtalo.`);
+
   return {
     id,
     alias: alias && slugValido(alias) ? alias : '',
     nombre,
     slogan: g('slogan'),
+    titular,
+    notaResenas: g('nota_resenas') || NOTA_RESENAS_DEFECTO,
     color: colorFinal,
-    estilo,
     logo,
     fondoLogo,
-    botones,
+    colorPlaca,
+    resena: botones.find((b) => b.icono === 'resenas') ?? null,
+    botones: botones.filter((b) => b.icono !== 'resenas'),
   };
 }
+
+const ESTRELLA = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.8l3 6.9 7.4.7-5.6 4.9 1.7 7.3L12 17.6 5.5 21.6l1.7-7.3L1.6 9.4l7.4-.7z"/></svg>';
+// "G" de Google, sin modificar (Google permite usarla para pedir reseñas)
+const G_GOOGLE =
+  '<svg class="g" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
 
 function htmlBotones(botones) {
   return botones
     .map(
-      (b, i) =>
-        `<a class="boton${i === 0 ? ' principal' : ''}" href="${esc(b.url)}" rel="noopener">` +
-        `<span class="chip">${svgIcono(b.icono)}</span>` +
-        `<span class="texto">${esc(b.texto)}</span></a>`
+      (b) =>
+        `<a class="tl" href="${esc(b.url)}" rel="noopener">` +
+        `<span class="ic">${svgIcono(b.icono)}</span>` +
+        `<span class="tx">${esc(b.texto)}</span></a>`
     )
     .join('\n      ');
+}
+
+function htmlResena(n) {
+  if (!n.resena) return '';
+  return (
+    `<a class="res" href="${esc(n.resena.url)}" rel="noopener" aria-label="${esc(n.resena.texto)}. Cinco estrellas">` +
+    `<span class="arr">${G_GOOGLE}<span>${esc(n.resena.texto)}</span></span>` +
+    `<span class="est" aria-hidden="true">${ESTRELLA.repeat(5)}</span>` +
+    `<span class="nota">${esc(n.notaResenas)}</span></a>`
+  );
 }
 
 function htmlLogo(n) {
@@ -555,15 +626,21 @@ function htmlLogo(n) {
     return `<div class="logo inicial" aria-hidden="true">${esc([...n.nombre][0].toUpperCase())}</div>`;
   }
   const medidas = n.logo.w ? ` width="${n.logo.w}" height="${n.logo.h}" style="width:${n.logo.w}px"` : '';
+  const clases = { blanco: 'placa fondo-blanco', oscuro: 'placa fondo-oscuro', color: 'placa', sin: 'sin', tal: 'tal' }[n.fondoLogo];
+  const estilo = n.fondoLogo === 'color' ? ` style="background:${n.colorPlaca}"` : '';
   return (
-    `<div class="logo fondo-${n.fondoLogo}">` +
+    `<div class="logo ${clases}"${estilo}>` +
     `<img src="${esc(n.logo.src)}" alt="Logo de ${esc(n.nombre)}"${medidas} decoding="async" fetchpriority="high">` +
     `</div>`
   );
 }
 
+// Los colores claros llevan íconos más oscuros para que se lean sobre el papel
+const colorIcono = (hex) => (textoSobre(hex) === '#111111' ? oscurecer(hex, 0.5) : hex);
+
 function htmlPagina(plantilla, n) {
-  const sloganHtml = n.slogan ? `<p class="slogan">${esc(n.slogan)}</p>` : '';
+  const sloganHtml = n.slogan ? `<span class="slogan">${esc(n.slogan)}</span>` : '';
+  const apilada = n.logo && n.logo.w && n.logo.w / n.logo.h > 2.2 ? ' apilada' : '';
   let pie = '';
   if (PIE_TEXTO) {
     const url = urlSegura(PIE_URL);
@@ -571,16 +648,16 @@ function htmlPagina(plantilla, n) {
   }
   return plantilla
     .replaceAll('{{TITULO}}', esc(n.nombre))
-    .replaceAll('{{ESTILO}}', n.estilo)
     .replaceAll('{{COLOR}}', n.color)
     .replaceAll('{{COLOR_TEXTO}}', textoSobre(n.color))
-    .replaceAll('{{COLOR_FUERTE}}', tonoFuerte(n.color))
-    .replaceAll('{{COLOR_FUERTE_TEXTO}}', textoSobre(tonoFuerte(n.color)))
-    .replaceAll('{{FONDO_SUAVE}}', aclarar(n.color, 0.9))
-    .replaceAll('{{BORDE_SUAVE}}', aclarar(n.color, 0.55))
+    .replaceAll('{{COLOR_ICONO}}', colorIcono(n.color))
+    .replaceAll('{{CAB_CLASE}}', apilada)
     .replaceAll('{{NOMBRE}}', esc(n.nombre))
     .replaceAll('{{LOGO_HTML}}', htmlLogo(n))
     .replaceAll('{{SLOGAN_HTML}}', sloganHtml)
+    .replaceAll('{{TITULAR}}', esc(n.titular))
+    .replaceAll('{{RESENA_HTML}}', htmlResena(n))
+    .replaceAll('{{N_BOTONES}}', String(Math.min(n.botones.length, 5)))
     .replaceAll('{{BOTONES}}', htmlBotones(n.botones))
     .replaceAll('{{PIE_HTML}}', pie);
 }
@@ -607,6 +684,15 @@ for (const obligatoria of ['id', 'estado', 'nombre']) {
 const plantilla = await readFile('plantilla.html', 'utf8');
 await rm(SALIDA, { recursive: true, force: true });
 await mkdir(SALIDA, { recursive: true });
+
+// Tipografía del titular: se publica junto al sitio (sin pedirla a Google en cada visita)
+const FUENTE = 'node_modules/@fontsource/unbounded/files/unbounded-latin-800-normal.woff2';
+if (existsSync(FUENTE)) {
+  await mkdir(`${SALIDA}/fonts`, { recursive: true });
+  await copyFile(FUENTE, `${SALIDA}/fonts/unbounded-800.woff2`);
+} else {
+  avisar('No encontré la tipografía del titular (@fontsource/unbounded). Se usará la letra del sistema. Ejecuta "npm install".');
+}
 
 const negocios = [];
 const vistos = new Set();
@@ -649,7 +735,7 @@ for (const n of negocios) {
     await mkdir(`${SALIDA}/${carpeta}`, { recursive: true });
     await writeFile(`${SALIDA}/${carpeta}/index.html`, html);
   }
-  console.log(`  ✔ ${n.id}${n.alias ? ' / ' + n.alias : ''} — ${n.nombre} (${n.botones.length} botones, fondo ${n.estilo})`);
+  console.log(`  ✔ ${n.id}${n.alias ? ' / ' + n.alias : ''} — ${n.nombre} (${n.botones.length + (n.resena ? 1 : 0)} botones)`);
 }
 
 await writeFile(`${SALIDA}/index.html`, paginaSimple('Tarjeta digital', 'Escanea la tarjeta de un negocio para ver su página.'));
