@@ -9,17 +9,17 @@ Hoja de Google  ──(robot de GitHub)──►  Una página por negocio  ─�
 
 ---
 
-## Qué trae esta versión (diseño "Tecla")
+## Qué trae esta versión (diseño "Mostrador" y tema "Premium")
 
-1. **Las estrellas son el botón de reseña.** Arriba va el mensaje "Nos encantó verte." y debajo un bloque con el logo de Google y cinco estrellas que se llenan al abrir. Tocarlas lleva a la reseña.
-2. **Botones cuadrados con relieve** (WhatsApp, catálogo, redes…): tienen grosor, como teclas, y se hunden al tocarlos. Cada uno lleva el ícono de su servicio.
-3. **Todo el fondo es del color del negocio**, y el texto cambia solo a blanco u oscuro según qué tan claro sea el color.
-4. **Logos que siempre se ven bien.** El robot recorta márgenes y pone el logo en una placa que se adapta a su forma. Si el logo trae su propio fondo liso (como un JPG con fondo crema), la placa toma ese color. Si trae un fondo con degradado, se muestra tal cual con las esquinas redondeadas.
-5. **Textos editables desde la hoja:** el titular, el nombre de cada botón y la nota debajo de las estrellas.
-6. **Actualizaciones rápidas:** el robot lee la hoja directamente y corre cada 10 minutos.
-7. **Compatibilidad con celulares viejos:** logos en PNG/JPG, sin funciones recientes del navegador, y se le pide al navegador que no oscurezca la página por su cuenta.
-
-### Cómo actualizar tu repositorio
+1. **Dos diseños.** Por defecto, **Mostrador**: fondo color papel, como una carta impresa, con el color del negocio en la franja de arriba, en la reseña, en los íconos y en las redes. Si escribes `premium` en la columna `estilo`, ese negocio usa **Premium**: fondo negro con detalles de oro.
+2. **La reseña es un tiquete con cinco estrellas vacías.** Una ola breve las ilumina para invitar a tocar, pero **no se muestran llenas**, para no presionar al cliente a poner cinco. Tocarlas lleva a la reseña de Google, donde el cliente elige su calificación.
+3. **Acciones en filas** (menú, WhatsApp, pedidos…), cada una con su ícono y una flecha. En Premium son botones cuadrados con filo dorado.
+4. **Redes sociales en círculos** al final de la página: Instagram, Facebook, TikTok, YouTube, X y Telegram.
+5. **El nombre no se repite** si el logo ya lo trae escrito (columna `nombre_en_logo`).
+6. **Logos que siempre se ven bien.** El robot recorta márgenes y pone el logo en una placa que se adapta a su forma. Si el logo trae su propio fondo liso (como un JPG con fondo crema), la placa toma ese color. Si trae un fondo con degradado, se muestra tal cual con las esquinas redondeadas.
+7. **Textos editables desde la hoja:** el titular, el nombre de cada botón y la nota debajo de las estrellas.
+8. **Actualizaciones rápidas:** el robot lee la hoja directamente y corre cada 10 minutos.
+9. **Compatibilidad con celulares viejos:** logos en PNG/JPG, sin funciones recientes del navegador, y se le pide al navegador que no oscurezca la página por su cuenta.
 
 ### Cómo actualizar tu repositorio
 
@@ -62,9 +62,14 @@ Pestaña **Negocios**, fila 1 con estos encabezados (el orden no importa; solo a
 | `boton4_url`, `boton4_texto`, `boton4_icono` | Un botón extra (redes, web, ubicación…) | No |
 | `boton5_url`, `boton5_texto`, `boton5_icono` | Otro botón extra | No |
 | `orden_botones` | El orden de los botones cuadrados | No |
+| `estilo` | Vacío = diseño normal; `premium` = negro y oro | No |
+| `nombre_en_logo` | `si` si el logo ya trae el nombre escrito: así no se repite debajo | No |
+| `instagram`, `facebook`, `tiktok`, `youtube`, `x`, `telegram` | El usuario (`@minegocio`) o el enlace completo de cada red. Salen como círculos con el ícono al final de la página | No |
 | `alias` | Nombre corto extra para el enlace, ej. `estilonorte` | No |
 
-La columna `estilo` que ya tengas en la hoja no estorba: el robot la ignora.
+**Columna `estilo`:** déjala vacía para el diseño normal (Mostrador) o escribe `premium` para el diseño negro y oro. Si tenías valores viejos en esa columna, bórralos: cualquier palabra distinta de `premium` hace que el robot avise con ⚠ y use el diseño normal.
+
+**Columna `color`:** es el **color principal de la marca** del negocio, en hexadecimal (por ejemplo `#AD6225`). En el diseño Mostrador pinta la franja de arriba, la franja de la reseña, los íconos y los círculos de redes. En Premium no se usa.
 
 Mira `ejemplo-negocios.csv`: tiene filas de ejemplo con todo esto.
 

@@ -8,150 +8,172 @@
 <meta name="theme-color" content="{{COLOR}}">
 <title>{{TITULO}}</title>
 <link rel="preload" href="../fonts/unbounded-800.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../fonts/inter-500.woff2" as="font" type="font/woff2" crossorigin>
 <style>
-  @font-face {
-    font-family: "Unbounded";
-    font-weight: 800;
-    font-style: normal;
-    font-display: swap;
-    src: url("../fonts/unbounded-800.woff2") format("woff2");
-  }
+  /* Diseño "Mostrador luminoso": papel cálido como una carta impresa. El color del negocio va en la franja
+     superior, la franja del tiquete de reseña, los íconos y los círculos de redes. Acciones en filas. */
+  @font-face { font-family: "Unbounded"; font-weight: 800; font-style: normal; font-display: swap; src: url("../fonts/unbounded-800.woff2") format("woff2"); }
+  @font-face { font-family: "Inter"; font-weight: 500; font-style: normal; font-display: swap; src: url("../fonts/inter-500.woff2") format("woff2"); }
   :root {
     --marca: {{COLOR}};
     --sobre: {{COLOR_TEXTO}};
     --icono: {{COLOR_ICONO}};
-    --papel: #fffdf8;
-    --canto: #cfc8b6;      /* grosor de la "tecla": un tono más oscuro del papel, se ve sobre cualquier color */
-    --tinta: #17150f;
-    --vacia: #e4e0d4;      /* estrella sin llenar */
-    --amarillo: #ffc21a;
+    --papel: #f4efe6;      /* fondo de la página */
+    --hoja: #fffdf8;       /* tiquete e íconos */
+    --tinta: #1a1712;
+    --gris: #6b655a;       /* texto secundario: 5:1 sobre el papel */
+    --regla: rgba(26, 23, 18, .14);
+    --entra: cubic-bezier(.2, .8, .2, 1);
     color-scheme: light;
   }
   * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; background: var(--marca); }
+  html { -webkit-text-size-adjust: 100%; background: var(--papel); }
   body {
     margin: 0;
     min-height: 100vh;
     min-height: 100dvh;
     display: flex;
     justify-content: center;
-    background: var(--marca);
-    color: var(--sobre);
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    border-top: 8px solid var(--marca);
+    background: var(--papel);
+    color: var(--tinta);
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    font-weight: 500;
+    -webkit-font-smoothing: antialiased;
   }
   main {
     width: 100%;
     max-width: 440px;
-    padding: 28px 20px 24px;
-    padding: max(28px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
+    padding: 26px 22px 20px;
+    padding: max(26px, env(safe-area-inset-top)) 22px max(20px, env(safe-area-inset-bottom));
     display: flex;
     flex-direction: column;
   }
   a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; }
-  a:focus-visible { outline: 3px solid var(--sobre); outline-offset: 3px; }
+  a:focus-visible { outline: 2px solid var(--tinta); outline-offset: 3px; }
 
-  /* ---------- Cabecera: logo + nombre ---------- */
-  .cab { display: flex; align-items: center; margin-bottom: 20px; }
-  .cab.apilada { display: block; }
-  .cab.apilada .logo { margin: 0 0 12px; }
-  .logo {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: none;
-    max-width: 62%;
-    margin-right: 14px;
-    border-radius: 16px;
-    overflow: hidden;
-  }
-  .cab.apilada .logo { max-width: 100%; }
+  /* ---------- Cabecera centrada: logo + nombre ---------- */
+  .cab { display: flex; flex-direction: column; align-items: center; margin-bottom: 22px; text-align: center; }
+  .logo { display: flex; align-items: center; justify-content: center; flex: none; max-width: 100%; margin-bottom: 12px; border-radius: 10px; overflow: hidden; }
   .logo img { display: block; max-width: 100%; height: auto; }
-  .logo.placa { padding: 8px 12px; box-shadow: 0 5px 0 rgba(0, 0, 0, .22), 0 14px 18px -10px rgba(0, 0, 0, .4); }
+  .logo.placa { padding: 8px 12px; box-shadow: 0 0 0 1px var(--regla); }
+  .logo.tal { box-shadow: 0 0 0 1px var(--regla); }
   .logo.fondo-blanco { background: #fff; }
   .logo.fondo-oscuro { background: var(--tinta); }
-  .logo.tal { box-shadow: 0 5px 0 rgba(0, 0, 0, .22), 0 14px 18px -10px rgba(0, 0, 0, .4); }
   .logo.sin { border-radius: 0; overflow: visible; }
-  .logo.inicial {
-    width: 64px; height: 64px; font-size: 30px; font-weight: 800;
-    background: var(--papel); color: var(--icono);
-    box-shadow: 0 5px 0 rgba(0, 0, 0, .22);
-  }
-  .nom { min-width: 0; margin: 0; font-size: 1.05rem; line-height: 1.2; font-weight: 700; overflow-wrap: anywhere; }
-  .slogan { display: block; margin-top: 3px; font-size: .86rem; font-weight: 500; line-height: 1.3; opacity: .85; }
+  .logo.inicial { width: 56px; height: 56px; font-family: "Unbounded", system-ui, sans-serif; font-size: 24px; font-weight: 800; background: var(--marca); color: var(--sobre); }
+  .nom { min-width: 0; margin: 0; font-size: 1.12rem; font-weight: 500; line-height: 1.2; letter-spacing: -.01em; overflow-wrap: anywhere; }
+  .slogan { display: block; margin-top: 4px; font-size: .88rem; line-height: 1.35; color: var(--gris); }
+  /* Si el logo ya dice el nombre, se oculta en pantalla pero queda para lectores de pantalla */
+  .nombre-en-logo .nom-txt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .nombre-en-logo .slogan { margin-top: 0; }
 
   /* ---------- Titular ---------- */
   h2 {
-    margin: 6px 0 22px;
-    font-family: "Unbounded", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    margin: 0 0 24px;
+    font-family: "Unbounded", system-ui, sans-serif;
     font-weight: 800;
-    font-size: 30px;
-    font-size: clamp(27px, 9vw, 40px);
-    line-height: 1.04;
-    letter-spacing: -.035em;
+    font-size: 32px;
+    font-size: clamp(30px, 10vw, 44px);
+    line-height: 1;
+    letter-spacing: -.05em;
+    text-align: center;
     overflow-wrap: anywhere;
   }
 
-  /* ---------- Reseña: las estrellas son el botón ---------- */
+  /* ---------- Reseña: tiquete blanco con franja del color del negocio ---------- */
   .res {
     display: block;
-    margin: 0 0 18px;
-    padding: 16px 16px 14px;
-    border-radius: 26px;
-    background: var(--papel);
+    margin: 0 0 22px;
+    padding: 24px 18px 14px;
+    border-radius: 18px;
+    background: var(--hoja);
     color: var(--tinta);
-    box-shadow: 0 7px 0 var(--canto), 0 22px 30px -14px rgba(0, 0, 0, .5);
-    transition: transform .1s ease, box-shadow .1s ease;
+    box-shadow: inset 0 6px 0 var(--marca), 0 0 0 1px var(--regla), 0 18px 30px -22px rgba(26, 23, 18, .55);
+    transition: transform .22s var(--entra), filter .22s var(--entra);
   }
-  .res:active { transform: translateY(5px); box-shadow: 0 2px 0 var(--canto); }
-  .res .arr { display: flex; align-items: center; margin-bottom: 12px; font-size: .97rem; font-weight: 700; line-height: 1.25; }
-  .res .g { width: 36px; height: 36px; margin-right: 10px; flex: none; padding: 5px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .08); }
-  .res .est { display: flex; justify-content: space-between; }
-  .res .est svg { width: 17.5%; max-width: 64px; height: auto; }
-  .res .est path { fill: var(--vacia); stroke: none; animation: llena .35s ease-out forwards; }
-  .res .est svg:nth-child(2) path { animation-delay: .12s; }
-  .res .est svg:nth-child(3) path { animation-delay: .24s; }
-  .res .est svg:nth-child(4) path { animation-delay: .36s; }
-  .res .est svg:nth-child(5) path { animation-delay: .48s; }
-  @keyframes llena { to { fill: var(--amarillo); } }
-  .res .nota { display: block; margin-top: 12px; text-align: center; font-size: .86rem; line-height: 1.35; opacity: .75; }
+  .res:active { transform: scale(.985); filter: brightness(.97); transition-duration: .08s; }
+  .res .arr { display: flex; align-items: center; margin-bottom: 14px; font-size: 1rem; line-height: 1.3; }
+  .res .g { width: 34px; height: 34px; margin-right: 10px; flex: none; padding: 5px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1px var(--regla); }
+  /* Estrellas vacías: una ola breve invita a tocar y vuelven a quedar vacías. No se sugiere ninguna calificación. */
+  .res .est { display: flex; justify-content: space-between; padding: 0 2px; color: var(--icono); }
+  .res .est svg { width: 16%; max-width: 54px; height: auto; overflow: visible; }
+  .res .est path { fill: transparent; stroke: currentColor; stroke-width: 1.2; stroke-linejoin: round; animation: invita .26s ease-out; }
+  .res .est svg:nth-child(1) path { animation-delay: .32s; }
+  .res .est svg:nth-child(2) path { animation-delay: .38s; }
+  .res .est svg:nth-child(3) path { animation-delay: .44s; }
+  .res .est svg:nth-child(4) path { animation-delay: .5s; }
+  .res .est svg:nth-child(5) path { animation-delay: .56s; }
+  .res .nota { position: relative; display: block; margin-top: 14px; padding-top: 12px; font-size: .82rem; line-height: 1.35; text-align: center; color: var(--gris); }
+  .res .nota::before { content: ""; position: absolute; top: 0; left: -18px; right: -18px; border-top: 1px dashed currentColor; opacity: .45; }
 
-  /* ---------- Botones tipo tecla ---------- */
-  .rej { display: grid; grid-template-columns: repeat(6, 1fr); grid-gap: 12px; }
+  /* ---------- Acciones en filas, como una carta ---------- */
+  .rej { display: flex; flex-direction: column; border-top: 1px solid var(--regla); }
   .tl {
-    grid-column: span 2;
+    position: relative;
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    min-height: 64px;
+    padding: 10px 40px 10px 2px;
+    border-bottom: 1px solid var(--regla);
+    font-size: 1rem;
+    line-height: 1.25;
+    transition: background-color .2s var(--entra), transform .2s var(--entra);
+    animation: fila .45s var(--entra) backwards;
+  }
+  .tl::after { content: ""; position: absolute; top: 50%; right: 12px; width: 9px; height: 9px; margin-top: -5px; border-top: 1.6px solid var(--gris); border-right: 1.6px solid var(--gris); transform: rotate(45deg); transition: transform .2s var(--entra); }
+  .tl:active { background-color: rgba(26, 23, 18, .05); transform: scale(.99); transition-duration: .08s; }
+  .tl:active::after { transform: translateX(4px) rotate(45deg); }
+  .tl:nth-child(1) { animation-delay: .14s; }
+  .tl:nth-child(2) { animation-delay: .2s; }
+  .tl:nth-child(3) { animation-delay: .26s; }
+  .tl:nth-child(4) { animation-delay: .32s; }
+  .tl:nth-child(5) { animation-delay: .38s; }
+  .tl .ic { display: flex; align-items: center; justify-content: center; flex: none; width: 42px; height: 42px; margin-right: 14px; border-radius: 12px; background: var(--hoja); box-shadow: 0 0 0 1px var(--regla); color: var(--icono); }
+  .tl svg { display: block; width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .tl svg.relleno { fill: currentColor; stroke: none; }
+  .tl .tx { min-width: 0; overflow-wrap: anywhere; }
+
+  /* ---------- Redes sociales: círculos rellenos del color del negocio ---------- */
+  .redes { display: flex; flex-wrap: wrap; justify-content: center; margin-top: 26px; }
+  .redes a {
+    display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 112px;
-    padding: 14px 6px 12px;
-    border-radius: 22px;
-    text-align: center;
-    background: var(--papel);
-    color: var(--tinta);
-    font-size: .88rem;
-    font-weight: 700;
-    line-height: 1.2;
-    box-shadow: 0 6px 0 var(--canto), 0 16px 20px -10px rgba(0, 0, 0, .45);
-    transition: transform .1s ease, box-shadow .1s ease;
+    width: 48px;
+    height: 48px;
+    margin: 0 6px 10px;
+    border-radius: 50%;
+    background: var(--marca);
+    color: var(--sobre);
+    transition: transform .2s var(--entra), box-shadow .2s var(--entra);
+    animation: sube .4s .4s var(--entra) backwards;
   }
-  .tl:active { transform: translateY(5px); box-shadow: 0 1px 0 var(--canto); }
-  .tl .ic { display: block; margin-bottom: 9px; color: var(--icono); }
-  .tl svg { display: block; width: 34px; height: 34px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .tl svg.relleno { fill: currentColor; stroke: none; }
-  .tl .tx { display: block; max-width: 100%; overflow-wrap: anywhere; }
-  /* Reparto según cuántos botones hay */
-  .rej.n1 .tl { grid-column: span 6; flex-direction: row; min-height: 74px; }
-  .rej.n1 .tl .ic { margin: 0 12px 0 0; }
-  .rej.n2 .tl, .rej.n4 .tl { grid-column: span 3; }
-  .rej.n5 .tl:nth-child(n+4) { grid-column: span 3; }
-  .rej { padding-bottom: 8px; }
+  .redes a:active { transform: scale(.92); box-shadow: 0 0 0 3px var(--papel), 0 0 0 4.5px var(--marca); transition-duration: .08s; }
+  .redes svg { width: 21px; height: 21px; fill: currentColor; }
 
-  .pie { margin-top: auto; padding-top: 34px; text-align: center; font-size: .8rem; opacity: .8; }
-  .pie a { text-decoration: underline; }
+  .pie { margin-top: auto; padding-top: 22px; text-align: center; font-size: .78rem; color: var(--gris); }
+  .pie a { display: inline-block; min-height: 48px; padding: 15px 12px; text-decoration: underline; text-underline-offset: 3px; } /* área táctil de 48 px */
+
+  /* ---------- Entrada breve y escalonada (termina antes de 0.6 s) ---------- */
+  .cab, h2, .res { animation: sube .45s var(--entra) backwards; }
+  h2 { animation-delay: .04s; }
+  .res { animation-delay: .08s; }
+  @keyframes sube { from { opacity: 0; transform: translateY(8px); } }
+  @keyframes fila { from { opacity: 0; transform: translateX(-10px); } }
+  @keyframes invita { 50% { fill: currentColor; } }
+
+  /* Hover solo con mouse: en celular se queda "pegado". Las estrellas se llenan hasta la que se señala. */
+  @media (hover: hover) and (pointer: fine) {
+    .res:hover { filter: brightness(1.02); }
+    .res .est:hover path { fill: currentColor; }
+    .res .est svg:hover ~ svg path { fill: transparent; }
+    .tl:hover { background-color: rgba(26, 23, 18, .035); }
+    .redes a:hover { transform: translateY(-2px); box-shadow: 0 0 0 3px var(--papel), 0 0 0 4.5px var(--marca); }
+  }
   @media (prefers-reduced-motion: reduce) {
-    .res, .tl { transition: none; }
-    .res .est path { animation: none; fill: var(--amarillo); }
+    .cab, h2, .res, .tl, .redes a, .res .est path { animation: none; }
+    .res, .tl, .tl::after, .redes a { transition: none; }
   }
 </style>
 </head>
@@ -166,6 +188,7 @@
     <nav class="rej n{{N_BOTONES}}">
       {{BOTONES}}
     </nav>
+    {{REDES_HTML}}
     {{PIE_HTML}}
   </main>
 </body>

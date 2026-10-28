@@ -24,6 +24,7 @@ const PIE_URL = process.env.PIE_URL ?? ''; // ej: "https://tudominio.co"
 const CAJA_LOGO = { w: 200, h: 80 }; // tamaño máximo en pantalla (px) donde se ajusta cada logo
 const LOGO_MAX_PX = 800; // tamaño máximo del archivo de logo que se publica
 const LOGO_MIN_PX = 300; // por debajo de esto se avisa que se verá borroso
+const PLANTILLAS = { mostrador: 'plantilla.html', premium: 'plantilla-premium.html' }; // columna "estilo" de la hoja
 // ------------------------------------------------
 
 const advertencias = [];
@@ -126,15 +127,18 @@ const aclarar = (hex, cantidad) => rgbAHex(hexARgb(hex).map((c) => c + (255 - c)
 const oscurecer = (hex, cantidad) => rgbAHex(hexARgb(hex).map((c) => c * (1 - cantidad)));
 
 // Tono del primer botón: un poco más profundo que el fondo (menos en colores claros, para que no se vean apagados)
-const tonoFuerte = (hex) => oscurecer(hex, textoSobre(hex) === '#111111' ? 0.1 : 0.22);
+const tonoFuerte = (hex) => oscurecer(hex, textoSobre(hex) === TEXTO_OSCURO ? 0.1 : 0.22);
 
-// Elige texto blanco u oscuro según qué tan claro es el color del negocio
+// Elige texto blanco u oscuro según qué tan claro es el color del negocio.
+// El texto oscuro es negro puro: con el corte en 0.179, blanco o negro siempre dan al menos 4.58:1 (AA).
+// Con #111111 había colores (luminancia entre 0.179 y 0.19) donde ninguno de los dos llegaba a 4.5:1.
+const TEXTO_OSCURO = '#000000';
 function textoSobre(hex) {
   const [r, g, b] = hexARgb(hex)
     .map((c) => c / 255)
     .map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
   const L = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-  return L > 0.179 ? '#111111' : '#ffffff';
+  return L > 0.179 ? TEXTO_OSCURO : '#ffffff';
 }
 
 function telefono(valor) {
@@ -190,6 +194,25 @@ function iconoExtra(url) {
   if (host === 'maps.app.goo.gl' || host === 'maps.google.com') return 'maps';
   if ((host === 'goo.gl' || /(^|\.)google\.[a-z.]+$/.test(host)) && u.pathname.startsWith('/maps')) return 'maps';
   return 'web';
+}
+
+// Redes sociales: una columna por red. Acepta el enlace completo o solo el usuario (@usuario).
+const REDES = [
+  { clave: 'instagram', nombre: 'Instagram', perfil: (u) => `https://instagram.com/${u}` },
+  { clave: 'facebook', nombre: 'Facebook', perfil: (u) => `https://facebook.com/${u}` },
+  { clave: 'tiktok', nombre: 'TikTok', perfil: (u) => `https://www.tiktok.com/@${u}` },
+  { clave: 'youtube', nombre: 'YouTube', perfil: (u) => `https://www.youtube.com/@${u}` },
+  { clave: 'x', nombre: 'X', perfil: (u) => `https://x.com/${u}` },
+  { clave: 'telegram', nombre: 'Telegram', perfil: (u) => `https://t.me/${u}` },
+];
+
+// Devuelve el enlace del perfil, '' si está vacío, o null si no es válido o no es de esa red
+function enlaceRed(red, valor) {
+  const v = (valor ?? '').trim();
+  if (!v) return '';
+  if (/^@?[\w.-]{1,60}$/.test(v) && !/^(www\.)?[a-z]+\.(com|me|be)$/i.test(v)) return red.perfil(v.replace(/^@/, '')); // solo el usuario
+  const url = urlSegura(v);
+  return url && iconoExtra(url) === red.clave ? url : null;
 }
 
 function svgIcono(clave) {
@@ -496,6 +519,13 @@ async function prepararNegocio(fila, num) {
   if (!color) avisar(`${etiqueta}: color inválido "${g('color')}". Usa 6 letras/números como #1F6F5C.`);
   const colorFinal = color ?? COLOR_DEFECTO;
 
+  // Tema: vacío = Mostrador (por defecto); "premium" = negro y oro
+  let estilo = normalizar(g('estilo'));
+  if (estilo && !PLANTILLAS[estilo]) {
+    avisar(`${etiqueta}: el estilo "${g('estilo')}" no existe. Escribe premium o déjalo vacío. Se usa el diseño normal.`);
+    estilo = '';
+  }
+
   const alias = g('alias').toLowerCase();
   if (alias && !slugValido(alias)) avisar(`${etiqueta}: el alias "${alias}" no es válido; se ignora.`);
 
@@ -579,6 +609,21 @@ async function prepararNegocio(fila, num) {
   const titular = g('titular') || TITULAR_DEFECTO;
   if (titular.length > 32) avisar(`${etiqueta}: el titular tiene ${titular.length} letras; en letra grande se verá muy largo. Acórtalo.`);
 
+  // Redes sociales: círculos con el ícono de cada red, al final de la página
+  const redes = [];
+  for (const red of REDES) {
+    const url = enlaceRed(red, g(red.clave));
+    if (url === null) avisar(`${etiqueta}: "${g(red.clave)}" no es un enlace ni un usuario de ${red.nombre}. Se omite.`);
+    else if (url) redes.push({ clave: red.clave, nombre: red.nombre, url });
+  }
+
+  // Si el logo ya trae el nombre escrito, el nombre no se repite en pantalla (sigue ahí para lectores de pantalla y Google)
+  let nombreEnLogo = ['si', 'yes'].includes(normalizar(g('nombre_en_logo')));
+  if (nombreEnLogo && !logo) {
+    avisar(`${etiqueta}: nombre_en_logo dice "si" pero no hay logo. Se muestra el nombre.`);
+    nombreEnLogo = false;
+  }
+
   return {
     id,
     alias: alias && slugValido(alias) ? alias : '',
@@ -592,6 +637,9 @@ async function prepararNegocio(fila, num) {
     colorPlaca,
     resena: botones.find((b) => b.icono === 'resenas') ?? null,
     botones: botones.filter((b) => b.icono !== 'resenas'),
+    redes,
+    nombreEnLogo,
+    estilo: estilo || 'mostrador',
   };
 }
 
@@ -614,11 +662,20 @@ function htmlBotones(botones) {
 function htmlResena(n) {
   if (!n.resena) return '';
   return (
-    `<a class="res" href="${esc(n.resena.url)}" rel="noopener" aria-label="${esc(n.resena.texto)}. Cinco estrellas">` +
+    // Sin "cinco estrellas": la calificación la elige el cliente en Google, aquí no se sugiere ninguna
+    `<a class="res" href="${esc(n.resena.url)}" rel="noopener" aria-label="${esc(n.resena.texto)}. Abre Google para calificar">` +
     `<span class="arr">${G_GOOGLE}<span>${esc(n.resena.texto)}</span></span>` +
     `<span class="est" aria-hidden="true">${ESTRELLA.repeat(5)}</span>` +
     `<span class="nota">${esc(n.notaResenas)}</span></a>`
   );
+}
+
+function htmlRedes(redes) {
+  if (!redes.length) return '';
+  const enlaces = redes
+    .map((r) => `<a href="${esc(r.url)}" rel="noopener" aria-label="${r.nombre}">${svgIcono(r.clave)}</a>`)
+    .join('\n      ');
+  return `<nav class="redes" aria-label="Redes sociales">\n      ${enlaces}\n    </nav>`;
 }
 
 function htmlLogo(n) {
@@ -636,7 +693,7 @@ function htmlLogo(n) {
 }
 
 // Los colores claros llevan íconos más oscuros para que se lean sobre el papel
-const colorIcono = (hex) => (textoSobre(hex) === '#111111' ? oscurecer(hex, 0.5) : hex);
+const colorIcono = (hex) => (textoSobre(hex) === TEXTO_OSCURO ? oscurecer(hex, 0.5) : hex);
 
 function htmlPagina(plantilla, n) {
   const sloganHtml = n.slogan ? `<span class="slogan">${esc(n.slogan)}</span>` : '';
@@ -651,14 +708,15 @@ function htmlPagina(plantilla, n) {
     .replaceAll('{{COLOR}}', n.color)
     .replaceAll('{{COLOR_TEXTO}}', textoSobre(n.color))
     .replaceAll('{{COLOR_ICONO}}', colorIcono(n.color))
-    .replaceAll('{{CAB_CLASE}}', apilada)
-    .replaceAll('{{NOMBRE}}', esc(n.nombre))
+    .replaceAll('{{CAB_CLASE}}', apilada + (n.nombreEnLogo ? ' nombre-en-logo' : ''))
+    .replaceAll('{{NOMBRE}}', `<span class="nom-txt">${esc(n.nombre)}</span>`)
     .replaceAll('{{LOGO_HTML}}', htmlLogo(n))
     .replaceAll('{{SLOGAN_HTML}}', sloganHtml)
     .replaceAll('{{TITULAR}}', esc(n.titular))
     .replaceAll('{{RESENA_HTML}}', htmlResena(n))
     .replaceAll('{{N_BOTONES}}', String(Math.min(n.botones.length, 5)))
     .replaceAll('{{BOTONES}}', htmlBotones(n.botones))
+    .replaceAll('{{REDES_HTML}}', htmlRedes(n.redes))
     .replaceAll('{{PIE_HTML}}', pie);
 }
 
@@ -681,17 +739,22 @@ for (const obligatoria of ['id', 'estado', 'nombre']) {
   }
 }
 
-const plantilla = await readFile('plantilla.html', 'utf8');
+const plantillas = {};
+for (const [estilo, archivo] of Object.entries(PLANTILLAS)) plantillas[estilo] = await readFile(archivo, 'utf8');
 await rm(SALIDA, { recursive: true, force: true });
 await mkdir(SALIDA, { recursive: true });
 
-// Tipografía del titular: se publica junto al sitio (sin pedirla a Google en cada visita)
-const FUENTE = 'node_modules/@fontsource/unbounded/files/unbounded-latin-800-normal.woff2';
-if (existsSync(FUENTE)) {
-  await mkdir(`${SALIDA}/fonts`, { recursive: true });
-  await copyFile(FUENTE, `${SALIDA}/fonts/unbounded-800.woff2`);
-} else {
-  avisar('No encontré la tipografía del titular (@fontsource/unbounded). Se usará la letra del sistema. Ejecuta "npm install".');
+// Tipografías: se publican junto al sitio (sin pedirlas a Google en cada visita)
+const FUENTES = {
+  'unbounded-800.woff2': '@fontsource/unbounded/files/unbounded-latin-800-normal.woff2',
+  'inter-400.woff2': '@fontsource/inter/files/inter-latin-400-normal.woff2',
+  'inter-500.woff2': '@fontsource/inter/files/inter-latin-500-normal.woff2',
+  'inter-600.woff2': '@fontsource/inter/files/inter-latin-600-normal.woff2',
+};
+await mkdir(`${SALIDA}/fonts`, { recursive: true });
+for (const [destino, origen] of Object.entries(FUENTES)) {
+  if (existsSync(`node_modules/${origen}`)) await copyFile(`node_modules/${origen}`, `${SALIDA}/fonts/${destino}`);
+  else avisar(`No encontré la tipografía ${destino}. Se usará la letra del sistema. Ejecuta "npm install".`);
 }
 
 const negocios = [];
@@ -730,12 +793,12 @@ for (const n of negocios) {
 }
 
 for (const n of negocios) {
-  const html = htmlPagina(plantilla, n);
+  const html = htmlPagina(plantillas[n.estilo], n);
   for (const carpeta of [n.id, n.alias].filter(Boolean)) {
     await mkdir(`${SALIDA}/${carpeta}`, { recursive: true });
     await writeFile(`${SALIDA}/${carpeta}/index.html`, html);
   }
-  console.log(`  ✔ ${n.id}${n.alias ? ' / ' + n.alias : ''} — ${n.nombre} (${n.botones.length + (n.resena ? 1 : 0)} botones)`);
+  console.log(`  ✔ ${n.id}${n.alias ? ' / ' + n.alias : ''} — ${n.nombre} (${n.botones.length + (n.resena ? 1 : 0)} botones${n.estilo === 'premium' ? ', premium' : ''})`);
 }
 
 await writeFile(`${SALIDA}/index.html`, paginaSimple('Tarjeta digital', 'Escanea la tarjeta de un negocio para ver su página.'));
