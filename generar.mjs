@@ -145,6 +145,22 @@ function textoSobre(hex) {
   return L > 0.179 ? TEXTO_OSCURO : '#ffffff';
 }
 
+const luminancia = (hex) => {
+  const [r, g, b] = hexARgb(hex).map((c) => c / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+const contraste = (a, b) => {
+  const [x, y] = [luminancia(a), luminancia(b)].sort((p, q) => q - p);
+  return (x + 0.05) / (y + 0.05);
+};
+// Oscurece el color poco a poco hasta que se lea sobre el fondo (3:1 para íconos y líneas, 4.5:1 para texto)
+function legibleSobre(hex, fondo, minimo) {
+  let c = hex;
+  for (let i = 1; contraste(c, fondo) < minimo && i <= 20; i++) c = oscurecer(hex, i * 0.05);
+  return c;
+}
+const distanciaColor = (a, b) => Math.hypot(...hexARgb(a).map((c, i) => c - hexARgb(b)[i]));
+
 function telefono(valor) {
   let d = (valor ?? '').replace(/\D/g, '');
   if (!d) return '';
@@ -160,18 +176,32 @@ const ICONOS = {
   resenas:
     '<polygon points="12 2 15.1 8.3 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 8.9 8.3"/>',
   catalogo:
-    '<line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>',
+    '<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/>',
   enlace:
     '<path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>',
   camara:
     '<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".6"/>',
   pin: '<path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
   web: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/>',
+  menu: '<path d="M6 3v5a2 2 0 0 0 4 0V3M8 10v11"/><path d="M17.5 21V3c-2.3 1.3-3.5 3.8-3.5 7.5V13h3.5"/>',
+  domicilio: '<path d="M5 8.5h14l-1.2 11a1.5 1.5 0 0 1-1.5 1.3H7.7a1.5 1.5 0 0 1-1.5-1.3z"/><path d="M9 8.5V7a3 3 0 0 1 6 0v1.5"/>',
+  tienda: '<path d="M4.5 10.5V20h15v-9.5"/><path d="M3 4h18l1 4a2.5 2.5 0 0 1-5 .5 2.5 2.5 0 0 1-5 0 2.5 2.5 0 0 1-5 0A2.5 2.5 0 0 1 2 8z"/><path d="M10 20v-5h4v5"/>',
+  reservas: '<rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M9 15.2l2 2 4-4"/>',
+  llamar: '<path d="M5.2 4h3.3l1.6 4.4-2.1 1.4a11 11 0 0 0 6.2 6.2l1.4-2.1 4.4 1.6v3.3a1.6 1.6 0 0 1-1.7 1.6A16 16 0 0 1 3.6 5.7 1.6 1.6 0 0 1 5.2 4z"/>',
+  horario: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/>',
+  promos: '<path d="M3.5 12.4V4.5a1 1 0 0 1 1-1h7.9l8.1 8.1a1.5 1.5 0 0 1 0 2.1l-6.8 6.8a1.5 1.5 0 0 1-2.1 0z"/><circle cx="8.3" cy="8.3" r="1.5"/>',
+  pago: '<rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h3.5"/>',
+  wifi: '<path d="M2.5 9a14 14 0 0 1 19 0M5.6 12.4a9.5 9.5 0 0 1 12.8 0M8.7 15.8a5 5 0 0 1 6.6 0"/><circle cx="12" cy="19.3" r=".8"/>',
 };
 
-// Los botones extra eligen su ícono según el enlace (o según la columna botonN_icono)
-const ICONOS_EXTRA = ['instagram', 'facebook', 'tiktok', 'youtube', 'x', 'telegram', 'maps', 'waze', 'web', 'enlace'];
-const ALIAS_ICONO = { twitter: 'x', mapa: 'maps', ubicacion: 'maps', google_maps: 'maps', pagina: 'web', sitio: 'web', link: 'enlace' };
+// Ícono de cada botón: 1) el que se escribe en botonN_icono, 2) el de la red o el mapa según el enlace,
+// 3) según el texto del botón ("Pedidos" → bolsa, "Sedes" → tienda), 4) según el servicio (Rappi, Doctoralia…), 5) globo.
+const ICONOS_EXTRA = ['instagram', 'facebook', 'tiktok', 'youtube', 'x', 'telegram', 'maps', 'waze', 'menu', 'catalogo', 'domicilio', 'tienda', 'reservas', 'llamar', 'horario', 'promos', 'pago', 'web', 'enlace'];
+const ALIAS_ICONO = {
+  twitter: 'x', mapa: 'maps', ubicacion: 'maps', google_maps: 'maps', pagina: 'web', sitio: 'web', link: 'enlace',
+  carta: 'menu', productos: 'catalogo', pedidos: 'domicilio', domicilios: 'domicilio', rappi: 'domicilio', sedes: 'tienda', local: 'tienda',
+  citas: 'reservas', cita: 'reservas', agenda: 'reservas', reserva: 'reservas', telefono: 'llamar', promociones: 'promos', pagos: 'pago',
+};
 const TEXTO_ICONO = {
   instagram: 'Instagram',
   facebook: 'Facebook',
@@ -181,9 +211,52 @@ const TEXTO_ICONO = {
   telegram: 'Telegram',
   maps: 'Cómo llegar',
   waze: 'Waze',
+  menu: 'Ver menú',
+  catalogo: 'Ver catálogo',
+  domicilio: 'Pide a domicilio',
+  tienda: 'Nuestras sedes',
+  reservas: 'Agenda tu cita',
+  llamar: 'Llámanos',
+  horario: 'Horario',
+  promos: 'Promociones',
+  pago: 'Medios de pago',
   web: 'Nuestra web',
   enlace: 'Más info',
 };
+// Palabras del texto del botón (ya normalizado: sin tildes y en minúsculas)
+const ICONO_POR_TEXTO = [
+  ['domicilio', /domicilio|pedido|pide|delivery|rappi|didi|ifood/],
+  ['menu', /(^|_)(menu|carta)(_|$)/],
+  ['tienda', /sede|tienda|local|sucursal|punto_de_venta/],
+  ['reservas', /reserva|cita|agend|turno|consulta/],
+  ['maps', /llegar|ubicacion|direccion|mapa/],
+  ['llamar', /llama|telefono/],
+  ['horario', /horario/],
+  ['promos', /promo|oferta|descuento/],
+  ['pago', /pago|paga|nequi|daviplata/],
+  ['catalogo', /catalogo|producto|servicio/],
+];
+// Servicios conocidos por su dominio
+const ICONO_POR_DOMINIO = [
+  ['domicilio', /(^|\.)(rappi\.com(\.co)?|didi-food\.com|didifood\.com|ifood\.com(\.co)?)$/],
+  ['reservas', /(^|\.)(calendly\.com|doctoralia\.(co|com)|booksy\.com|agendapro\.com|fresha\.com|setmore\.com|simplybook\.me|cal\.com)$/],
+];
+const TEXTO_DOMINIO = { 'rappi.com.co': 'Pide en Rappi', 'rappi.com': 'Pide en Rappi' };
+
+function elegirIcono({ forzado, texto, url, defecto, etiqueta, columna }) {
+  if (forzado) {
+    const clave = ALIAS_ICONO[forzado] ?? forzado;
+    if (ICONOS_EXTRA.includes(clave)) return clave;
+    avisar(`${etiqueta}: el ícono "${forzado}" de ${columna} no existe. Usa: ${ICONOS_EXTRA.join(', ')}. Se elige automático.`);
+  }
+  const porEnlace = iconoExtra(url);
+  if (porEnlace !== 'web') return porEnlace;
+  const t = normalizar(texto ?? '');
+  for (const [clave, patron] of ICONO_POR_TEXTO) if (t && patron.test(t)) return clave;
+  const host = new URL(url).hostname.replace(/^www\./, '');
+  for (const [clave, patron] of ICONO_POR_DOMINIO) if (patron.test(host)) return clave;
+  return defecto;
+}
 
 function iconoExtra(url) {
   const u = new URL(url);
@@ -303,12 +376,78 @@ async function colorFondoLiso(buffer) {
   return cercanos / borde.length >= 0.7 ? rgbAHex(medio) : null;
 }
 
+// Color con carácter más repetido del logo (sin contar su fondo, blancos ni grises). Sirve de color secundario.
+async function colorDelLogo(buffer, fondo) {
+  const { data } = await sharp(buffer).ensureAlpha().resize(64, 64, { fit: 'inside' }).raw().toBuffer({ resolveWithObject: true });
+  const grupos = new Map();
+  let opacos = 0;
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3] < 200) continue;
+    const p = [data[i], data[i + 1], data[i + 2]];
+    opacos++;
+    if (Math.max(...p) - Math.min(...p) < 40) continue; // gris, blanco o negro
+    if (fondo && distanciaColor(rgbAHex(p), fondo) < 48) continue;
+    const k = p.map((c) => c >> 5).join(',');
+    const g = grupos.get(k) ?? { n: 0, suma: [0, 0, 0] };
+    g.n++;
+    p.forEach((c, j) => (g.suma[j] += c));
+    grupos.set(k, g);
+  }
+  const mejor = [...grupos.values()].sort((a, b) => b.n - a.n)[0];
+  return mejor && mejor.n >= opacos * 0.03 ? rgbAHex(mejor.suma.map((c) => c / mejor.n)) : null;
+}
+
 function sugerirArchivos() {
   try {
     const lista = readdirSync(LOGOS_DIR).filter((f) => !f.startsWith('.'));
     return lista.length ? ` Archivos que sí hay en logos/: ${lista.slice(0, 6).join(', ')}.` : ' La carpeta logos/ está vacía.';
   } catch {
     return '';
+  }
+}
+
+// Busca el archivo del logo sin importar mayúsculas ni si falta la extensión.
+// En Windows "logo005.png" y "logo005.PNG" son el mismo archivo, pero en GitHub (Linux) no: sin esto, funciona en el
+// computador y falla al publicar.
+function buscarLogo(nombre) {
+  let lista;
+  try {
+    lista = readdirSync(LOGOS_DIR).filter((f) => !f.startsWith('.'));
+  } catch {
+    return null;
+  }
+  const n = nombre.toLowerCase();
+  return lista.find((f) => f === nombre) ?? lista.find((f) => f.toLowerCase() === n) ?? lista.find((f) => f.toLowerCase().replace(/\.[^.]+$/, '') === n) ?? null;
+}
+
+// Foto de portada (opcional): se recorta a 900×500 y se comprime para que la página siga siendo liviana
+const PORTADA = { w: 900, h: 500, maxBytes: 70 * 1024 };
+async function prepararPortada(id, valor, etiqueta) {
+  const v = (valor ?? '').trim();
+  if (!v) return null;
+  const archivo = /^[\w. -]+$/.test(v) ? buscarLogo(v) : null;
+  if (!archivo || !['.jpg', '.jpeg', '.png', '.webp'].includes(extname(archivo).toLowerCase())) {
+    avisar(`${etiqueta}: no encontré la foto de portada "${v}" (JPG, PNG o WEBP) en la carpeta logos/. Se omite.${sugerirArchivos()}`);
+    return null;
+  }
+  if (!sharp) {
+    avisar(`${etiqueta}: la portada necesita "sharp" para reducir su peso. Se omite.`);
+    return null;
+  }
+  try {
+    const base = sharp(await readFile(`${LOGOS_DIR}/${archivo}`)).rotate().resize(PORTADA.w, PORTADA.h, { fit: 'cover', position: 'attention' });
+    let datos;
+    for (const calidad of [72, 62, 52]) {
+      datos = await base.clone().jpeg({ quality: calidad, mozjpeg: true }).toBuffer();
+      if (datos.length <= PORTADA.maxBytes) break;
+    }
+    await mkdir(`${SALIDA}/logos`, { recursive: true });
+    const nombre = `${id}-portada-${huella(datos)}.jpg`;
+    await writeFile(`${SALIDA}/logos/${nombre}`, datos);
+    return { src: `../logos/${nombre}`, kb: Math.round(datos.length / 1024) };
+  } catch (e) {
+    avisar(`${etiqueta}: no se pudo procesar la portada "${v}" (${e.message}). Se omite.`);
+    return null;
   }
 }
 
@@ -326,13 +465,14 @@ async function prepararLogo(id, valor, etiqueta) {
     return { src: u, w: 0, h: 0, claro: false, opaco: false, fondoEsquina: null };
   }
 
-  if (!/^[\w. -]+$/.test(v) || !existsSync(`${LOGOS_DIR}/${v}`)) {
-    avisar(`${etiqueta}: no encontré el logo "${v}" en la carpeta logos/. Revisa mayúsculas y la extensión.${sugerirArchivos()} Se usará la inicial del negocio.`);
+  const archivo = /^[\w. -]+$/.test(v) ? buscarLogo(v) : null;
+  if (!archivo) {
+    avisar(`${etiqueta}: no encontré el logo "${v}" en la carpeta logos/. Revisa el nombre y la extensión.${sugerirArchivos()} Se usará la inicial del negocio.`);
     return 'error';
   }
 
-  const ruta = `${LOGOS_DIR}/${v}`;
-  const ext = extname(v).toLowerCase();
+  const ruta = `${LOGOS_DIR}/${archivo}`;
+  const ext = extname(archivo).toLowerCase();
   await mkdir(`${SALIDA}/logos`, { recursive: true });
 
   // Logo vectorial: se publica tal cual (nítido a cualquier tamaño)
@@ -343,7 +483,8 @@ async function prepararLogo(id, valor, etiqueta) {
     const nombreSvg = `${id}-${huella(txt)}.svg`;
     await copyFile(ruta, `${SALIDA}/logos/${nombreSvg}`);
     const caja = ajustarACaja(dim?.w || 200, dim?.h || 100, true);
-    return { src: `../logos/${nombreSvg}`, w: caja.w, h: caja.h, claro: false, opaco: false, fondoEsquina: null };
+    const secundario = sharp ? await colorDelLogo(Buffer.from(txt), null).catch(() => null) : null;
+    return { src: `../logos/${nombreSvg}`, w: caja.w, h: caja.h, claro: false, opaco: false, fondoEsquina: null, secundario };
   }
 
   if (!['.png', '.jpg', '.jpeg', '.webp'].includes(ext)) {
@@ -402,7 +543,8 @@ async function prepararLogo(id, valor, etiqueta) {
     }
 
     const caja = ajustarACaja(w, h, false);
-    return { src: `../logos/${nombreFinal}`, w: caja.w, h: caja.h, claro: await esLogoClaro(final.data), mayor, opaco: !conTransparencia, fondoEsquina };
+    const secundario = await colorDelLogo(final.data, fondoEsquina);
+    return { src: `../logos/${nombreFinal}`, w: caja.w, h: caja.h, claro: await esLogoClaro(final.data), mayor, opaco: !conTransparencia, fondoEsquina, secundario };
   } catch (e) {
     avisar(`${etiqueta}: no se pudo procesar el logo "${v}" (${e.message}). Se usará la inicial del negocio.`);
     return 'error';
@@ -690,7 +832,10 @@ async function prepararNegocio(fila, num) {
 
   const catalogo = urlSegura(g('catalogo'));
   if (catalogo === null) avisar(`${etiqueta}: el enlace del catálogo no es válido. Se omite ese botón.`);
-  else if (catalogo) disponibles.catalogo = { icono: 'catalogo', texto: texto('texto_catalogo', 'Ver catálogo'), url: catalogo };
+  else if (catalogo) {
+    const icono = elegirIcono({ texto: g('texto_catalogo'), url: catalogo, defecto: 'catalogo', etiqueta, columna: 'catalogo' });
+    disponibles.catalogo = { icono, texto: texto('texto_catalogo', TEXTO_ICONO[icono] ?? 'Ver catálogo'), url: catalogo };
+  }
 
   const tel = telefono(g('whatsapp'));
   if (tel === null) avisar(`${etiqueta}: el número de WhatsApp no parece válido. Se omite ese botón.`);
@@ -707,14 +852,16 @@ async function prepararNegocio(fila, num) {
     const url = urlSegura(g(`boton${n}_url`));
     if (url === null) avisar(`${etiqueta}: el enlace del botón ${n} no es válido. Se omite.`);
     else if (url) {
-      let icono = iconoExtra(url);
-      const forzado = normalizar(g(`boton${n}_icono`));
-      if (forzado) {
-        const clave = ALIAS_ICONO[forzado] ?? forzado;
-        if (ICONOS_EXTRA.includes(clave)) icono = clave;
-        else avisar(`${etiqueta}: el ícono "${g(`boton${n}_icono`)}" no existe. Usa: ${ICONOS_EXTRA.join(', ')}. Se elige automático.`);
-      }
-      disponibles['boton' + n] = { icono, texto: texto(`boton${n}_texto`, TEXTO_ICONO[icono]), url };
+      const icono = elegirIcono({
+        forzado: normalizar(g(`boton${n}_icono`)),
+        texto: g(`boton${n}_texto`),
+        url,
+        defecto: 'web',
+        etiqueta,
+        columna: `boton${n}_icono`,
+      });
+      const porDominio = TEXTO_DOMINIO[new URL(url).hostname.replace(/^www\./, '')];
+      disponibles['boton' + n] = { icono, texto: texto(`boton${n}_texto`, porDominio ?? TEXTO_ICONO[icono]), url };
     }
   }
 
@@ -745,9 +892,26 @@ async function prepararNegocio(fila, num) {
     nombreEnLogo = false;
   }
 
+  // Color secundario automático: el color con carácter del logo, si se distingue del principal.
+  // Si no hay, el mismo color principal. En los dos casos se oscurece solo si hace falta para leerse sobre el papel.
+  const secundario = logo?.secundario && distanciaColor(logo.secundario, colorFinal) > 60 ? logo.secundario : colorFinal;
+  const acento = legibleSobre(secundario, '#fffdf8', 3);
+
+  const portada = await prepararPortada(id, g('portada'), etiqueta);
+
+  // Wi-Fi para clientes: se muestra al tocar el botón, sin JavaScript
+  let wifi = null;
+  if (g('wifi_red') || g('wifi_clave')) {
+    if (!g('wifi_red')) avisar(`${etiqueta}: hay clave de Wi-Fi pero falta el nombre de la red (wifi_red). Se omite el Wi-Fi.`);
+    else wifi = { red: g('wifi_red'), clave: g('wifi_clave') };
+  }
+
   return {
     id,
     alias: alias && slugValido(alias) ? alias : '',
+    acento,
+    portada,
+    wifi,
     nombre,
     slogan: g('slogan'),
     titular,
@@ -791,6 +955,18 @@ function htmlResena(n) {
   );
 }
 
+// <details> abre y cierra sin JavaScript. La clave se selecciona completa con un toque para copiarla.
+function htmlWifi(wifi) {
+  if (!wifi) return '';
+  const clave = wifi.clave
+    ? `<span class="wf-dato"><span class="wf-et">Clave</span><span class="wf-clave">${esc(wifi.clave)}</span></span>`
+    : `<span class="wf-dato"><span class="wf-et">Clave</span><span>Red abierta, sin clave</span></span>`;
+  return (
+    `<details class="wifi"><summary><span class="ic">${svgIcono('wifi')}</span><span class="tx">Wi-Fi gratis</span></summary>` +
+    `<div class="wf-panel"><span class="wf-dato"><span class="wf-et">Red</span><span class="wf-red">${esc(wifi.red)}</span></span>${clave}</div></details>`
+  );
+}
+
 function htmlRedes(redes) {
   if (!redes.length) return '';
   const enlaces = redes
@@ -829,6 +1005,10 @@ function htmlPagina(plantilla, n) {
     .replaceAll('{{COLOR}}', n.color)
     .replaceAll('{{COLOR_TEXTO}}', textoSobre(n.color))
     .replaceAll('{{COLOR_ICONO}}', colorIcono(n.color))
+    .replaceAll('{{COLOR_ACENTO}}', n.acento)
+    .replaceAll('{{TOLDO_CLASE}}', n.portada ? ' con-portada' : '')
+    .replaceAll('{{PORTADA_HTML}}', n.portada ? `<img class="portada" src="${esc(n.portada.src)}" alt="" width="900" height="500" decoding="async">` : '')
+    .replaceAll('{{WIFI_HTML}}', htmlWifi(n.wifi))
     .replaceAll('{{CAB_CLASE}}', apilada + (n.nombreEnLogo ? ' nombre-en-logo' : ''))
     .replaceAll('{{NOMBRE}}', `<span class="nom-txt">${esc(n.nombre)}</span>`)
     .replaceAll('{{LOGO_HTML}}', htmlLogo(n))

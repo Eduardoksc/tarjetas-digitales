@@ -21,7 +21,8 @@ En PowerShell: `$env:SHEET_CSV_FILE="ejemplo-negocios.csv"; node generar.mjs`
 
 Qué esperar con `ejemplo-negocios.csv`:
 - `dist/001/` y `dist/estilonorte/` (alias), con el logo SVG `estilo-norte.svg`.
-- `dist/002/`, sin logo (muestra la inicial) y con `logo_fondo=blanco`.
+- `dist/002/`, sin logo (muestra la inicial), con `logo_fondo=blanco` y `estilo=premium`.
+- `dist/001/` tiene Wi-Fi para clientes y redes sociales.
 - `003` está `pausado`: no se genera.
 - Se generan también `dist/index.html`, `dist/404.html`, `dist/robots.txt`, `dist/fonts/` y `dist/logos/`.
 - La consola muestra `✔` por negocio y `⚠` por cada problema. El resumen final cuenta páginas, pausadas y advertencias.
@@ -62,7 +63,7 @@ Flujo de `generar.mjs`:
 5. **`htmlPagina()`** reemplaza los tokens con `replaceAll` en secuencia.
 6. Escribe `dist/<id>/index.html` y, si hay alias, una copia idéntica en `dist/<alias>/index.html`. `dist/` se borra completo al inicio de cada build.
 
-Tokens de la plantilla: `{{TITULO}}`, `{{COLOR}}`, `{{COLOR_TEXTO}}`, `{{COLOR_ICONO}}`, `{{CAB_CLASE}}`, `{{NOMBRE}}`, `{{LOGO_HTML}}`, `{{SLOGAN_HTML}}`, `{{TITULAR}}`, `{{RESENA_HTML}}`, `{{N_BOTONES}}`, `{{BOTONES}}`, `{{REDES_HTML}}`, `{{PIE_HTML}}`. `{{NOMBRE}}` sale envuelto en `<span class="nom-txt">` y `{{CAB_CLASE}}` puede incluir `nombre-en-logo`.
+Tokens de la plantilla: `{{TITULO}}`, `{{COLOR}}`, `{{COLOR_TEXTO}}`, `{{COLOR_ICONO}}`, `{{CAB_CLASE}}`, `{{NOMBRE}}`, `{{LOGO_HTML}}`, `{{SLOGAN_HTML}}`, `{{TITULAR}}`, `{{RESENA_HTML}}`, `{{N_BOTONES}}`, `{{BOTONES}}`, `{{REDES_HTML}}`, `{{PIE_HTML}}`, `{{COLOR_ACENTO}}`, `{{TOLDO_CLASE}}`, `{{PORTADA_HTML}}`, `{{WIFI_HTML}}`. `{{NOMBRE}}` sale envuelto en `<span class="nom-txt">` y `{{CAB_CLASE}}` puede incluir `nombre-en-logo`.
 
 Reglas de seguridad que se deben mantener:
 - Todo texto que venga de la hoja pasa por `esc()`.
@@ -79,7 +80,7 @@ Reglas de seguridad que se deben mantener:
 | `nombre` * | Texto libre | Fila omitida |
 | `slogan` | Texto bajo el nombre | No se muestra |
 | `color` | Hex de 6 dígitos, con o sin `#` | Usa `#1f6f5c` (con aviso si era inválido) |
-| `logo` | Archivo en `logos/` (png, jpg, jpeg, webp o svg) o un enlace `https://`, que se usa sin procesar | Muestra la inicial del nombre |
+| `logo` | Archivo en `logos/` (png, jpg, jpeg, webp o svg) o un enlace `https://`, que se usa sin procesar. `buscarLogo()` ignora mayúsculas y acepta el nombre sin extensión (en Windows funcionaba y en GitHub, que usa Linux, no) | Muestra la inicial del nombre |
 | `logo_fondo` | `blanco`, `oscuro` o `sin` | Automático (ver reglas de diseño) |
 | `titular` | Frase grande. Avisa si pasa de 32 caracteres | "Nos encantó verte." |
 | `google_resenas` | Enlace para dejar reseña | Sin bloque de reseña |
@@ -89,7 +90,9 @@ Reglas de seguridad que se deben mantener:
 | `whatsapp` | Solo dígitos. Si tiene 10 dígitos y empieza por 3, se le antepone `57`. Debe quedar de 11 a 15 dígitos | Sin botón |
 | `mensaje_whatsapp` | Texto que el **cliente** envía al negocio (`wa.me/<tel>?text=`) | "Hola, vi su tarjeta y quisiera más información." |
 | `texto_whatsapp` | Máximo 16 | "Escríbenos" |
-| `boton4_url`, `boton4_texto`, `boton4_icono` (y `boton5_*`) | El ícono sale del dominio del enlace (`iconoExtra`) o se fuerza con: instagram, facebook, tiktok, youtube, x, telegram, maps, waze, web, enlace (también acepta twitter, mapa, ubicacion, google_maps, pagina, sitio, link) | Sin botón. El texto por defecto depende del ícono (`TEXTO_ICONO`) |
+| `boton4_url`, `boton4_texto`, `boton4_icono` (y `boton5_*`) | Ícono según `elegirIcono()`: 1) `botonN_icono` (claves en `ICONOS_EXTRA`, con alias en `ALIAS_ICONO`), 2) red social o mapa por el dominio, 3) palabras del texto (`ICONO_POR_TEXTO`: "Pedidos" → domicilio, "Sedes" → tienda, "Citas" → reservas…), 4) servicio por dominio (`ICONO_POR_DOMINIO`: Rappi, DiDi Food, Doctoralia, Calendly, Booksy…), 5) globo | Sin botón. El texto por defecto depende del ícono (`TEXTO_ICONO`) o del dominio ("Pide en Rappi") |
+| `portada` | Foto (JPG, PNG o WEBP) en `logos/`. Se recorta a 900×500 y se comprime a 70 KB como máximo (`prepararPortada`) | Sin foto |
+| `wifi_red`, `wifi_clave` | Botón "Wi-Fi gratis" que despliega la red y la clave con `<details>` (sin JavaScript). Sin clave, dice "Red abierta" | Sin Wi-Fi. Clave sin red: avisa |
 | `orden_botones` | Claves `catalogo`, `whatsapp`, `boton4`, `boton5` (también acepta menu, wa, extra, extra1, extra2), separadas por coma, `;` o espacio. Las que falten se agregan en el orden por defecto | `catalogo, whatsapp, boton4, boton5` |
 | `estilo` | `premium` (normalizado, así que `Premium` también vale) usa `plantilla-premium.html` | Tema Mostrador. Otro valor: avisa y usa Mostrador |
 | `nombre_en_logo` | `si` oculta el nombre en pantalla cuando el logo ya lo trae escrito. Lo deja para lectores de pantalla y Google | Se muestra el nombre. Sin logo, avisa y lo muestra |
@@ -104,16 +107,17 @@ Una fila activa que no tenga **ningún** botón válido (contando la reseña) se
 
 La columna `estilo` elige la plantilla (`PLANTILLAS` en `generar.mjs`). Las dos comparten exactamente la misma estructura HTML y los mismos tokens; solo cambia el CSS.
 
-### "Mostrador luminoso" (`plantilla.html`, por defecto)
+### "Mostrador" con toldo de marca (`plantilla.html`, por defecto)
 
-- **Papel cálido** (`--papel #f4efe6`) como una carta impresa. Texto `--tinta #1a1712` y secundario `--gris #6b655a` (5:1). Nunca `opacity` en textos: baja el contraste.
-- **El color del negocio** (`--marca`, columna `color`) va en: la franja superior de 8 px, la franja del tiquete de reseña, la inicial cuando no hay logo, los íconos (`--icono`) y los círculos de redes (con ícono en `--sobre`). `textoSobre()` da `#ffffff` o `#000000` (`TEXTO_OSCURO`) con umbral 0.179, así que cualquier color da al menos 4.58:1.
+- **Toldo de marca:** la parte de arriba (portada opcional, logo, nombre, slogan y titular) va en el color del negocio (`--marca`), con texto en `--sobre`. `textoSobre()` da `#ffffff` o `#000000` (`TEXTO_OSCURO`) con umbral 0.179, así que cualquier color da al menos 4.58:1. El borde inferior es curvo y el tiquete de reseña se monta sobre él.
+- **Color secundario automático** (`--acento`): `colorDelLogo()` saca el color con carácter más repetido del logo (sin su fondo, blancos ni grises). Si no hay o se parece al principal, se usa el principal. `legibleSobre()` lo oscurece hasta 3:1 sobre el papel. Va en la franja del tiquete, las estrellas, los íconos de las filas y la inicial.
+- **Abajo, papel cálido** (`--papel #f4efe6`). Texto `--tinta #1a1712` y secundario `--gris #6b655a` (5:1). Nunca `opacity` en textos: baja el contraste.
 - **Estructura**, de arriba abajo:
-  1. Cabecera centrada: logo, nombre y slogan. Con `nombre_en_logo` = `si`, el nombre se oculta en pantalla (`.nombre-en-logo .nom-txt`).
-  2. Titular `h2` centrado en Unbounded 800, `clamp(30px, 10vw, 44px)`.
-  3. Reseña: tiquete blanco con franja del color, la "G" de Google sin modificar, **5 estrellas de contorno vacías** y la nota bajo una línea perforada. Una ola breve las ilumina y vuelven a quedar vacías: **nunca se muestran llenas**, para no sugerir una calificación.
-  4. Acciones en filas de carta (ícono, texto y flecha), separadas por líneas de 1 px.
-  5. Redes sociales en círculos de 48 px, centrados.
+  1. Toldo: portada (si hay), logo, nombre y slogan centrados, y titular `h2` en Unbounded 800, `clamp(30px, 10vw, 44px)`. Con `nombre_en_logo` = `si`, el nombre se oculta en pantalla (`.nombre-en-logo .nom-txt`).
+  2. Reseña: tiquete blanco con franja del acento, la "G" de Google sin modificar, **5 estrellas de contorno vacías** y la nota bajo una línea perforada. Una ola breve las ilumina y vuelven a quedar vacías: **nunca se muestran llenas**, para no sugerir una calificación.
+  3. Acciones en filas de carta (ícono, texto y flecha), separadas por líneas de 1 px.
+  4. Wi-Fi (si hay): una fila más que se despliega.
+  5. Redes sociales en círculos de 48 px, centrados, en el color de la marca.
   6. Pie opcional.
 - Tipografías: Unbounded 800 (titular) e Inter 500 (resto).
 
@@ -135,7 +139,7 @@ Negro profundo, la reseña como pieza de oro, botones cuadrados satinados con fi
 - **Restricciones técnicas:**
   - Mobile-first, `max-width` de 440 px (480 px en Premium), respeta `safe-area-inset`.
   - **Cero JavaScript en el cliente.**
-  - Fuentes servidas desde el propio sitio (`dist/fonts/`, copiadas desde `@fontsource`), sin pedidos a Google Fonts. Peso sin logo: unos 64 KB.
+  - Fuentes servidas desde el propio sitio (`dist/fonts/`, copiadas desde `@fontsource`), sin pedidos a Google Fonts. Peso sin logo: unos 64 KB, más la portada si hay (máximo 70 KB).
   - `color-scheme: light only` en Mostrador, para que Android no oscurezca la página. `dark` en Premium.
   - Respeta `prefers-reduced-motion`.
   - `noindex` y `robots.txt` con `Disallow: /`.
@@ -148,3 +152,6 @@ Negro profundo, la reseña como pieza de oro, botones cuadrados satinados con fi
 - Los SVG de `logos/` se publican sin limpiar.
 - El workflow despliega en cada ejecución (cada 10 min) aunque no haya cambios.
 - El token del botón de Apps Script tiene permiso Contents: Read and write. Es más de lo necesario.
+- `urlSegura()` rechaza enlaces sin dominio real (una palabra suelta como "Sedes").
+- Los cron de GitHub Actions se retrasan horas cuando GitHub tiene carga; "cada 10 minutos" es lo pedido, no lo garantizado.
+- La lectura de vínculos con nombre (`.xlsx`) se probó con un archivo armado a mano, no con una exportación real de Google. Si Google cambia el formato, el robot avisa y sigue con el texto del CSV.

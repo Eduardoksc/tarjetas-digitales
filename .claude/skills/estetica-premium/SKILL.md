@@ -7,7 +7,7 @@ description: Criterio estético del tema opcional "Premium" de las tarjetas (neg
 
 ## Cuándo aplica
 
-**Solo** a negocios con `estilo` = `premium` en la hoja: spas, joyerías, barberías de alta gama, restaurantes de manteles. El tema vive en `plantilla-premium.html`. El tema por defecto es **"Mostrador luminoso"** (`plantilla.html`) y esta skill no lo modifica.
+**Solo** a negocios con `estilo` = `premium` en la hoja: spas, joyerías, barberías de alta gama, restaurantes de manteles. El tema vive en `plantilla-premium.html`. El tema por defecto es **"Mostrador" con toldo de marca** (`plantilla.html`) y esta skill no lo modifica. Premium comparte su estructura HTML: la portada va como foto con filo dorado y el medallón del logo encima, y el Wi-Fi como un bloque satinado desplegable.
 
 ## Criterio
 

@@ -11,15 +11,20 @@ Hoja de Google  ──(robot de GitHub)──►  Una página por negocio  ─�
 
 ## Qué trae esta versión (diseño "Mostrador" y tema "Premium")
 
-1. **Dos diseños.** Por defecto, **Mostrador**: fondo color papel, como una carta impresa, con el color del negocio en la franja de arriba, en la reseña, en los íconos y en las redes. Si escribes `premium` en la columna `estilo`, ese negocio usa **Premium**: fondo negro con detalles de oro.
-2. **La reseña es un tiquete con cinco estrellas vacías.** Una ola breve las ilumina para invitar a tocar, pero **no se muestran llenas**, para no presionar al cliente a poner cinco. Tocarlas lleva a la reseña de Google, donde el cliente elige su calificación.
-3. **Acciones en filas** (menú, WhatsApp, pedidos…), cada una con su ícono y una flecha. En Premium son botones cuadrados con filo dorado.
-4. **Redes sociales en círculos** al final de la página: Instagram, Facebook, TikTok, YouTube, X y Telegram.
-5. **El nombre no se repite** si el logo ya lo trae escrito (columna `nombre_en_logo`).
-6. **Logos que siempre se ven bien.** El robot recorta márgenes y pone el logo en una placa que se adapta a su forma. Si el logo trae su propio fondo liso (como un JPG con fondo crema), la placa toma ese color. Si trae un fondo con degradado, se muestra tal cual con las esquinas redondeadas.
-7. **Textos editables desde la hoja:** el titular, el nombre de cada botón y la nota debajo de las estrellas.
-8. **Actualizaciones rápidas:** el robot lee la hoja directamente y corre cada 10 minutos.
-9. **Compatibilidad con celulares viejos:** logos en PNG/JPG, sin funciones recientes del navegador, y se le pide al navegador que no oscurezca la página por su cuenta.
+1. **Dos diseños.** Por defecto, **Mostrador**: la parte de arriba es un **toldo con el color del negocio**, con borde curvo, el logo, el slogan y el titular. Debajo, fondo color papel, como una carta impresa. Si escribes `premium` en la columna `estilo`, ese negocio usa **Premium**: fondo negro con detalles de oro.
+2. **Color secundario automático.** El robot saca un segundo color del logo (por ejemplo, el verde de BA CU) y lo usa en las estrellas y los íconos. No hay que escribirlo.
+3. **Foto de portada opcional** (columna `portada`): una foto del local o de un plato arriba, con el logo encima.
+4. **Wi-Fi gratis** (columnas `wifi_red` y `wifi_clave`): un botón que muestra la red y la clave al tocarlo.
+5. **Íconos que corresponden a cada botón:** bolsa para pedidos, tienda para sedes, cubiertos para el menú, calendario para citas, y "Pide en Rappi" automático con un enlace de Rappi.
+6. **La reseña es un tiquete con cinco estrellas vacías.** Una ola breve las ilumina para invitar a tocar, pero **no se muestran llenas**, para no presionar al cliente a poner cinco. Tocarlas lleva a la reseña de Google, donde el cliente elige su calificación.
+7. **Acciones en filas** (menú, WhatsApp, pedidos…), cada una con su ícono y una flecha. En Premium son botones cuadrados con filo dorado.
+8. **Redes sociales en círculos** al final de la página: Instagram, Facebook, TikTok, YouTube, X y Telegram.
+9. **El nombre no se repite** si el logo ya lo trae escrito (columna `nombre_en_logo`).
+10. **Vínculos con nombre:** puedes usar Insertar → Vínculo con un texto corto; el robot usa el enlace real.
+11. **Logos que siempre se ven bien.** El robot recorta márgenes y pone el logo en una placa que se adapta a su forma. Si el logo trae su propio fondo liso (como un JPG con fondo crema), la placa toma ese color. Si trae un fondo con degradado, se muestra tal cual con las esquinas redondeadas.
+12. **Textos editables desde la hoja:** el titular, el nombre de cada botón y la nota debajo de las estrellas.
+13. **Actualizaciones rápidas:** el robot lee la hoja directamente y corre cada 10 minutos (GitHub a veces lo retrasa; usa "Publicar ahora" para verlo al momento).
+14. **Compatibilidad con celulares viejos:** logos en PNG/JPG, sin funciones recientes del navegador, y se le pide al navegador que no oscurezca la página por su cuenta.
 
 ### Cómo actualizar tu repositorio
 
@@ -63,15 +68,23 @@ Pestaña **Negocios**, fila 1 con estos encabezados (el orden no importa; solo a
 | `boton5_url`, `boton5_texto`, `boton5_icono` | Otro botón extra | No |
 | `orden_botones` | El orden de los botones cuadrados | No |
 | `estilo` | Vacío = diseño normal; `premium` = negro y oro | No |
+| `portada` | Foto del local o de un producto, guardada en la carpeta `logos/` (ej. `foto005.jpg`). Va arriba, en grande. El robot la recorta y la aligera | No |
+| `wifi_red`, `wifi_clave` | Nombre y clave del Wi-Fi para clientes. Aparece un botón "Wi-Fi gratis" que muestra los datos al tocarlo | No |
 | `nombre_en_logo` | `si` si el logo ya trae el nombre escrito: así no se repite debajo | No |
 | `instagram`, `facebook`, `tiktok`, `youtube`, `x`, `telegram` | El usuario (`@minegocio`) o el enlace completo de cada red. Salen como círculos con el ícono al final de la página | No |
 | `alias` | Nombre corto extra para el enlace, ej. `estilonorte` | No |
+
+**Íconos de los botones:** el robot elige el ícono solo, según el texto del botón y el enlace. "Pedidos" o "Domicilios" muestran una bolsa de entrega; "Sedes" o "Tiendas", una tienda; "Menú" o "Carta", cubiertos; "Citas", "Agendar" o "Reservas", un calendario (sirve para barberías, consultorios, spas…). Un enlace de **Rappi** muestra la bolsa y el texto "Pide en Rappi"; uno de Doctoralia, Calendly o Booksy, el calendario. Si quieres otro, escríbelo en `boton4_icono`: `menu`, `catalogo`, `domicilio`, `tienda`, `reservas`, `llamar`, `horario`, `promos`, `pago`, `maps`, `web`.
+
+**Color secundario:** no hay que escribirlo. El robot lo saca del logo (por ejemplo, el verde de BA CU) y lo usa en las estrellas y los íconos.
+
+**Wi-Fi en la tarjeta:** la clave queda visible para cualquiera que abra la tarjeta. Úsalo solo con la red de clientes, nunca con la red interna del negocio.
 
 **Enlaces largos:** en las columnas de enlaces (reseñas, catálogo, botones extra y redes) puedes usar **Insertar → Vínculo** y ponerle un nombre corto (por ejemplo "Sedes"), para que la celda no se llene con un enlace enorme. El robot usa el enlace real, no el nombre. Si algún día ves el aviso ⚠ "No se pudieron leer los vínculos con nombre", pega el enlace completo en esas celdas.
 
 **Columna `estilo`:** déjala vacía para el diseño normal (Mostrador) o escribe `premium` para el diseño negro y oro. Si tenías valores viejos en esa columna, bórralos: cualquier palabra distinta de `premium` hace que el robot avise con ⚠ y use el diseño normal.
 
-**Columna `color`:** es el **color principal de la marca** del negocio, en hexadecimal (por ejemplo `#AD6225`). En el diseño Mostrador pinta la franja de arriba, la franja de la reseña, los íconos y los círculos de redes. En Premium no se usa.
+**Columna `color`:** es el **color principal de la marca** del negocio, en hexadecimal (por ejemplo `#AD6225`). En el diseño Mostrador pinta el toldo de arriba y los círculos de redes. Usa el color **oficial** (del manual de marca), no uno tomado de una captura o de Instagram, porque esos traen filtros. En Premium no se usa.
 
 Mira `ejemplo-negocios.csv`: tiene filas de ejemplo con todo esto.
 
@@ -116,19 +129,25 @@ Los SVG no se tocan: se ven nítidos a cualquier tamaño.
 
 **Reseña.** El bloque de estrellas aparece si hay `google_resenas`. Siempre va arriba.
 
-**Botones cuadrados.** Cada uno muestra el ícono del servicio:
+**Botones.** En el diseño Mostrador son filas; en Premium, botones cuadrados. Cada uno muestra un ícono que el robot elige solo:
 
-| Botón | Ícono |
+| Si el botón… | Ícono |
 |---|---|
-| Catálogo | Lista |
+| Lleva a Instagram, Facebook, TikTok, YouTube, X, Telegram, Google Maps o Waze | El de esa red o mapa |
+| Dice "Menú" o "Carta" | Cubiertos |
+| Dice "Pedidos", "Domicilios" o "Pide…", o lleva a Rappi o DiDi Food | Bolsa de entrega |
+| Dice "Sedes", "Tiendas" o "Locales" | Tienda |
+| Dice "Citas", "Agendar", "Reservas" o "Turnos", o lleva a Doctoralia, Calendly, Booksy o AgendaPro | Calendario |
+| Dice "Cómo llegar" o "Ubicación" | Pin del mapa |
+| Dice "Promociones", "Horario", "Pagos" o "Catálogo" / "Servicios" | Etiqueta, reloj, tarjeta o cuadrícula |
 | WhatsApp | Logo de WhatsApp |
-| Extras (`boton4`, `boton5`) | Se elige según el enlace: Instagram, Facebook, TikTok, YouTube, X, Telegram, Google Maps, Waze; cualquier otra página muestra un globo |
+| Nada de lo anterior | Globo (página web) |
 
-Si el ícono automático no es el que quieres, escribe el que prefieras en `boton4_icono` o `boton5_icono`.
+Si el ícono automático no es el que quieres, escribe el que prefieras en `boton4_icono` o `boton5_icono` (ver la lista en "Íconos de los botones").
 
-**Nombres.** Escribe el texto en su columna. En un botón cuadrado caben **unas 16 letras** ("Ver catálogo", "Escríbenos", "Cómo llegar"). Si te pasas, el robot lo avisa con un ⚠.
+**Nombres.** Escribe el texto en su columna. Caben **unas 16 letras** ("Ver catálogo", "Escríbenos", "Cómo llegar"). Si te pasas, el robot lo avisa con un ⚠. Si dejas vacío el texto de un botón de Rappi, dice "Pide en Rappi"; uno de citas, "Agenda tu cita".
 
-**Cantidad.** Con 1 botón queda ancho; con 2 o 4, en parejas; con 3, en fila; con 5, tres arriba y dos abajo.
+**Cantidad.** En Premium: con 1 botón queda ancho; con 2 o 4, en parejas; con 3, en fila; con 5, tres arriba y dos abajo.
 
 **Orden.** En `orden_botones` escribe los nombres separados por comas, por ejemplo `whatsapp, catalogo`. Un botón sin datos simplemente no aparece.
 
@@ -136,7 +155,7 @@ Si el ícono automático no es el que quieres, escribe el que prefieras en `boto
 
 ## Colores y fondo
 
-Toda la página lleva el color del negocio. El texto se vuelve blanco u oscuro solo, según qué tan claro sea el color. Los botones y el bloque de estrellas son color papel, con un ícono del color del negocio (más oscuro si el color es muy claro).
+El toldo de arriba lleva el color del negocio. El texto encima se vuelve blanco o negro solo, según qué tan claro sea el color, para que siempre se lea. Abajo, la reseña y los botones van sobre papel, con las estrellas y los íconos en el color secundario que el robot saca del logo (más oscuro si hace falta para que se vean bien).
 
 Escribe el color como `#B83A5B` (6 letras o números después del `#`). Si es incorrecto, el robot avisa y usa uno por defecto.
 
@@ -281,11 +300,12 @@ Crea la carpeta `dist` con las páginas y muestra los avisos en español. Abre `
 | "Falta la dirección de la hoja" | No existen las variables | Paso 4 (pestaña **Variables**, no Secrets) |
 | Sale "Esta tarjeta no está disponible" | El enlace no coincide con un `id`, o el `id` perdió los ceros | Formato de la columna `id` como texto sin formato; vuelve a ejecutar el robot |
 | Un negocio no aparece | Estado distinto de `activo`, o la fila tiene errores | Mira los ⚠ en el paso "Crear las páginas desde la hoja" |
-| El logo no se ve, sale la inicial | El nombre del archivo no coincide con la columna `logo` | El aviso lista los archivos que existen; corrige mayúsculas y extensión |
+| El logo no se ve, sale la inicial | El archivo no está subido a GitHub, o el nombre en la columna `logo` no coincide | Confirma que el logo esté en `logos/` **y subido** (commit y push). Las mayúsculas y la extensión ya no importan (`logo005`, `logo005.png` y `LOGO005.PNG` sirven). El aviso lista los archivos que existen |
+| Un botón no abre la página correcta | En la celda quedó un texto (ej. "Sedes") en vez de un enlace | Pega el enlace, o usa Insertar → Vínculo; el robot avisa con ⚠ si no es un enlace válido |
 | El logo se ve borroso | El archivo es muy pequeño | Pide un SVG o un PNG de más de 800 px |
 | Un logo blanco no se ve | La placa es clara | Pon `oscuro` en `logo_fondo` |
 | El titular se sale o queda enorme | Es demasiado largo | Usa menos de 30 letras en `titular` |
 | Un logo trae marca de agua (por ejemplo, de una herramienta de IA) | El archivo original ya la tenía | Pide al cliente el logo original sin marca de agua |
 | En el celular se ve distinto que en el computador | El celular guarda la versión anterior de la página | Abre el enlace en una ventana privada o borra los datos del navegador; espera unos minutos después de publicar. Si persiste, mándame una captura y el modelo del celular |
 | El cambio no se ve | Falta publicar, o el robot aún no corrió | Espera hasta 10 minutos, presiona **Publicar ahora**, o ejecuta el robot a mano en **Actions** |
-| El robot por hora dejó de correr | GitHub pausa tareas programadas tras 60 días sin actividad en el repositorio | Haz un cambio pequeño o ejecútalo a mano |
+| El robot dejó de correr solo | GitHub pausa tareas programadas tras 60 días sin actividad en el repositorio | Haz un cambio pequeño o ejecútalo a mano |

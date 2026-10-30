@@ -43,7 +43,7 @@ La persona tiene el **celular en una mano**, de pie frente a un **mostrador**, u
    - Mucho aire entre bloques: es mejor quitar un elemento que apretarlo.
    - Elimina los textos redundantes. Por ejemplo, el nombre del negocio repetido justo debajo de un logo que ya lo dice, o una nota que repite lo que dice el botón.
    - Cada pantalla tiene una sola cosa que destaca: la reseña.
-10. **Respeta el tema activo.** El tema por defecto es **"Mostrador luminoso"** (`plantilla.html`, descrito en `CLAUDE.md`): papel cálido, tiquete de reseña con franja del color del negocio, acciones en filas y redes en círculos. Los negocios con `estilo` = `premium` usan **Premium** (`plantilla-premium.html`), que sigue la skill `estetica-premium`. Un cambio en la estructura HTML va en las dos plantillas, y se verifica en las dos.
+10. **Respeta el tema activo.** El tema por defecto es **"Mostrador" con toldo de marca** (`plantilla.html`, descrito en `CLAUDE.md`): toldo curvo del color del negocio arriba (con foto de portada opcional), papel cálido abajo, tiquete de reseña montado sobre el toldo, color secundario sacado del logo, acciones en filas, Wi-Fi desplegable y redes en círculos. Los negocios con `estilo` = `premium` usan **Premium** (`plantilla-premium.html`), que sigue la skill `estetica-premium`. Un cambio en la estructura HTML va en las dos plantillas, y se verifica en las dos.
 11. **La reseña no presiona.** Las estrellas se muestran vacías; nunca llenas ni preseleccionadas. Tampoco se usan textos que sugieran una calificación ("¡Danos 5 estrellas!").
 12. **Interacciones:** cualquier estado interactivo o animación sigue la skill `micro-interacciones`.
 

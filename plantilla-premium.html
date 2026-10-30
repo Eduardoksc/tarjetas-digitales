@@ -179,6 +179,24 @@
   .redes a:active { transform: scale(.92); border-color: rgba(234, 202, 166, .8); transition-duration: .09s; }
   .redes svg { width: 20px; height: 20px; fill: currentColor; }
 
+  /* ---------- Portada opcional: foto con filo dorado; el medallón del logo se monta encima ---------- */
+  .portada { display: block; width: 100%; height: auto; aspect-ratio: 9 / 5; object-fit: cover; margin-bottom: 0; border-radius: 20px; box-shadow: 0 0 0 1px var(--linea); background: #151517; }
+  .con-portada .cab { margin-top: -52px; }
+
+  /* ---------- Wi-Fi: se despliega al tocar (sin JavaScript) ---------- */
+  .wifi { margin-top: 10px; border: 1px solid var(--linea); border-radius: 16px; background: var(--sup) linear-gradient(180deg, var(--sup2), var(--sup)); text-align: left; animation: aparece .5s .44s var(--entra) backwards; }
+  .wifi summary { display: flex; align-items: center; justify-content: center; min-height: 56px; padding: 10px 14px; font-size: .9rem; font-weight: 600; cursor: pointer; list-style: none; -webkit-tap-highlight-color: transparent; transition: transform .24s var(--entra); }
+  .wifi summary::-webkit-details-marker { display: none; }
+  .wifi summary:active { transform: scale(.98); transition-duration: .09s; }
+  .wifi summary:focus-visible { outline: 2px solid var(--oro); outline-offset: 4px; border-radius: 16px; }
+  .wifi .ic { display: block; margin-right: 10px; color: var(--oro); }
+  .wifi svg { display: block; width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .wf-panel { display: flex; flex-wrap: wrap; justify-content: center; padding: 4px 16px 16px; border-top: 1px solid var(--linea); text-align: center; }
+  .wf-dato { display: flex; flex-direction: column; margin: 12px 16px 0; }
+  .wf-et { font-size: .72rem; letter-spacing: .06em; color: var(--suave); }
+  .wf-red, .wf-clave { font-size: 1.05rem; font-weight: 600; letter-spacing: .02em; color: var(--texto); overflow-wrap: anywhere; }
+  .wf-clave { color: var(--oro); -webkit-user-select: all; user-select: all; }
+
   .pie { margin-top: auto; padding-top: 24px; font-size: .75rem; letter-spacing: .04em; color: var(--tenue); }
   .pie a { display: inline-block; min-height: 48px; padding: 15px 12px; text-decoration: underline; text-decoration-color: var(--linea); text-underline-offset: 4px; }
 
@@ -198,22 +216,26 @@
     .redes a:hover { border-color: rgba(234, 202, 166, .7); transform: translateY(-2px); }
   }
   @media (prefers-reduced-motion: reduce) {
-    .cab, h2, .res, .tl, .res::after, .redes a, .res .est path { animation: none; }
-    .res, .tl, .redes a { transition: none; }
+    .cab, h2, .res, .tl, .res::after, .redes a, .res .est path, .wifi { animation: none; }
+    .res, .tl, .redes a, .wifi summary { transition: none; }
   }
 </style>
 </head>
 <body>
   <main>
-    <header class="cab{{CAB_CLASE}}">
-      {{LOGO_HTML}}
-      <h1 class="nom">{{NOMBRE}}{{SLOGAN_HTML}}</h1>
-    </header>
-    <h2>{{TITULAR}}</h2>
+    <div class="toldo{{TOLDO_CLASE}}">
+      {{PORTADA_HTML}}
+      <header class="cab{{CAB_CLASE}}">
+        {{LOGO_HTML}}
+        <h1 class="nom">{{NOMBRE}}{{SLOGAN_HTML}}</h1>
+      </header>
+      <h2>{{TITULAR}}</h2>
+    </div>
     {{RESENA_HTML}}
     <nav class="rej n{{N_BOTONES}}">
       {{BOTONES}}
     </nav>
+    {{WIFI_HTML}}
     {{REDES_HTML}}
     {{PIE_HTML}}
   </main>
