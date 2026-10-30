@@ -31,6 +31,7 @@ Para verificar un cambio, revisa la salida de consola (los avisos nuevos o perdi
 Variables útiles para pruebas:
 - `LOGOS_DIR`: carpeta de logos distinta de `logos/`.
 - `SHEETS_BASE`: reemplaza `https://docs.google.com` para simular la descarga.
+- `SHEET_XLSX_FILE`: junto con `SHEET_CSV_FILE`, un `.xlsx` de la hoja para probar los vínculos con nombre.
 - `PIE_TEXTO` / `PIE_URL`: pie de página opcional.
 
 `fallar()` termina con código 1. Pasa si no hay hoja configurada, si faltan las columnas `id`, `estado` o `nombre`, si la hoja está vacía o si no queda **ningún negocio activo**. En ese último caso Actions no publica y el sitio anterior sigue en línea; esta protección no se debe quitar.
@@ -54,6 +55,7 @@ Archivos:
 
 Flujo de `generar.mjs`:
 1. **`leerCSV()`** usa `SHEET_CSV_FILE` (local). Si no existe, intenta `SHEET_ID`/`SHEET_GID` (export directo, con la hoja compartida por enlace) y después `SHEET_CSV_URL` (publicada en la web, de respaldo). Hace 3 intentos por fuente y rechaza respuestas HTML. `parsearCSV()` es un parser propio que soporta comillas y BOM.
+   - **Vínculos con nombre:** el CSV solo trae el texto visible de cada celda. Si en la hoja se usó "Insertar vínculo" con otro texto (o `=HYPERLINK`), `aplicarVinculos()` descarga la versión `.xlsx` de la hoja (`export?format=xlsx`, o `output=xlsx` en el enlace publicado) y reemplaza ese texto por el enlace real. Lo hace solo en `COLUMNAS_ENLACE` (reseñas, catálogo, botones extra y redes). Lee el zip con `leerZip()` (sin dependencias) y elige la pestaña cuyos encabezados coinciden con los del CSV. Si falla, avisa y sigue con el texto. Para probarlo en local usa `SHEET_XLSX_FILE`.
 2. **Encabezados** normalizados con `normalizar()`: minúsculas, sin tildes, y todo lo que no sea alfanumérico pasa a `_`. Por eso `Google Reseñas` equivale a `google_resenas`. El orden de las columnas no importa y las columnas desconocidas se ignoran.
 3. **`prepararNegocio()`** valida cada fila. Los errores de datos llaman a `avisar()` (no detienen el build) y omiten el botón o la fila.
 4. **`prepararLogo()`** con `sharp`. Es opcional: sin él, los logos se copian tal cual. Recorta márgenes (`trim`), reduce a 800 px como máximo y sale como PNG (si tiene transparencia real) o JPG. Nunca WebP, porque falla en celulares viejos. Detecta si el logo es claro o si trae un fondo liso (`colorFondoLiso`) para elegir la placa. Los SVG se copian sin procesar. El nombre de salida es `<id>-<md5 8>.<ext>` para invalidar la caché.

@@ -67,6 +67,8 @@ Pestaña **Negocios**, fila 1 con estos encabezados (el orden no importa; solo a
 | `instagram`, `facebook`, `tiktok`, `youtube`, `x`, `telegram` | El usuario (`@minegocio`) o el enlace completo de cada red. Salen como círculos con el ícono al final de la página | No |
 | `alias` | Nombre corto extra para el enlace, ej. `estilonorte` | No |
 
+**Enlaces largos:** en las columnas de enlaces (reseñas, catálogo, botones extra y redes) puedes usar **Insertar → Vínculo** y ponerle un nombre corto (por ejemplo "Sedes"), para que la celda no se llene con un enlace enorme. El robot usa el enlace real, no el nombre. Si algún día ves el aviso ⚠ "No se pudieron leer los vínculos con nombre", pega el enlace completo en esas celdas.
+
 **Columna `estilo`:** déjala vacía para el diseño normal (Mostrador) o escribe `premium` para el diseño negro y oro. Si tenías valores viejos en esa columna, bórralos: cualquier palabra distinta de `premium` hace que el robot avise con ⚠ y use el diseño normal.
 
 **Columna `color`:** es el **color principal de la marca** del negocio, en hexadecimal (por ejemplo `#AD6225`). En el diseño Mostrador pinta la franja de arriba, la franja de la reseña, los íconos y los círculos de redes. En Premium no se usa.

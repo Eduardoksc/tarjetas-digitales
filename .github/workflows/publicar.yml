@@ -28,10 +28,11 @@ jobs:
   construir:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      # Versiones que corren en Node 24 (GitHub retiró Node 20 de las acciones)
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
       - name: Instalar la herramienta de imágenes (recorta y ajusta los logos)
         run: npm ci --no-audit --no-fund
@@ -43,8 +44,8 @@ jobs:
           SHEET_CSV_URL: ${{ vars.SHEET_CSV_URL }}
           PIE_TEXTO: ${{ vars.PIE_TEXTO }}
           PIE_URL: ${{ vars.PIE_URL }}
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
@@ -56,4 +57,4 @@ jobs:
       url: ${{ steps.despliegue.outputs.page_url }}
     steps:
       - id: despliegue
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

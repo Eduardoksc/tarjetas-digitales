@@ -8,6 +8,7 @@ import { readFile, writeFile, mkdir, rm, copyFile } from 'node:fs/promises';
 import { existsSync, readdirSync } from 'node:fs';
 import { extname } from 'node:path';
 import { createHash } from 'node:crypto';
+import { inflateRawSync } from 'node:zlib';
 import { MARCAS } from './iconos.mjs';
 
 // ---------- Ajustes que puedes cambiar ----------
@@ -94,8 +95,10 @@ function parsearCSV(texto) {
     fila.push(campo);
     filas.push(fila);
   }
-  return filas.filter((f) => f.some((x) => x.trim() !== ''));
+  return filas; // incluye filas vacías para conservar el número de fila de la hoja (se quitan después)
 }
+
+const filaVacia = (f) => !f.some((x) => (x ?? '').trim() !== '');
 
 function urlSegura(valor) {
   const v = (valor ?? '').trim();
@@ -103,6 +106,7 @@ function urlSegura(valor) {
   try {
     const u = new URL(/^https?:\/\//i.test(v) ? v : 'https://' + v);
     if (u.protocol !== 'https:' && u.protocol !== 'http:') return null;
+    if (!/^[^.]+(\.[^.]+)+$/.test(u.hostname)) return null; // sin dominio real (ej. una palabra como "Sedes" escrita en vez del enlace)
     u.protocol = 'https:';
     return u.href;
   } catch {
@@ -417,9 +421,11 @@ async function descargarCSV(base) {
   return texto;
 }
 
+// Devuelve { texto, xlsx }: el CSV y de dónde sacar la versión .xlsx (para los vínculos con nombre)
 async function leerCSV() {
   if (process.env.SHEET_CSV_FILE) {
-    return readFile(process.env.SHEET_CSV_FILE, 'utf8');
+    const archivo = process.env.SHEET_XLSX_FILE; // solo para pruebas locales
+    return { texto: await readFile(process.env.SHEET_CSV_FILE, 'utf8'), xlsx: archivo ? { archivo } : null };
   }
   const id = (process.env.SHEET_ID ?? '').trim();
   const gid = (process.env.SHEET_GID ?? '').trim() || '0';
@@ -435,6 +441,7 @@ async function leerCSV() {
     fuentes.push({
       nombre: 'lectura directa de la hoja',
       url: `${SHEETS_BASE}/spreadsheets/d/${encodeURIComponent(id)}/export?format=csv&gid=${encodeURIComponent(gid)}`,
+      xlsx: { url: `${SHEETS_BASE}/spreadsheets/d/${encodeURIComponent(id)}/export?format=xlsx` },
       ayuda: 'Revisa que la hoja esté compartida como "Cualquier persona con el enlace" (Lector) y que SHEET_GID sea el de la pestaña Negocios.',
     });
   }
@@ -442,6 +449,7 @@ async function leerCSV() {
     fuentes.push({
       nombre: 'enlace publicado en la web',
       url: publicada,
+      xlsx: /output=csv/i.test(publicada) ? { url: publicada.replace(/output=csv/i, 'output=xlsx') } : null,
       ayuda: 'Revisa que la hoja esté "Publicada en la web" en formato CSV.',
     });
   }
@@ -453,7 +461,7 @@ async function leerCSV() {
         const texto = await descargarCSV(fuente.url);
         console.log(`  Fuente de datos: ${fuente.nombre}.`);
         if (i > 0) avisar(`Se usó el ${fuente.nombre} porque la lectura directa falló. Los cambios pueden tardar unos minutos más en verse.`);
-        return texto;
+        return { texto, xlsx: fuente.xlsx };
       } catch (e) {
         ultimoError = `${fuente.nombre}: ${e.message} ${fuente.ayuda}`;
         console.warn(`  Intento ${intento} falló (${fuente.nombre}): ${e.message}`);
@@ -462,6 +470,119 @@ async function leerCSV() {
     }
   }
   fallar('No se pudo leer la hoja. ' + ultimoError);
+}
+
+// ---------- Vínculos con nombre ----------
+// Si en la hoja se usa "Insertar vínculo" y se le pone un nombre (ej. "Sedes"), el CSV solo trae ese nombre.
+// El enlace real sí viene en la versión .xlsx de la hoja: de ahí se toma, solo para las columnas de enlaces.
+const COLUMNAS_ENLACE = new Set(['google_resenas', 'catalogo', 'boton4_url', 'boton5_url', ...REDES.map((r) => r.clave)]);
+
+// Lee los archivos de un .xlsx (que es un .zip) sin instalar nada más
+function leerZip(buf) {
+  let fin = buf.length - 22;
+  while (fin >= 0 && buf.readUInt32LE(fin) !== 0x06054b50) fin--;
+  if (fin < 0) throw new Error('el archivo .xlsx no es válido');
+  const archivos = {};
+  let p = buf.readUInt32LE(fin + 16);
+  for (let i = buf.readUInt16LE(fin + 10); i > 0 && buf.readUInt32LE(p) === 0x02014b50; i--) {
+    const metodo = buf.readUInt16LE(p + 10);
+    const tamano = buf.readUInt32LE(p + 20);
+    const largoNombre = buf.readUInt16LE(p + 28);
+    const local = buf.readUInt32LE(p + 42);
+    const nombre = buf.toString('utf8', p + 46, p + 46 + largoNombre);
+    const inicio = local + 30 + buf.readUInt16LE(local + 26) + buf.readUInt16LE(local + 28);
+    const datos = buf.subarray(inicio, inicio + tamano);
+    archivos[nombre] = () => (metodo === 8 ? inflateRawSync(datos) : datos).toString('utf8');
+    p += 46 + largoNombre + buf.readUInt16LE(p + 30) + buf.readUInt16LE(p + 32);
+  }
+  return archivos;
+}
+
+const desescaparXml = (s) =>
+  s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(+n)).replace(/&amp;/g, '&');
+const atributo = (texto, nombre) => texto.match(new RegExp(`(?:^|\\s)${nombre}="([^"]*)"`))?.[1];
+
+// "J5" → [fila, columna] contando desde 0
+function celda(ref) {
+  const [, letras, num] = ref.match(/^([A-Z]+)(\d+)$/);
+  let col = 0;
+  for (const l of letras) col = col * 26 + l.charCodeAt(0) - 64;
+  return [+num - 1, col - 1];
+}
+
+// Devuelve [[fila, columna, enlace], …] de la pestaña cuyos encabezados coinciden con los del CSV, o null
+function vinculosXlsx(buf, encabezados, filaEncabezados) {
+  const zip = leerZip(buf);
+  const compartidos = zip['xl/sharedStrings.xml']
+    ? [...zip['xl/sharedStrings.xml']().matchAll(/<si>([\s\S]*?)<\/si>/g)].map((m) =>
+        desescaparXml([...m[1].matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map((t) => t[1]).join(''))
+      )
+    : [];
+  for (const nombre of Object.keys(zip).filter((n) => /^xl\/worksheets\/[^/]+\.xml$/.test(n))) {
+    const xml = zip[nombre]();
+    const celdas = [...xml.matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)].map((m) => ({ attrs: m[1], dentro: m[2] ?? '' }));
+
+    // ¿Es la pestaña de los negocios? Sus encabezados deben ser los mismos del CSV
+    const titulos = [];
+    for (const c of celdas) {
+      const [f, col] = celda(atributo(c.attrs, 'r') ?? 'A0');
+      if (f !== filaEncabezados) continue;
+      const v = c.dentro.match(/<v>([\s\S]*?)<\/v>/)?.[1] ?? c.dentro.match(/<t[^>]*>([\s\S]*?)<\/t>/)?.[1] ?? '';
+      titulos[col] = normalizar(atributo(c.attrs, 't') === 's' ? compartidos[+v] ?? '' : desescaparXml(v));
+    }
+    if (!encabezados.every((h, j) => !h || titulos[j] === h)) continue;
+
+    const vinculos = [];
+    // 1) Vínculos insertados con "Insertar vínculo": <hyperlink ref="J5" r:id="rId1"/> + archivo de relaciones
+    const rels = zip[nombre.replace('worksheets/', 'worksheets/_rels/') + '.rels'];
+    const destinos = {};
+    if (rels) for (const m of rels().matchAll(/<Relationship\b([^>]*)>/g)) destinos[atributo(m[1], 'Id')] = desescaparXml(atributo(m[1], 'Target') ?? '');
+    for (const m of xml.matchAll(/<hyperlink\b([^>]*)>/g)) {
+      const url = destinos[atributo(m[1], 'r:id')];
+      const [desde, hasta = desde] = (atributo(m[1], 'ref') ?? '').split(':');
+      if (!url || !desde) continue;
+      const [f1, c1] = celda(desde);
+      const [f2, c2] = celda(hasta);
+      for (let f = f1; f <= f2; f++) for (let c = c1; c <= c2; c++) vinculos.push([f, c, url]);
+    }
+    // 2) Fórmulas =HYPERLINK("enlace"; "nombre")
+    for (const c of celdas) {
+      const formula = desescaparXml(c.dentro.match(/<f>([\s\S]*?)<\/f>/)?.[1] ?? '');
+      const url = formula.match(/^HYPERLINK\(\s*"([^"]+)"/i)?.[1];
+      const ref = atributo(c.attrs, 'r');
+      if (url && ref) vinculos.push([...celda(ref), url]);
+    }
+    return vinculos;
+  }
+  return null;
+}
+
+async function aplicarVinculos(todas, iEncabezados, fuente) {
+  try {
+    let buf;
+    if (fuente.archivo) buf = await readFile(fuente.archivo);
+    else {
+      const res = await fetch(fuente.url + (fuente.url.includes('?') ? '&' : '?') + 'nocache=' + Date.now(), { redirect: 'follow' });
+      if (!res.ok) throw new Error('Google respondió ' + res.status);
+      buf = Buffer.from(await res.arrayBuffer());
+    }
+    const encabezados = todas[iEncabezados].map(normalizar);
+    const vinculos = vinculosXlsx(buf, encabezados, iEncabezados);
+    if (!vinculos) throw new Error('no encontré la pestaña de los negocios en el .xlsx');
+    let cambiados = 0;
+    for (const [f, c, url] of vinculos) {
+      if (f <= iEncabezados || !todas[f] || !COLUMNAS_ENLACE.has(encabezados[c])) continue;
+      if ((todas[f][c] ?? '').trim() !== url) {
+        todas[f][c] = url;
+        cambiados++;
+      }
+    }
+    if (cambiados) console.log(`  · ${cambiados} vínculo(s) con nombre: se usa el enlace real, no el texto que se ve en la celda.`);
+  } catch (e) {
+    avisar(`No se pudieron leer los vínculos con nombre (${e.message}). Si en una celda usaste "Insertar vínculo" con otro texto, ese botón puede fallar: pega el enlace completo.`);
+  }
 }
 
 // ---------- Construcción de cada negocio ----------
@@ -729,7 +850,11 @@ h1{font-size:1.4rem;margin:0 0 8px}p{margin:0;color:#5d6368;line-height:1.5}</st
 
 // ---------- Programa principal ----------
 console.log('Leyendo la hoja…');
-const filas = parsearCSV(await leerCSV());
+const hoja = await leerCSV();
+const todas = parsearCSV(hoja.texto);
+const iEncabezados = todas.findIndex((f) => !filaVacia(f));
+if (iEncabezados >= 0 && hoja.xlsx) await aplicarVinculos(todas, iEncabezados, hoja.xlsx);
+const filas = todas.filter((f) => !filaVacia(f));
 if (filas.length < 2) fallar('La hoja está vacía o solo tiene los encabezados.');
 
 const encabezados = filas[0].map(normalizar);
