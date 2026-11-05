@@ -1,3 +1,8 @@
 dist/
 node_modules/
 .DS_Store
+
+# Impeccable (herramienta de diseño local, no se publica)
+.claude/skills/impeccable/
+.claude/agents/impeccable-*
+.claude/settings.local.json
