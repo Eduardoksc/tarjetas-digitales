@@ -34,6 +34,7 @@ Variables útiles para pruebas:
 - `SHEETS_BASE`: reemplaza `https://docs.google.com` para simular la descarga.
 - `SHEET_XLSX_FILE`: junto con `SHEET_CSV_FILE`, un `.xlsx` de la hoja para probar los vínculos con nombre.
 - `PIE_TEXTO` / `PIE_URL`: pie de página opcional.
+- `SITIO_URL`: dirección pública, para `og:url` y `og:image`. Sin ella, en Actions se deduce de `GITHUB_REPOSITORY`; en local, esas etiquetas se omiten y la consola lo dice con un `·`.
 
 `fallar()` termina con código 1. Pasa si no hay hoja configurada, si faltan las columnas `id`, `estado` o `nombre`, si la hoja está vacía o si no queda **ningún negocio activo**. En ese último caso Actions no publica y el sitio anterior sigue en línea; esta protección no se debe quitar.
 
@@ -63,11 +64,12 @@ Flujo de `generar.mjs`:
 5. **`htmlPagina()`** reemplaza los tokens con `replaceAll` en secuencia.
 6. Escribe `dist/<id>/index.html` y, si hay alias, una copia idéntica en `dist/<alias>/index.html`. `dist/` se borra completo al inicio de cada build.
 
-Tokens de la plantilla: `{{TITULO}}`, `{{COLOR}}`, `{{COLOR_TEXTO}}`, `{{COLOR_ICONO}}`, `{{CAB_CLASE}}`, `{{NOMBRE}}`, `{{LOGO_HTML}}`, `{{SLOGAN_HTML}}`, `{{TITULAR}}`, `{{RESENA_HTML}}`, `{{N_BOTONES}}`, `{{BOTONES}}`, `{{REDES_HTML}}`, `{{PIE_HTML}}`, `{{COLOR_ACENTO}}`, `{{COLOR_ACENTO_TEXTO}}`, `{{COLOR_TINTA}}`, `{{COLOR_GRIS}}`, `{{COLOR_TINTE}}`, `{{COLOR_ICONO_MOSAICO}}`, `{{COLOR_SOMBRA}}`, `{{TOLDO_CLASE}}`, `{{PORTADA_HTML}}`, `{{WIFI_HTML}}`. `{{NOMBRE}}` sale envuelto en `<span class="nom-txt">`, `{{SLOGAN_HTML}}` es un `<p class="slogan">` fuera del `h1` y `{{CAB_CLASE}}` puede incluir `nombre-en-logo`. Los `{{COLOR_*}}` de la paleta salen de `paletaMarca()`; Premium no los usa.
+Tokens de la plantilla: `{{TITULO}}`, `{{COLOR}}`, `{{COLOR_TEXTO}}`, `{{COLOR_ICONO}}`, `{{CAB_CLASE}}`, `{{NOMBRE}}`, `{{LOGO_HTML}}`, `{{SLOGAN_HTML}}`, `{{TITULAR}}`, `{{RESENA_HTML}}`, `{{N_BOTONES}}`, `{{BOTONES}}`, `{{REDES_HTML}}`, `{{PIE_HTML}}`, `{{COLOR_ACENTO}}`, `{{COLOR_ACENTO_TEXTO}}`, `{{COLOR_TINTA}}`, `{{COLOR_GRIS}}`, `{{COLOR_TINTE}}`, `{{COLOR_ICONO_MOSAICO}}`, `{{COLOR_SOMBRA}}`, `{{TOLDO_CLASE}}`, `{{PORTADA_HTML}}`, `{{WIFI_HTML}}`, `{{DESCRIPCION}}`, `{{META_ENLACES}}`. `{{NOMBRE}}` sale envuelto en `<span class="nom-txt">`, `{{SLOGAN_HTML}}` es un `<p class="slogan">` fuera del `h1` y `{{CAB_CLASE}}` puede incluir `nombre-en-logo`. `{{TOLDO_CLASE}}` puede incluir `con-portada` y `sin-resena`. `{{DESCRIPCION}}` es el slogan o "Contacto y enlaces de <nombre>."; `{{META_ENLACES}}` son `og:url`, `og:image` (portada, o logo que no sea SVG) y `twitter:card`. Los `{{COLOR_*}}` de la paleta salen de `paletaMarca()`; Premium no los usa.
 
 Reglas de seguridad que se deben mantener:
 - Todo texto que venga de la hoja pasa por `esc()`.
-- Todo enlace pasa por `urlSegura()`, que solo acepta http(s), lo fuerza a `https:` y agrega `https://` si falta.
+- Todo enlace pasa por `urlSegura()`, que solo acepta http(s), lo fuerza a `https:` y agrega `https://` si falta. Rechaza otros esquemas, enlaces con usuario o clave y direcciones numéricas.
+- Solo `boton4_url` a `boton9_url` usan `enlaceBoton()`, que además acepta teléfono (`enlaceLlamada()`, siempre `tel:` con solo dígitos y `+`) y correo (`enlaceCorreo()`, sin `?subject=` ni `?bcc=`). Reseñas, catálogo, redes, logo y pie siguen solo con http(s).
 - Los colores pasan por `colorHex()`, que acepta solo 6 dígitos hex.
 - `id` y `alias` pasan por `slugValido()`, y el nombre de logo por `/^[\w. -]+$/`. Así no se puede escribir fuera de `dist/` ni leer fuera de `logos/`.
 
@@ -90,10 +92,10 @@ Reglas de seguridad que se deben mantener:
 | `whatsapp` | Solo dígitos. Si tiene 10 dígitos y empieza por 3, se le antepone `57`. Debe quedar de 11 a 15 dígitos | Sin botón |
 | `mensaje_whatsapp` | Texto que el **cliente** envía al negocio (`wa.me/<tel>?text=`) | "Hola, vi su tarjeta y quisiera más información." |
 | `texto_whatsapp` | Máximo 16 | "Escríbenos" |
-| `boton4_url`, `boton4_texto`, `boton4_icono` (y `boton5_*`) | Ícono según `elegirIcono()`: 1) `botonN_icono` (claves en `ICONOS_EXTRA`, con alias en `ALIAS_ICONO`), 2) red social o mapa por el dominio, 3) palabras del texto (`ICONO_POR_TEXTO`: "Pedidos" → domicilio, "Sedes" → tienda, "Citas" → reservas…), 4) servicio por dominio (`ICONO_POR_DOMINIO`: Rappi, DiDi Food, Doctoralia, Calendly, Booksy…), 5) globo | Sin botón. El texto por defecto depende del ícono (`TEXTO_ICONO`) o del dominio ("Pide en Rappi") |
+| `boton4_url`, `boton4_texto`, `boton4_icono` (y `boton5_*` a `boton9_*`, tope en `ULTIMO_BOTON_EXTRA`) | Página, teléfono o correo (`enlaceBoton()`). Teléfono sin `+`: celular `3…` o fijo `60…` de 10 dígitos, con o sin `57`, o `018000`; con `+`: 8 a 15 dígitos. Ícono según `elegirIcono()`: 1) `botonN_icono` (claves en `ICONOS_EXTRA`, con alias en `ALIAS_ICONO`), 2) `llamar` o `correo` si el enlace es `tel:` o `mailto:`, y red social o mapa por el dominio, 3) palabras del texto (`ICONO_POR_TEXTO`: "Pedidos" → domicilio, "Sedes" → tienda, "Citas" → reservas…), 4) servicio por dominio (`ICONO_POR_DOMINIO`: Rappi, DiDi Food, Doctoralia, Calendly, Booksy…), 5) globo | Sin botón, con aviso si es inválido. `boton10_url` o mayor: aviso. El texto por defecto depende del ícono (`TEXTO_ICONO`) o del dominio ("Pide en Rappi") |
 | `portada` | Foto (JPG, PNG o WEBP) en `logos/`. Se recorta a 900×500 y se comprime a 70 KB como máximo (`prepararPortada`) | Sin foto |
 | `wifi_red`, `wifi_clave` | Botón "Wi-Fi gratis" que despliega la red y la clave con `<details>` (sin JavaScript). Sin clave, dice "Red abierta" | Sin Wi-Fi. Clave sin red: avisa |
-| `orden_botones` | Claves `catalogo`, `whatsapp`, `boton4`, `boton5` (también acepta menu, wa, extra, extra1, extra2), separadas por coma, `;` o espacio. Las que falten se agregan en el orden por defecto | `catalogo, whatsapp, boton4, boton5` |
+| `orden_botones` | Claves `catalogo`, `whatsapp`, `boton4` a `boton9` (también acepta menu, wa, extra, extra1, extra2), separadas por coma, `;` o espacio. Las que falten se agregan en el orden por defecto | `catalogo, whatsapp, boton4` … `boton9` |
 | `estilo` | `premium` (normalizado, así que `Premium` también vale) usa `plantilla-premium.html` | Tema Mostrador. Otro valor: avisa y usa Mostrador |
 | `nombre_en_logo` | `si` oculta el nombre en pantalla cuando el logo ya lo trae escrito. Lo deja para lectores de pantalla y Google | Se muestra el nombre. Sin logo, avisa y lo muestra |
 | `instagram`, `facebook`, `tiktok`, `youtube`, `x`, `telegram` | Enlace completo o solo el usuario (`@usuario`). El enlace debe ser de esa red (`enlaceRed`). Se muestran como círculos centrados al final (`{{REDES_HTML}}`) | Sin círculo. Si es inválido, avisa |
@@ -136,6 +138,7 @@ Negro profundo, la reseña como pieza de oro, botones cuadrados satinados con fi
   - Logo opaco con fondo de degradado o foto: se muestra tal cual con esquinas redondeadas (`tal`).
   - Logo transparente claro: placa `oscuro`.
   - Cualquier otro: placa `blanco`.
+- **Cantidad de acciones:** 8 como máximo (catálogo, WhatsApp y `boton4` a `boton9`). Sin reseña, el toldo se acorta (`.sin-resena`) y las acciones van 20 px debajo. En Premium, de 6 a 8 acciones van en parejas, porque en tres columnas "Administración" se parte.
 - **Límites de texto:** unos 16 caracteres por botón (en Premium son cuadrados), unos 32 en el titular y 45 en `texto_resenas`. Si los superas, el script avisa pero no corta.
 - **Restricciones técnicas:**
   - Mobile-first, `max-width` de 440 px (480 px en Premium), respeta `safe-area-inset`.
@@ -153,6 +156,7 @@ Negro profundo, la reseña como pieza de oro, botones cuadrados satinados con fi
 - Los tokens se reemplazan en secuencia. Un texto de la hoja que contenga `{{OTRO_TOKEN}}` se expande. No es XSS, pero es un error.
 - `fonts` no está reservado como `id`, a diferencia de `logos`. Un negocio con ese id chocaría con la carpeta de la tipografía.
 - Los SVG de `logos/` se publican sin limpiar.
+- La vista previa al compartir depende de quien la genere: `robots.txt` (`Disallow: /`) puede dejar sin datos a los rastreadores que lo respetan, como el de X. No se ha probado en un chat real, porque requiere publicar.
 - El workflow despliega en cada ejecución (cada 10 min) aunque no haya cambios.
 - El token del botón de Apps Script tiene permiso Contents: Read and write. Es más de lo necesario.
 - `urlSegura()` rechaza enlaces sin dominio real (una palabra suelta como "Sedes").

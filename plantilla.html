@@ -7,6 +7,12 @@
 <meta name="color-scheme" content="light only">
 <meta name="theme-color" content="{{COLOR}}">
 <title>{{TITULO}}</title>
+<meta name="description" content="{{DESCRIPCION}}">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_CO">
+<meta property="og:title" content="{{TITULO}}">
+<meta property="og:description" content="{{DESCRIPCION}}">
+{{META_ENLACES}}
 <link rel="preload" href="../fonts/unbounded-800.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="../fonts/figtree-500.woff2" as="font" type="font/woff2" crossorigin>
 <style>
@@ -72,6 +78,9 @@
     text-align: center;
   }
   .toldo.con-portada { padding-top: 0; }
+  /* Sin reseña no hay tiquete montado: el toldo se acorta y las acciones arrancan con aire debajo de la curva */
+  .toldo.sin-resena { padding-bottom: 44px; }
+  .sin-resena + .rej { margin-top: 20px; }
   /* La foto queda limpia, con corte neto: sin difuminar ni degradados encima */
   .portada { display: block; width: calc(100% + 44px); max-width: none; height: auto; margin: 0 -22px; aspect-ratio: 9 / 5; object-fit: cover; }
   .cab { display: flex; flex-direction: column; align-items: center; margin-bottom: 16px; }

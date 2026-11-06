@@ -7,6 +7,12 @@
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0d0d0d">
 <title>{{TITULO}}</title>
+<meta name="description" content="{{DESCRIPCION}}">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_CO">
+<meta property="og:title" content="{{TITULO}}">
+<meta property="og:description" content="{{DESCRIPCION}}">
+{{META_ENLACES}}
 <link rel="preload" href="../fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="../fonts/inter-600.woff2" as="font" type="font/woff2" crossorigin>
 <style>
@@ -154,6 +160,9 @@
   .tl:nth-child(3) { animation-delay: .28s; }
   .tl:nth-child(4) { animation-delay: .34s; }
   .tl:nth-child(5) { animation-delay: .4s; }
+  .tl:nth-child(6) { animation-delay: .46s; }
+  .tl:nth-child(7) { animation-delay: .52s; }
+  .tl:nth-child(8) { animation-delay: .58s; }
   .tl .ic { display: block; margin-bottom: 10px; color: var(--oro); }
   .tl svg { display: block; width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
   .tl svg.relleno { fill: currentColor; stroke: none; }
@@ -162,6 +171,10 @@
   .rej.n1 .tl .ic { margin: 0 12px 0 0; }
   .rej.n2 .tl, .rej.n4 .tl { grid-column: span 3; }
   .rej.n5 .tl:nth-child(n+4) { grid-column: span 3; }
+  /* Con 6 o más acciones van en parejas: en tres columnas las palabras largas ("Administración") se parten */
+  .rej.n6 .tl, .rej.n7 .tl, .rej.n8 .tl { grid-column: span 3; }
+  .rej.n7 .tl:last-child { grid-column: span 6; flex-direction: row; min-height: 68px; }
+  .rej.n7 .tl:last-child .ic { margin: 0 12px 0 0; }
 
   /* ---------- Redes sociales: círculos satinados con ícono dorado ---------- */
   .redes { display: flex; flex-wrap: wrap; justify-content: center; margin-top: 30px; }

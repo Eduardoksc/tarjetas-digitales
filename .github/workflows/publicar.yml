@@ -44,6 +44,7 @@ jobs:
           SHEET_CSV_URL: ${{ vars.SHEET_CSV_URL }}
           PIE_TEXTO: ${{ vars.PIE_TEXTO }}
           PIE_URL: ${{ vars.PIE_URL }}
+          SITIO_URL: ${{ vars.SITIO_URL }}
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:

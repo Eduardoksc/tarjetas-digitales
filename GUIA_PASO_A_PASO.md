@@ -64,8 +64,8 @@ Pestaña **Negocios**, fila 1 con estos encabezados (el orden no importa; solo a
 | `whatsapp` | Número, ej. `300 123 4567` | Recomendada |
 | `mensaje_whatsapp` | Mensaje que aparece escrito al abrir el chat | No |
 | `texto_whatsapp` | Nombre del botón. Vacío = "Escríbenos" | No |
-| `boton4_url`, `boton4_texto`, `boton4_icono` | Un botón extra (redes, web, ubicación…) | No |
-| `boton5_url`, `boton5_texto`, `boton5_icono` | Otro botón extra | No |
+| `boton4_url`, `boton4_texto`, `boton4_icono` | Un botón extra: una página, un teléfono para llamar o un correo (ver "Llamar y correo") | No |
+| `boton5_…` a `boton9_…` | Más botones extra, con las mismas tres columnas. Crea solo las columnas que vayas a usar. El máximo es `boton9` | No |
 | `orden_botones` | El orden de los botones cuadrados | No |
 | `estilo` | Vacío = diseño normal; `premium` = negro y oro | No |
 | `portada` | Foto del local o de un producto, guardada en la carpeta `logos/` (ej. `foto005.jpg`). Va arriba, en grande. El robot la recorta y la aligera | No |
@@ -74,7 +74,7 @@ Pestaña **Negocios**, fila 1 con estos encabezados (el orden no importa; solo a
 | `instagram`, `facebook`, `tiktok`, `youtube`, `x`, `telegram` | El usuario (`@minegocio`) o el enlace completo de cada red. Salen como círculos con el ícono al final de la página | No |
 | `alias` | Nombre corto extra para el enlace, ej. `estilonorte` | No |
 
-**Íconos de los botones:** el robot elige el ícono solo, según el texto del botón y el enlace. "Pedidos" o "Domicilios" muestran una bolsa de entrega; "Sedes" o "Tiendas", una tienda; "Menú" o "Carta", cubiertos; "Citas", "Agendar" o "Reservas", un calendario (sirve para barberías, consultorios, spas…). Un enlace de **Rappi** muestra la bolsa y el texto "Pide en Rappi"; uno de Doctoralia, Calendly o Booksy, el calendario. Si quieres otro, escríbelo en `boton4_icono`: `menu`, `catalogo`, `domicilio`, `tienda`, `reservas`, `llamar`, `horario`, `promos`, `pago`, `maps`, `web`.
+**Íconos de los botones:** el robot elige el ícono solo, según el texto del botón y el enlace. "Pedidos" o "Domicilios" muestran una bolsa de entrega; "Sedes" o "Tiendas", una tienda; "Menú" o "Carta", cubiertos; "Citas", "Agendar" o "Reservas", un calendario (sirve para barberías, consultorios, spas…). Un enlace de **Rappi** muestra la bolsa y el texto "Pide en Rappi"; uno de Doctoralia, Calendly o Booksy, el calendario. Si quieres otro, escríbelo en `boton4_icono`: `menu`, `catalogo`, `domicilio`, `tienda`, `reservas`, `llamar`, `correo`, `horario`, `promos`, `pago`, `maps`, `web`.
 
 **Color secundario:** no hay que escribirlo. El robot lo saca del logo (por ejemplo, el verde de BA CU) y lo usa en las estrellas y los íconos.
 
@@ -96,8 +96,8 @@ Mira `ejemplo-negocios.csv`: tiene filas de ejemplo con todo esto.
 |---|---|---|
 | `estado` | `activo` (también `si` o `activa`). Cualquier otra cosa, por ejemplo `pausado`, oculta la página | La página se oculta |
 | `logo_fondo` | `blanco` (placa blanca), `oscuro` (placa oscura, para logos blancos) o `sin` (el logo va directo sobre el color) | Se elige solo (ver abajo) |
-| `orden_botones` | Nombres separados por coma: `catalogo`, `whatsapp`, `boton4`, `boton5`. La reseña siempre va arriba, no hace falta ponerla | `catalogo, whatsapp, boton4, boton5` |
-| `boton4_icono`, `boton5_icono` | `instagram`, `facebook`, `tiktok`, `youtube`, `x`, `telegram`, `maps`, `waze`, `web`, `enlace` | Se elige solo según el enlace |
+| `orden_botones` | Nombres separados por coma: `catalogo`, `whatsapp`, `boton4` a `boton9`. La reseña siempre va arriba, no hace falta ponerla | `catalogo, whatsapp, boton4` y así hasta `boton9` |
+| `boton4_icono` a `boton9_icono` | `instagram`, `facebook`, `tiktok`, `youtube`, `x`, `telegram`, `maps`, `waze`, `menu`, `catalogo`, `domicilio`, `tienda`, `reservas`, `llamar`, `correo`, `horario`, `promos`, `pago`, `web`, `enlace` | Se elige solo según el enlace |
 
 Consejo: en `estado` y `logo_fondo` pon una lista desplegable en **Datos → Validación de datos**, así no te equivocas al escribir.
 
@@ -139,17 +139,45 @@ Los SVG no se tocan: se ven nítidos a cualquier tamaño.
 | Dice "Sedes", "Tiendas" o "Locales" | Tienda |
 | Dice "Citas", "Agendar", "Reservas" o "Turnos", o lleva a Doctoralia, Calendly, Booksy o AgendaPro | Calendario |
 | Dice "Cómo llegar" o "Ubicación" | Pin del mapa |
+| Lleva a un teléfono, o dice "Llámanos" o "Teléfono" | Teléfono |
+| Lleva a un correo, o dice "Correo" o "Email" | Sobre |
 | Dice "Promociones", "Horario", "Pagos" o "Catálogo" / "Servicios" | Etiqueta, reloj, tarjeta o cuadrícula |
 | WhatsApp | Logo de WhatsApp |
 | Nada de lo anterior | Globo (página web) |
 
-Si el ícono automático no es el que quieres, escribe el que prefieras en `boton4_icono` o `boton5_icono` (ver la lista en "Íconos de los botones").
+Si el ícono automático no es el que quieres, escribe el que prefieras en `boton4_icono` a `boton9_icono` (ver la lista en "Íconos de los botones").
 
 **Nombres.** Escribe el texto en su columna. Caben **unas 16 letras** ("Ver catálogo", "Escríbenos", "Cómo llegar"). Si te pasas, el robot lo avisa con un ⚠. Si dejas vacío el texto de un botón de Rappi, dice "Pide en Rappi"; uno de citas, "Agenda tu cita".
 
-**Cantidad.** En Premium: con 1 botón queda ancho; con 2 o 4, en parejas; con 3, en fila; con 5, tres arriba y dos abajo.
+**Llamar y correo.** Solo en `boton4_url` a `boton9_url` (no en reseñas, catálogo ni redes):
+
+| Quieres | Escribe | Si dejas vacío el texto |
+|---|---|---|
+| Llamar a un celular | `300 123 4567` | "Llámanos" |
+| Llamar a un fijo de Colombia (con el 60 y el indicativo) | `601 555 1234` | "Llámanos" |
+| Llamar a una línea gratuita | `01 8000 123456` | "Llámanos" |
+| Llamar a otro país | `tel:+1 415 555 2671` | "Llámanos" |
+| Escribir un correo | `hola@negocio.com` | "Enviar correo" |
+
+El ícono sale solo. Si el número o el correo no están completos, el robot avisa con un ⚠ y no muestra el botón. **En Google Sheets no empieces la celda con `+`**, porque lo toma como una fórmula: escribe `tel:` antes, como en el ejemplo. Los números fijos de 7 dígitos sin el 60 ya no se pueden marcar en Colombia, así que el robot no los acepta. El correo no admite asunto ni copias (`?subject=`, `?bcc=`).
+
+**Cantidad.** Puedes tener hasta 8 acciones: catálogo, WhatsApp y `boton4` a `boton9`, además de la reseña, el Wi-Fi y las redes. Con más, el cliente tarda en encontrar lo que busca y la tarjeta se vuelve una lista; si necesitas más, júntalas en una página y pon un solo botón. Una columna `boton10_url` no se usa: el robot lo avisa con un ⚠. En Premium: con 1 botón queda ancho; con 2 o 4, en parejas; con 3, en fila; con 5, tres arriba y dos abajo; con 6 a 8, en parejas (con 7, el último queda ancho).
 
 **Orden.** En `orden_botones` escribe los nombres separados por comas, por ejemplo `whatsapp, catalogo`. Un botón sin datos simplemente no aparece.
+
+**Tarjeta sin reseña.** Si `google_resenas` está vacía, no sale el bloque de estrellas y las acciones suben. Sirve para consultorios, conjuntos residenciales y negocios que no buscan reseñas.
+
+## Vista previa al compartir
+
+Cuando alguien pega el enlace de una tarjeta en un chat, la vista previa usa datos de la hoja:
+
+- **Título:** `nombre`.
+- **Descripción:** `slogan`. Sin slogan, dice "Contacto y enlaces de" más el nombre.
+- **Imagen:** la `portada`. Sin portada, el `logo`, si es JPG o PNG (los logos SVG no se muestran en esas apps).
+
+No hay que hacer nada: el robot arma la dirección de la imagen solo. Al pasar a un dominio propio, crea la variable `SITIO_URL` (paso 4) para que apunte allá.
+
+Las apps guardan la vista previa de cada enlace durante un tiempo, así que un cambio puede tardar en verse. Como las tarjetas están bloqueadas para los buscadores (`robots.txt`), las redes que respetan ese bloqueo, como X, pueden mostrar el enlace sin imagen ni texto.
 
 ---
 
@@ -219,7 +247,7 @@ git push -u origin main
 
 ## PASO 4: Variables de GitHub
 
-**Settings → Secrets and variables → Actions → pestaña Variables**: `SHEET_ID` y `SHEET_GID` (lectura directa) y/o `SHEET_CSV_URL` (respaldo). Opcional: `PIE_TEXTO` y `PIE_URL` para un pie en cada página.
+**Settings → Secrets and variables → Actions → pestaña Variables**: `SHEET_ID` y `SHEET_GID` (lectura directa) y/o `SHEET_CSV_URL` (respaldo). Opcional: `PIE_TEXTO` y `PIE_URL` para un pie en cada página, y `SITIO_URL` solo cuando pases a un dominio propio (por ejemplo `https://t.tumarca.co`).
 
 ## PASO 5: Activa la publicación
 
@@ -301,6 +329,7 @@ Crea la carpeta `dist` con las páginas y muestra los avisos en español. Abre `
 | Sale "Esta tarjeta no está disponible" | El enlace no coincide con un `id`, o el `id` perdió los ceros | Formato de la columna `id` como texto sin formato; vuelve a ejecutar el robot |
 | Un negocio no aparece | Estado distinto de `activo`, o la fila tiene errores | Mira los ⚠ en el paso "Crear las páginas desde la hoja" |
 | El logo no se ve, sale la inicial | El archivo no está subido a GitHub, o el nombre en la columna `logo` no coincide | Confirma que el logo esté en `logos/` **y subido** (commit y push). Las mayúsculas y la extensión ya no importan (`logo005`, `logo005.png` y `LOGO005.PNG` sirven). El aviso lista los archivos que existen |
+| Aviso "… no sirve. Usa una página, un teléfono o un correo" | En `botonN_url` hay un número incompleto, un correo mal escrito, otro tipo de enlace o un enlace con usuario y clave | Corrígelo como en "Llamar y correo" |
 | Un botón no abre la página correcta | En la celda quedó un texto (ej. "Sedes") en vez de un enlace | Pega el enlace, o usa Insertar → Vínculo; el robot avisa con ⚠ si no es un enlace válido |
 | El logo se ve borroso | El archivo es muy pequeño | Pide un SVG o un PNG de más de 800 px |
 | Un logo blanco no se ve | La placa es clara | Pon `oscuro` en `logo_fondo` |

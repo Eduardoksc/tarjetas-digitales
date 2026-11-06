@@ -19,9 +19,15 @@ const TITULAR_DEFECTO = 'Nos encantó verte.';
 const TEXTO_RESENAS_DEFECTO = '¿Cómo te fue? Cuéntanos tu experiencia'; // el botón ya dice "Calificar en Google"
 const NOTA_RESENAS_DEFECTO = '20 segundos. Ayudas a que más gente nos encuentre.';
 const MAX_TEXTO_BOTON = 16; // los botones cuadrados tienen poco espacio
+const ULTIMO_BOTON_EXTRA = 9; // botones adicionales: boton4 a boton9. Con catálogo y WhatsApp son 8 acciones como máximo
+const BOTONES_EXTRA = Array.from({ length: ULTIMO_BOTON_EXTRA - 3 }, (_, i) => String(i + 4)); // ['4', '5', … '9']
 const MENSAJE_DEFECTO = 'Hola, vi su tarjeta y quisiera más información.';
 const PIE_TEXTO = process.env.PIE_TEXTO ?? ''; // ej: "Tarjeta digital por E.S.C"
 const PIE_URL = process.env.PIE_URL ?? ''; // ej: "https://tudominio.co"
+// Dirección pública del sitio, para la imagen de la vista previa al compartir (WhatsApp, Facebook…).
+// Sin la variable SITIO_URL, en GitHub se deduce del repositorio. Al pasar a un dominio propio, basta con crear SITIO_URL.
+const [DUENO_REPO, NOMBRE_REPO] = (process.env.GITHUB_REPOSITORY ?? '').split('/');
+const SITIO_URL = process.env.SITIO_URL || (NOMBRE_REPO ? `https://${DUENO_REPO.toLowerCase()}.github.io/${NOMBRE_REPO}` : '');
 const CAJA_LOGO = { w: 200, h: 80 }; // tamaño máximo en pantalla (px) donde se ajusta cada logo
 const LOGO_MAX_PX = 800; // tamaño máximo del archivo de logo que se publica
 const LOGO_MIN_PX = 300; // por debajo de esto se avisa que se verá borroso
@@ -100,18 +106,55 @@ function parsearCSV(texto) {
 
 const filaVacia = (f) => !f.some((x) => (x ?? '').trim() !== '');
 
+// Solo acepta páginas web. Teléfono y correo solo se aceptan en los botones adicionales: ver enlaceBoton().
 function urlSegura(valor) {
   const v = (valor ?? '').trim();
   if (!v) return '';
+  // Otro esquema (mailto:, tel:, javascript:…). "ejemplo.com:8080" no es un esquema, es un puerto.
+  if (!/^https?:\/\//i.test(v) && /^[a-z][a-z0-9+.-]*:(?!\d{1,5}(?:[/?#]|$))/i.test(v)) return null;
   try {
     const u = new URL(/^https?:\/\//i.test(v) ? v : 'https://' + v);
     if (u.protocol !== 'https:' && u.protocol !== 'http:') return null;
+    if (u.username || u.password) return null; // "usuario@ejemplo.com" abriría ejemplo.com, no un correo
+    if (/^[\d.]+$/.test(u.hostname)) return null; // un número suelto se convierte en una dirección IP que no lleva a ninguna parte
     if (!/^[^.]+(\.[^.]+)+$/.test(u.hostname)) return null; // sin dominio real (ej. una palabra como "Sedes" escrita en vez del enlace)
     u.protocol = 'https:';
     return u.href;
   } catch {
     return null;
   }
+}
+
+// Teléfono para llamar: "tel:+573001234567" o null. Sin +, solo números de Colombia:
+// celular (3…) o fijo (60…) de 10 dígitos, con o sin 57, y líneas 018000. Con +, cualquier país (8 a 15 dígitos).
+function enlaceLlamada(valor) {
+  const v = valor.trim();
+  if (!/^\+?[\d\s().-]+$/.test(v)) return null;
+  const d = v.replace(/\D/g, '');
+  const conMas = v.startsWith('+');
+  if (!conMas && /^018000\d{6}$/.test(d)) return 'tel:' + d;
+  if (!conMas && /^(3\d{9}|60\d{8})$/.test(d)) return 'tel:+57' + d;
+  if (/^57(3\d{9}|60\d{8})$/.test(d)) return 'tel:+' + d;
+  if (conMas && !d.startsWith('57') && /^[1-9]\d{7,14}$/.test(d)) return 'tel:+' + d;
+  return null;
+}
+
+// Correo: "mailto:hola@ejemplo.com" o null. Sin asunto ni copias ocultas (?bcc=…), para que nadie los cuele.
+function enlaceCorreo(valor) {
+  const v = valor.trim();
+  if (v.length > 254) return null;
+  return /^[a-z0-9_+-]+(\.[a-z0-9_+-]+)*@[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*\.[a-z]{2,}$/i.test(v) ? 'mailto:' + v : null;
+}
+
+// Enlace de un botón adicional: página web, teléfono o correo. Acepta también el número o el correo sin "tel:" ni "mailto:".
+function enlaceBoton(valor) {
+  const v = (valor ?? '').normalize('NFKC').trim(); // NFKC convierte el "＠" ancho de algunos teclados en "@"
+  if (!v) return '';
+  if (/^tel:/i.test(v)) return enlaceLlamada(v.slice(4));
+  if (/^mailto:/i.test(v)) return enlaceCorreo(v.slice(7));
+  if (/^\+?[\d\s().-]+$/.test(v)) return enlaceLlamada(v);
+  if (/^[^/?#:\s]+@[^/?#:\s]+$/.test(v)) return enlaceCorreo(v);
+  return urlSegura(v);
 }
 
 // ---------- Colores ----------
@@ -208,16 +251,17 @@ const ICONOS = {
   horario: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/>',
   promos: '<path d="M3.5 12.4V4.5a1 1 0 0 1 1-1h7.9l8.1 8.1a1.5 1.5 0 0 1 0 2.1l-6.8 6.8a1.5 1.5 0 0 1-2.1 0z"/><circle cx="8.3" cy="8.3" r="1.5"/>',
   pago: '<rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h3.5"/>',
+  correo: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 7l8.5 6.5L20.5 7"/>',
   wifi: '<path d="M2.5 9a14 14 0 0 1 19 0M5.6 12.4a9.5 9.5 0 0 1 12.8 0M8.7 15.8a5 5 0 0 1 6.6 0"/><circle cx="12" cy="19.3" r=".8"/>',
 };
 
 // Ícono de cada botón: 1) el que se escribe en botonN_icono, 2) el de la red o el mapa según el enlace,
 // 3) según el texto del botón ("Pedidos" → bolsa, "Sedes" → tienda), 4) según el servicio (Rappi, Doctoralia…), 5) globo.
-const ICONOS_EXTRA = ['instagram', 'facebook', 'tiktok', 'youtube', 'x', 'telegram', 'maps', 'waze', 'menu', 'catalogo', 'domicilio', 'tienda', 'reservas', 'llamar', 'horario', 'promos', 'pago', 'web', 'enlace'];
+const ICONOS_EXTRA = ['instagram', 'facebook', 'tiktok', 'youtube', 'x', 'telegram', 'maps', 'waze', 'menu', 'catalogo', 'domicilio', 'tienda', 'reservas', 'llamar', 'correo', 'horario', 'promos', 'pago', 'web', 'enlace'];
 const ALIAS_ICONO = {
   twitter: 'x', mapa: 'maps', ubicacion: 'maps', google_maps: 'maps', pagina: 'web', sitio: 'web', link: 'enlace',
   carta: 'menu', productos: 'catalogo', pedidos: 'domicilio', domicilios: 'domicilio', rappi: 'domicilio', sedes: 'tienda', local: 'tienda',
-  citas: 'reservas', cita: 'reservas', agenda: 'reservas', reserva: 'reservas', telefono: 'llamar', promociones: 'promos', pagos: 'pago',
+  citas: 'reservas', cita: 'reservas', agenda: 'reservas', reserva: 'reservas', telefono: 'llamar', email: 'correo', mail: 'correo', promociones: 'promos', pagos: 'pago',
 };
 const TEXTO_ICONO = {
   instagram: 'Instagram',
@@ -234,6 +278,7 @@ const TEXTO_ICONO = {
   tienda: 'Nuestras sedes',
   reservas: 'Agenda tu cita',
   llamar: 'Llámanos',
+  correo: 'Enviar correo',
   horario: 'Horario',
   promos: 'Promociones',
   pago: 'Medios de pago',
@@ -248,6 +293,7 @@ const ICONO_POR_TEXTO = [
   ['reservas', /reserva|cita|agend|turno|consulta/],
   ['maps', /llegar|ubicacion|direccion|mapa/],
   ['llamar', /llama|telefono/],
+  ['correo', /correo|e_?mail/],
   ['horario', /horario/],
   ['promos', /promo|oferta|descuento/],
   ['pago', /pago|paga|nequi|daviplata/],
@@ -255,10 +301,10 @@ const ICONO_POR_TEXTO = [
 ];
 // Servicios conocidos por su dominio
 const ICONO_POR_DOMINIO = [
-  ['domicilio', /(^|\.)(rappi\.com(\.co)?|didi-food\.com|didifood\.com|ifood\.com(\.co)?)$/],
-  ['reservas', /(^|\.)(calendly\.com|doctoralia\.(co|com)|booksy\.com|agendapro\.com|fresha\.com|setmore\.com|simplybook\.me|cal\.com)$/],
+  ['domicilio', /(^|\.)(rappi\.(com|co|com\.co)|didi-food\.(com|co|com\.co)|didifood\.(com|co|com\.co)|ifood\.(com|co|com\.co))$/],
+  ['reservas', /(^|\.)(calendly\.com|doctoralia\.(co|com|com\.co)|booksy\.(com|co|com\.co)|agendapro\.(com|co|com\.co)|fresha\.(com|co|com\.co)|setmore\.com|simplybook\.me|cal\.com)$/],
 ];
-const TEXTO_DOMINIO = { 'rappi.com.co': 'Pide en Rappi', 'rappi.com': 'Pide en Rappi' };
+const TEXTO_DOMINIO = { 'rappi.com.co': 'Pide en Rappi', 'rappi.com': 'Pide en Rappi', 'rappi.co': 'Pide en Rappi' };
 
 function elegirIcono({ forzado, texto, url, defecto, etiqueta, columna }) {
   if (forzado) {
@@ -266,6 +312,8 @@ function elegirIcono({ forzado, texto, url, defecto, etiqueta, columna }) {
     if (ICONOS_EXTRA.includes(clave)) return clave;
     avisar(`${etiqueta}: el ícono "${forzado}" de ${columna} no existe. Usa: ${ICONOS_EXTRA.join(', ')}. Se elige automático.`);
   }
+  if (url.startsWith('tel:')) return 'llamar'; // aunque el texto diga otra cosa ("Consulta"): lo que hace es llamar
+  if (url.startsWith('mailto:')) return 'correo';
   const porEnlace = iconoExtra(url);
   if (porEnlace !== 'web') return porEnlace;
   const t = normalizar(texto ?? '');
@@ -634,7 +682,7 @@ async function leerCSV() {
 // ---------- Vínculos con nombre ----------
 // Si en la hoja se usa "Insertar vínculo" y se le pone un nombre (ej. "Sedes"), el CSV solo trae ese nombre.
 // El enlace real sí viene en la versión .xlsx de la hoja: de ahí se toma, solo para las columnas de enlaces.
-const COLUMNAS_ENLACE = new Set(['google_resenas', 'catalogo', 'boton4_url', 'boton5_url', ...REDES.map((r) => r.clave)]);
+const COLUMNAS_ENLACE = new Set(['google_resenas', 'catalogo', ...BOTONES_EXTRA.map((n) => `boton${n}_url`), ...REDES.map((r) => r.clave)]);
 
 // Lee los archivos de un .xlsx (que es un .zip) sin instalar nada más
 function leerZip(buf) {
@@ -745,7 +793,7 @@ async function aplicarVinculos(todas, iEncabezados, fuente) {
 }
 
 // ---------- Construcción de cada negocio ----------
-const ORDEN_DEFECTO = ['resenas', 'catalogo', 'whatsapp', 'boton4', 'boton5'];
+const ORDEN_DEFECTO = ['resenas', 'catalogo', 'whatsapp', ...BOTONES_EXTRA.map((n) => 'boton' + n)];
 const NOMBRES_CLAVE = {
   resenas: 'resenas',
   resena: 'resenas',
@@ -754,11 +802,10 @@ const NOMBRES_CLAVE = {
   menu: 'catalogo',
   whatsapp: 'whatsapp',
   wa: 'whatsapp',
-  boton4: 'boton4',
   extra: 'boton4',
   extra1: 'boton4',
-  boton5: 'boton5',
   extra2: 'boton5',
+  ...Object.fromEntries(BOTONES_EXTRA.map((n) => ['boton' + n, 'boton' + n])),
 };
 
 function ordenarBotones(texto, etiqueta) {
@@ -766,7 +813,7 @@ function ordenarBotones(texto, etiqueta) {
   for (const parte of (texto ?? '').split(/[,;\s]+/).filter(Boolean)) {
     const clave = NOMBRES_CLAVE[normalizar(parte)];
     if (!clave) {
-      avisar(`${etiqueta}: "${parte}" no es un botón válido en orden_botones. Usa: resenas, catalogo, whatsapp, boton4, boton5.`);
+      avisar(`${etiqueta}: "${parte}" no es un botón válido en orden_botones. Usa: catalogo, whatsapp o boton4 a boton${ULTIMO_BOTON_EXTRA}.`);
     } else if (!pedidos.includes(clave)) pedidos.push(clave);
   }
   return [...pedidos, ...ORDEN_DEFECTO.filter((c) => !pedidos.includes(c))];
@@ -865,9 +912,15 @@ async function prepararNegocio(fila, num) {
     };
   }
 
-  for (const n of ['4', '5']) {
-    const url = urlSegura(g(`boton${n}_url`));
-    if (url === null) avisar(`${etiqueta}: el enlace del botón ${n} no es válido. Se omite.`);
+  // Una columna fuera del rango se ignoraría sin que nadie lo note
+  for (const columna of Object.keys(fila)) {
+    const m = columna.match(/^boton(\d+)_url$/);
+    if (m && g(columna) && !BOTONES_EXTRA.includes(m[1])) avisar(`${etiqueta}: la columna ${columna} no se usa. Los botones adicionales van de boton4 a boton${ULTIMO_BOTON_EXTRA}. Se omite.`);
+  }
+
+  for (const n of BOTONES_EXTRA) {
+    const url = enlaceBoton(g(`boton${n}_url`));
+    if (url === null) avisar(`${etiqueta}: "${g(`boton${n}_url`).slice(0, 40)}" en boton${n}_url no sirve. Usa una página (https://…), un teléfono (3001234567 o tel:+573001234567) o un correo (hola@negocio.com). Se omite.`);
     else if (url) {
       const icono = elegirIcono({
         forzado: normalizar(g(`boton${n}_icono`)),
@@ -1039,6 +1092,20 @@ function htmlLogo(n) {
 // Los colores claros llevan íconos más oscuros para que se lean sobre el papel
 const colorIcono = (hex) => (textoSobre(hex) === TEXTO_OSCURO ? oscurecer(hex, 0.5) : hex);
 
+// Etiquetas de la vista previa que necesitan la dirección completa del sitio. Sin SITIO_URL se omiten (pruebas locales).
+// Se prefiere la portada: tiene la proporción que usan WhatsApp y Facebook. Los SVG no sirven: esas apps no los muestran.
+function metaEnlaces(n) {
+  const base = urlSegura(SITIO_URL)?.replace(/\/+$/, '');
+  if (!base) return '';
+  const absoluta = (src) => (src.startsWith('../') ? `${base}/${src.slice(3)}` : src);
+  const imagen = n.portada?.src ?? (n.logo && !/\.svg(\?|$)/i.test(n.logo.src) ? n.logo.src : '');
+  const etiquetas = [`<meta property="og:url" content="${esc(`${base}/${n.id}/`)}">`];
+  if (imagen) etiquetas.push(`<meta property="og:image" content="${esc(absoluta(imagen))}">`);
+  if (n.portada) etiquetas.push('<meta property="og:image:width" content="900">', '<meta property="og:image:height" content="500">');
+  etiquetas.push(`<meta name="twitter:card" content="${n.portada ? 'summary_large_image' : 'summary'}">`);
+  return etiquetas.join('\n');
+}
+
 function htmlPagina(plantilla, n) {
   // El slogan va fuera del h1: así el encabezado se lee solo con el nombre del negocio
   const sloganHtml = n.slogan ? `<p class="slogan">${esc(n.slogan)}</p>` : '';
@@ -1050,6 +1117,8 @@ function htmlPagina(plantilla, n) {
   }
   return plantilla
     .replaceAll('{{TITULO}}', esc(n.nombre))
+    .replaceAll('{{DESCRIPCION}}', esc(n.slogan || `Contacto y enlaces de ${n.nombre}.`))
+    .replaceAll('{{META_ENLACES}}', metaEnlaces(n))
     .replaceAll('{{COLOR}}', n.color)
     .replaceAll('{{COLOR_TEXTO}}', textoSobre(n.color))
     .replaceAll('{{COLOR_ICONO}}', colorIcono(n.color))
@@ -1060,7 +1129,7 @@ function htmlPagina(plantilla, n) {
     .replaceAll('{{COLOR_TINTE}}', n.tinte)
     .replaceAll('{{COLOR_ICONO_MOSAICO}}', n.iconoMosaico)
     .replaceAll('{{COLOR_SOMBRA}}', n.sombra)
-    .replaceAll('{{TOLDO_CLASE}}', n.portada ? ' con-portada' : '')
+    .replaceAll('{{TOLDO_CLASE}}', (n.portada ? ' con-portada' : '') + (n.resena ? '' : ' sin-resena'))
     .replaceAll('{{PORTADA_HTML}}', n.portada ? `<img class="portada" src="${esc(n.portada.src)}" alt="" width="900" height="500" decoding="async">` : '')
     .replaceAll('{{WIFI_HTML}}', htmlWifi(n.wifi))
     .replaceAll('{{CAB_CLASE}}', apilada + (n.nombreEnLogo ? ' nombre-en-logo' : ''))
@@ -1069,7 +1138,7 @@ function htmlPagina(plantilla, n) {
     .replaceAll('{{SLOGAN_HTML}}', sloganHtml)
     .replaceAll('{{TITULAR}}', esc(n.titular))
     .replaceAll('{{RESENA_HTML}}', htmlResena(n))
-    .replaceAll('{{N_BOTONES}}', String(Math.min(n.botones.length, 5)))
+    .replaceAll('{{N_BOTONES}}', String(n.botones.length))
     .replaceAll('{{BOTONES}}', htmlBotones(n.botones))
     .replaceAll('{{REDES_HTML}}', htmlRedes(n.redes))
     .replaceAll('{{PIE_HTML}}', pie);
@@ -1100,6 +1169,8 @@ for (const obligatoria of ['id', 'estado', 'nombre']) {
 
 const plantillas = {};
 for (const [estilo, archivo] of Object.entries(PLANTILLAS)) plantillas[estilo] = await readFile(archivo, 'utf8');
+if (!SITIO_URL) console.log('  · Sin SITIO_URL: la vista previa al compartir no lleva imagen en esta construcción (en GitHub se deduce sola).');
+else if (!urlSegura(SITIO_URL)) avisar(`La variable SITIO_URL ("${SITIO_URL}") no es una dirección válida. La vista previa al compartir no llevará imagen.`);
 await rm(SALIDA, { recursive: true, force: true });
 await mkdir(SALIDA, { recursive: true });
 
