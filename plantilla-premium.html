@@ -77,7 +77,7 @@
   .logo.tal img { max-width: 100%; max-height: 100%; }
   .logo.inicial { font-size: 40px; font-weight: 600; color: var(--oro); }
   .nom { margin: 0; font-size: 1.45rem; font-weight: 600; line-height: 1.2; letter-spacing: -.015em; overflow-wrap: anywhere; }
-  .slogan { display: block; margin-top: 6px; font-size: .92rem; font-weight: 400; line-height: 1.4; letter-spacing: 0; color: var(--suave); }
+  .slogan { display: block; margin: 6px 0 0; font-size: .92rem; font-weight: 400; line-height: 1.4; letter-spacing: 0; color: var(--suave); }
   .nombre-en-logo .nom-txt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .nombre-en-logo .slogan { margin-top: 0; }
 
@@ -122,6 +122,9 @@
   .res .est svg:nth-child(3) path { animation-delay: .44s; }
   .res .est svg:nth-child(4) path { animation-delay: .5s; }
   .res .est svg:nth-child(5) path { animation-delay: .56s; }
+  .res .cta { display: flex; align-items: center; justify-content: center; min-height: 50px; margin-top: 14px; padding: 0 20px; border-radius: 999px; background: var(--negro); color: var(--oro-b); font-size: .98rem; font-weight: 600; }
+  .fl { width: 20px; height: 20px; margin-left: 8px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .24s var(--entra); }
+  .res:active .fl { transform: translateX(4px); transition-duration: .09s; }
   .res .nota { display: block; margin-top: 12px; font-size: .82rem; line-height: 1.4; }
 
   /* ---------- Botones satinados con filo dorado ---------- */
@@ -197,7 +200,8 @@
   .wf-red, .wf-clave { font-size: 1.05rem; font-weight: 600; letter-spacing: .02em; color: var(--texto); overflow-wrap: anywhere; }
   .wf-clave { color: var(--oro); -webkit-user-select: all; user-select: all; }
 
-  .pie { margin-top: auto; padding-top: 24px; font-size: .75rem; letter-spacing: .04em; color: var(--tenue); }
+  .base { margin-top: auto; }
+  .pie { margin: 0; padding-top: 24px; font-size: .75rem; letter-spacing: .04em; color: var(--tenue); }
   .pie a { display: inline-block; min-height: 48px; padding: 15px 12px; text-decoration: underline; text-decoration-color: var(--linea); text-underline-offset: 4px; }
 
   /* ---------- Entrada breve y escalonada ---------- */
@@ -210,14 +214,13 @@
 
   @media (hover: hover) and (pointer: fine) {
     .res:hover { filter: brightness(1.04); }
-    .res .est:hover path { fill: var(--negro); }
-    .res .est svg:hover ~ svg path { fill: transparent; }
+    .res:hover .fl { transform: translateX(4px); }
     .tl:hover { border-color: rgba(234, 202, 166, .6); }
     .redes a:hover { border-color: rgba(234, 202, 166, .7); transform: translateY(-2px); }
   }
   @media (prefers-reduced-motion: reduce) {
     .cab, h2, .res, .tl, .res::after, .redes a, .res .est path, .wifi { animation: none; }
-    .res, .tl, .redes a, .wifi summary { transition: none; }
+    .res, .tl, .redes a, .wifi summary, .fl { transition: none; }
   }
 </style>
 </head>
@@ -227,7 +230,8 @@
       {{PORTADA_HTML}}
       <header class="cab{{CAB_CLASE}}">
         {{LOGO_HTML}}
-        <h1 class="nom">{{NOMBRE}}{{SLOGAN_HTML}}</h1>
+        <h1 class="nom">{{NOMBRE}}</h1>
+        {{SLOGAN_HTML}}
       </header>
       <h2>{{TITULAR}}</h2>
     </div>
@@ -236,8 +240,7 @@
       {{BOTONES}}
     </nav>
     {{WIFI_HTML}}
-    {{REDES_HTML}}
-    {{PIE_HTML}}
+    <footer class="base">{{REDES_HTML}}{{PIE_HTML}}</footer>
   </main>
 </body>
 </html>
