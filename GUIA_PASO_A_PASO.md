@@ -11,13 +11,13 @@ Hoja de Google  ──(robot de GitHub)──►  Una página por negocio  ─�
 
 ## Qué trae esta versión (diseño "Mostrador" y tema "Premium")
 
-1. **Dos diseños.** Por defecto, **Mostrador**: arriba, la foto del local con corte limpio (opcional) y un **toldo con el color del negocio**, con el logo montado sobre el borde. Abajo, fondo claro con la reseña y los botones. Si escribes `premium` en la columna `estilo`, ese negocio usa **Premium**: fondo negro con detalles de oro.
-2. **Color secundario automático.** El robot saca un segundo color del logo (por ejemplo, el verde de BA CU) y lo usa en las estrellas y el botón de la reseña. No hay que escribirlo.
-3. **Foto de portada opcional** (columna `portada`): una foto del local o de un plato arriba, con el logo encima. Sin foto, el titular se hace un poco más grande. En los dos casos todo va centrado.
+1. **Dos diseños.** Por defecto, **Mostrador**: la parte de arriba es un **toldo con el color del negocio**, con borde curvo, el logo, el slogan y el titular. Debajo, fondo color papel, como una carta impresa. Si escribes `premium` en la columna `estilo`, ese negocio usa **Premium**: fondo negro con detalles de oro.
+2. **Color secundario automático.** El robot saca un segundo color del logo (por ejemplo, el verde de BA CU) y lo usa en las estrellas y los íconos. No hay que escribirlo.
+3. **Foto de portada opcional** (columna `portada`): una foto del local o de un plato arriba, con el logo encima.
 4. **Wi-Fi gratis** (columnas `wifi_red` y `wifi_clave`): un botón que muestra la red y la clave al tocarlo.
 5. **Íconos que corresponden a cada botón:** bolsa para pedidos, tienda para sedes, cubiertos para el menú, calendario para citas, y "Pide en Rappi" automático con un enlace de Rappi.
-6. **La reseña es un tiquete con cinco estrellas vacías y un botón "Calificar en Google →".** Una ola breve ilumina las estrellas, pero **no se muestran llenas**, para no presionar al cliente a poner cinco. Todo el tiquete lleva a la reseña de Google, donde el cliente elige su calificación.
-7. **Acciones en mosaico** (menú, WhatsApp, pedidos…). La primera de la lista va a todo el ancho, en el color de la marca: pon primero la más importante con `orden_botones`. Las demás van en dos columnas, con el ícono arriba y el texto abajo. Si una queda sola, ocupa todo el ancho. Al tocar un botón, se hunde y su ícono se llena, para que el cliente sepa que funcionó. En Premium son botones cuadrados con filo dorado.
+6. **La reseña es un tiquete con cinco estrellas vacías.** Una ola breve las ilumina para invitar a tocar, pero **no se muestran llenas**, para no presionar al cliente a poner cinco. Tocarlas lleva a la reseña de Google, donde el cliente elige su calificación.
+7. **Acciones en filas** (menú, WhatsApp, pedidos…), cada una con su ícono y una flecha. En Premium son botones cuadrados con filo dorado.
 8. **Redes sociales en círculos** al final de la página: Instagram, Facebook, TikTok, YouTube, X y Telegram.
 9. **El nombre no se repite** si el logo ya lo trae escrito (columna `nombre_en_logo`).
 10. **Vínculos con nombre:** puedes usar Insertar → Vínculo con un texto corto; el robot usa el enlace real.
@@ -57,7 +57,7 @@ Pestaña **Negocios**, fila 1 con estos encabezados (el orden no importa; solo a
 | `logo_fondo` | `blanco`, `oscuro` o `sin` | No |
 | `titular` | Frase grande de arriba. Vacío = "Nos encantó verte." (máx. unas 30 letras) | No |
 | `google_resenas` | Enlace para dejar reseña | Recomendada |
-| `texto_resenas` | Texto junto al logo de Google. Vacío = "¿Cómo te fue? Cuéntanos tu experiencia". El botón "Calificar en Google" va siempre debajo, así que no hace falta repetir "Google" aquí | No |
+| `texto_resenas` | Texto junto al logo de Google. Vacío = "Toca las estrellas y cuéntale a Google" | No |
 | `nota_resenas` | Línea bajo las estrellas. Vacío = "20 segundos. Ayudas a que más gente nos encuentre." | No |
 | `catalogo` | Enlace al catálogo | No |
 | `texto_catalogo` | Nombre del botón. Vacío = "Ver catálogo" | No |
@@ -84,7 +84,7 @@ Pestaña **Negocios**, fila 1 con estos encabezados (el orden no importa; solo a
 
 **Columna `estilo`:** déjala vacía para el diseño normal (Mostrador) o escribe `premium` para el diseño negro y oro. Si tenías valores viejos en esa columna, bórralos: cualquier palabra distinta de `premium` hace que el robot avise con ⚠ y use el diseño normal.
 
-**Columna `color`:** es el **color principal de la marca** del negocio, en hexadecimal (por ejemplo `#AD6225`). En el diseño Mostrador pinta el toldo, el primer botón y los círculos de redes. Usa el color **oficial** (del manual de marca), no uno tomado de una captura o de Instagram, porque esos traen filtros. En Premium no se usa.
+**Columna `color`:** es el **color principal de la marca** del negocio, en hexadecimal (por ejemplo `#AD6225`). En el diseño Mostrador pinta el toldo de arriba y los círculos de redes. Usa el color **oficial** (del manual de marca), no uno tomado de una captura o de Instagram, porque esos traen filtros. En Premium no se usa.
 
 Mira `ejemplo-negocios.csv`: tiene filas de ejemplo con todo esto.
 
@@ -129,7 +129,7 @@ Los SVG no se tocan: se ven nítidos a cualquier tamaño.
 
 **Reseña.** El bloque de estrellas aparece si hay `google_resenas`. Siempre va arriba.
 
-**Botones.** En el diseño Mostrador van en mosaico; en Premium, cuadrados. Cada uno muestra un ícono que el robot elige solo:
+**Botones.** En el diseño Mostrador son filas; en Premium, botones cuadrados. Cada uno muestra un ícono que el robot elige solo:
 
 | Si el botón… | Ícono |
 |---|---|
@@ -155,7 +155,7 @@ Si el ícono automático no es el que quieres, escribe el que prefieras en `boto
 
 ## Colores y fondo
 
-El toldo de arriba lleva el color del negocio. El texto encima se vuelve blanco o negro solo, según qué tan claro sea el color, para que siempre se lea. Abajo, la reseña va en un tiquete blanco, con las estrellas y su botón en el color secundario que el robot saca del logo (más oscuro si hace falta para que se vean bien).
+El toldo de arriba lleva el color del negocio. El texto encima se vuelve blanco o negro solo, según qué tan claro sea el color, para que siempre se lea. Abajo, la reseña y los botones van sobre papel, con las estrellas y los íconos en el color secundario que el robot saca del logo (más oscuro si hace falta para que se vean bien).
 
 Escribe el color como `#B83A5B` (6 letras o números después del `#`). Si es incorrecto, el robot avisa y usa uno por defecto.
 
@@ -304,9 +304,6 @@ Crea la carpeta `dist` con las páginas y muestra los avisos en español. Abre `
 | Un botón no abre la página correcta | En la celda quedó un texto (ej. "Sedes") en vez de un enlace | Pega el enlace, o usa Insertar → Vínculo; el robot avisa con ⚠ si no es un enlace válido |
 | El logo se ve borroso | El archivo es muy pequeño | Pide un SVG o un PNG de más de 800 px |
 | Un logo blanco no se ve | La placa es clara | Pon `oscuro` en `logo_fondo` |
-| Aviso "el color … es casi blanco" | En `color` quedó blanco o un color muy claro, y la tarjeta se perdería | El robot usa el color del logo mientras tanto. Escribe en `color` el color fuerte de la marca (el aviso te lo sugiere) |
-| Aviso "los botones … se parecen" | Dos botones empiezan igual, como "Pedir" y "Pedidos" | Cambia el texto de uno, por ejemplo "Tienda en línea" |
-| Aviso "ya sale en los círculos de redes" | Un botón extra lleva a la misma red que la columna de esa red | Borra el botón o la columna; no hace falta mostrarlo dos veces |
 | El titular se sale o queda enorme | Es demasiado largo | Usa menos de 30 letras en `titular` |
 | Un logo trae marca de agua (por ejemplo, de una herramienta de IA) | El archivo original ya la tenía | Pide al cliente el logo original sin marca de agua |
 | En el celular se ve distinto que en el computador | El celular guarda la versión anterior de la página | Abre el enlace en una ventana privada o borra los datos del navegador; espera unos minutos después de publicar. Si persiste, mándame una captura y el modelo del celular |

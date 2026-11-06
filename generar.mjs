@@ -16,7 +16,7 @@ const SALIDA = 'dist';
 const LOGOS_DIR = process.env.LOGOS_DIR ?? 'logos';
 const COLOR_DEFECTO = '#1f6f5c';
 const TITULAR_DEFECTO = 'Nos encantó verte.';
-const TEXTO_RESENAS_DEFECTO = '¿Cómo te fue? Cuéntanos tu experiencia'; // el botón ya dice "Calificar en Google"
+const TEXTO_RESENAS_DEFECTO = 'Toca las estrellas y cuéntale a Google';
 const NOTA_RESENAS_DEFECTO = '20 segundos. Ayudas a que más gente nos encuentre.';
 const MAX_TEXTO_BOTON = 16; // los botones cuadrados tienen poco espacio
 const MENSAJE_DEFECTO = 'Hola, vi su tarjeta y quisiera más información.';
@@ -160,23 +160,6 @@ function legibleSobre(hex, fondo, minimo) {
   return c;
 }
 const distanciaColor = (a, b) => Math.hypot(...hexARgb(a).map((c, i) => c - hexARgb(b)[i]));
-// Mezcla dos colores: t = 0 da el primero, t = 1 el segundo
-const mezclar = (a, b, t) => rgbAHex(hexARgb(a).map((c, i) => c + (hexARgb(b)[i] - c) * t));
-
-// Paleta de la tarjeta: el color de la marca va arriba y el resto, sobre un fondo claro neutro y tarjetas blancas.
-function paletaMarca(marca, secundario) {
-  const acento = legibleSobre(secundario, '#ffffff', 3); // estrellas y botón de la reseña, sobre el tiquete blanco
-  const tinte = mezclar('#ffffff', marca, 0.1); // círculo de los íconos del mosaico
-  return {
-    tinta: mezclar('#17150f', marca, 0.12),
-    gris: legibleSobre(mezclar('#6b655a', marca, 0.25), '#ffffff', 4.6),
-    acento,
-    acentoTexto: textoSobre(acento),
-    tinte,
-    iconoMosaico: legibleSobre(marca, tinte, 3),
-    sombra: oscurecer(marca, 0.5),
-  };
-}
 
 function telefono(valor) {
   let d = (valor ?? '').replace(/\D/g, '');
@@ -909,36 +892,10 @@ async function prepararNegocio(fila, num) {
     nombreEnLogo = false;
   }
 
-  // Un color de marca casi blanco borra el toldo, la placa del logo y los círculos de redes.
-  // Si el logo tiene un color con carácter, ese pasa a ser el principal.
-  let marca = colorFinal;
-  if (luminancia(colorFinal) > 0.7) {
-    if (logo?.secundario && luminancia(logo.secundario) < 0.45) {
-      marca = logo.secundario;
-      avisar(`${etiqueta}: el color ${colorFinal} es casi blanco y la tarjeta se perdería. Se usa el color del logo (${marca}). Escribe ese color en la columna color para que quede fijo.`);
-    } else {
-      avisar(`${etiqueta}: el color ${colorFinal} es casi blanco y el toldo casi no se verá. Usa el color fuerte de la marca.`);
-    }
-  }
-
   // Color secundario automático: el color con carácter del logo, si se distingue del principal.
-  // Si no hay, el mismo color principal. En los dos casos se oscurece solo si hace falta para leerse sobre el tiquete.
-  const secundario = logo?.secundario && distanciaColor(logo.secundario, marca) > 60 ? logo.secundario : marca;
-  const paleta = paletaMarca(marca, secundario);
-
-  // Botones que se confunden entre sí: misma red dos veces, o textos que empiezan igual ("Pedir" y "Pedidos")
-  const dominio = (u) => new URL(u).hostname.replace(/^www\./, '');
-  const acciones = botones.filter((b) => b.icono !== 'resenas');
-  for (const b of acciones) {
-    const red = redes.find((r) => dominio(r.url) === dominio(b.url));
-    if (red) avisar(`${etiqueta}: el botón "${b.texto}" lleva a ${red.nombre}, que ya sale en los círculos de redes. Quita uno de los dos.`);
-  }
-  const inicios = acciones.map((b) => normalizar(b.texto).replace(/^_+/, '').replace(/^(ver|el|la|los|las|tu|su)_/, '').slice(0, 4));
-  inicios.forEach((x, i) => {
-    const j = inicios.indexOf(x);
-    if (x.length === 4 && j < i) avisar(`${etiqueta}: los botones "${acciones[j].texto}" y "${acciones[i].texto}" se parecen y el cliente puede confundirlos. Cambia uno.`);
-  });
-  if (/[.,;:]\s*[!?¡¿]/.test(titular)) avisar(`${etiqueta}: el titular "${titular}" tiene un signo de más (por ejemplo ". !"). Revísalo.`);
+  // Si no hay, el mismo color principal. En los dos casos se oscurece solo si hace falta para leerse sobre el papel.
+  const secundario = logo?.secundario && distanciaColor(logo.secundario, colorFinal) > 60 ? logo.secundario : colorFinal;
+  const acento = legibleSobre(secundario, '#fffdf8', 3);
 
   const portada = await prepararPortada(id, g('portada'), etiqueta);
 
@@ -952,14 +909,14 @@ async function prepararNegocio(fila, num) {
   return {
     id,
     alias: alias && slugValido(alias) ? alias : '',
-    ...paleta,
+    acento,
     portada,
     wifi,
     nombre,
     slogan: g('slogan'),
     titular,
     notaResenas: g('nota_resenas') || NOTA_RESENAS_DEFECTO,
-    color: marca,
+    color: colorFinal,
     logo,
     fondoLogo,
     colorPlaca,
@@ -972,7 +929,6 @@ async function prepararNegocio(fila, num) {
 }
 
 const ESTRELLA = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.8l3 6.9 7.4.7-5.6 4.9 1.7 7.3L12 17.6 5.5 21.6l1.7-7.3L1.6 9.4l7.4-.7z"/></svg>';
-const FLECHA = '<svg class="fl" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>';
 // "G" de Google, sin modificar (Google permite usarla para pedir reseñas)
 const G_GOOGLE =
   '<svg class="g" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
@@ -980,9 +936,8 @@ const G_GOOGLE =
 function htmlBotones(botones) {
   return botones
     .map(
-      // La primera acción va a todo el ancho, llena del color de la marca; las demás, en mosaico
-      (b, i) =>
-        `<a class="tl${i === 0 ? ' pri' : ''}" href="${esc(b.url)}" rel="noopener">` +
+      (b) =>
+        `<a class="tl" href="${esc(b.url)}" rel="noopener">` +
         `<span class="ic">${svgIcono(b.icono)}</span>` +
         `<span class="tx">${esc(b.texto)}</span></a>`
     )
@@ -996,8 +951,6 @@ function htmlResena(n) {
     `<a class="res" href="${esc(n.resena.url)}" rel="noopener" aria-label="${esc(n.resena.texto)}. Abre Google para calificar">` +
     `<span class="arr">${G_GOOGLE}<span>${esc(n.resena.texto)}</span></span>` +
     `<span class="est" aria-hidden="true">${ESTRELLA.repeat(5)}</span>` +
-    // Un botón claro: las estrellas son adorno, la calificación se elige en Google
-    `<span class="cta">Calificar en Google${FLECHA}</span>` +
     `<span class="nota">${esc(n.notaResenas)}</span></a>`
   );
 }
@@ -1040,13 +993,12 @@ function htmlLogo(n) {
 const colorIcono = (hex) => (textoSobre(hex) === TEXTO_OSCURO ? oscurecer(hex, 0.5) : hex);
 
 function htmlPagina(plantilla, n) {
-  // El slogan va fuera del h1: así el encabezado se lee solo con el nombre del negocio
-  const sloganHtml = n.slogan ? `<p class="slogan">${esc(n.slogan)}</p>` : '';
+  const sloganHtml = n.slogan ? `<span class="slogan">${esc(n.slogan)}</span>` : '';
   const apilada = n.logo && n.logo.w && n.logo.w / n.logo.h > 2.2 ? ' apilada' : '';
   let pie = '';
   if (PIE_TEXTO) {
     const url = urlSegura(PIE_URL);
-    pie = `<p class="pie">${url ? `<a href="${esc(url)}" rel="noopener">${esc(PIE_TEXTO)}</a>` : esc(PIE_TEXTO)}</p>`;
+    pie = `<footer class="pie">${url ? `<a href="${esc(url)}" rel="noopener">${esc(PIE_TEXTO)}</a>` : esc(PIE_TEXTO)}</footer>`;
   }
   return plantilla
     .replaceAll('{{TITULO}}', esc(n.nombre))
@@ -1054,12 +1006,6 @@ function htmlPagina(plantilla, n) {
     .replaceAll('{{COLOR_TEXTO}}', textoSobre(n.color))
     .replaceAll('{{COLOR_ICONO}}', colorIcono(n.color))
     .replaceAll('{{COLOR_ACENTO}}', n.acento)
-    .replaceAll('{{COLOR_ACENTO_TEXTO}}', n.acentoTexto)
-    .replaceAll('{{COLOR_TINTA}}', n.tinta)
-    .replaceAll('{{COLOR_GRIS}}', n.gris)
-    .replaceAll('{{COLOR_TINTE}}', n.tinte)
-    .replaceAll('{{COLOR_ICONO_MOSAICO}}', n.iconoMosaico)
-    .replaceAll('{{COLOR_SOMBRA}}', n.sombra)
     .replaceAll('{{TOLDO_CLASE}}', n.portada ? ' con-portada' : '')
     .replaceAll('{{PORTADA_HTML}}', n.portada ? `<img class="portada" src="${esc(n.portada.src)}" alt="" width="900" height="500" decoding="async">` : '')
     .replaceAll('{{WIFI_HTML}}', htmlWifi(n.wifi))
@@ -1107,8 +1053,7 @@ await mkdir(SALIDA, { recursive: true });
 const FUENTES = {
   'unbounded-800.woff2': '@fontsource/unbounded/files/unbounded-latin-800-normal.woff2',
   'inter-400.woff2': '@fontsource/inter/files/inter-latin-400-normal.woff2',
-  'figtree-500.woff2': '@fontsource/figtree/files/figtree-latin-500-normal.woff2',
-  'figtree-700.woff2': '@fontsource/figtree/files/figtree-latin-700-normal.woff2',
+  'inter-500.woff2': '@fontsource/inter/files/inter-latin-500-normal.woff2',
   'inter-600.woff2': '@fontsource/inter/files/inter-latin-600-normal.woff2',
 };
 await mkdir(`${SALIDA}/fonts`, { recursive: true });
