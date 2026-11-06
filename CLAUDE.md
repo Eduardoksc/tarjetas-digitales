@@ -13,7 +13,7 @@ Todo el proyecto (código, comentarios, avisos, guía) está en **español**, co
 No hay pruebas automáticas ni linter. Para probar, construye el sitio con el CSV de ejemplo:
 
 ```bash
-npm install                                          # sharp + tipografías Unbounded e Inter (solo la primera vez)
+npm install                                          # sharp + tipografías Unbounded, Figtree e Inter (solo la primera vez)
 SHEET_CSV_FILE=ejemplo-negocios.csv node generar.mjs
 ```
 
@@ -63,7 +63,7 @@ Flujo de `generar.mjs`:
 5. **`htmlPagina()`** reemplaza los tokens con `replaceAll` en secuencia.
 6. Escribe `dist/<id>/index.html` y, si hay alias, una copia idéntica en `dist/<alias>/index.html`. `dist/` se borra completo al inicio de cada build.
 
-Tokens de la plantilla: `{{TITULO}}`, `{{COLOR}}`, `{{COLOR_TEXTO}}`, `{{COLOR_ICONO}}`, `{{CAB_CLASE}}`, `{{NOMBRE}}`, `{{LOGO_HTML}}`, `{{SLOGAN_HTML}}`, `{{TITULAR}}`, `{{RESENA_HTML}}`, `{{N_BOTONES}}`, `{{BOTONES}}`, `{{REDES_HTML}}`, `{{PIE_HTML}}`, `{{COLOR_ACENTO}}`, `{{TOLDO_CLASE}}`, `{{PORTADA_HTML}}`, `{{WIFI_HTML}}`. `{{NOMBRE}}` sale envuelto en `<span class="nom-txt">` y `{{CAB_CLASE}}` puede incluir `nombre-en-logo`.
+Tokens de la plantilla: `{{TITULO}}`, `{{COLOR}}`, `{{COLOR_TEXTO}}`, `{{COLOR_ICONO}}`, `{{CAB_CLASE}}`, `{{NOMBRE}}`, `{{LOGO_HTML}}`, `{{SLOGAN_HTML}}`, `{{TITULAR}}`, `{{RESENA_HTML}}`, `{{N_BOTONES}}`, `{{BOTONES}}`, `{{REDES_HTML}}`, `{{PIE_HTML}}`, `{{COLOR_ACENTO}}`, `{{COLOR_ACENTO_TEXTO}}`, `{{COLOR_TINTA}}`, `{{COLOR_GRIS}}`, `{{COLOR_TINTE}}`, `{{COLOR_ICONO_MOSAICO}}`, `{{COLOR_SOMBRA}}`, `{{TOLDO_CLASE}}`, `{{PORTADA_HTML}}`, `{{WIFI_HTML}}`. `{{NOMBRE}}` sale envuelto en `<span class="nom-txt">`, `{{SLOGAN_HTML}}` es un `<p class="slogan">` fuera del `h1` y `{{CAB_CLASE}}` puede incluir `nombre-en-logo`. Los `{{COLOR_*}}` de la paleta salen de `paletaMarca()`; Premium no los usa.
 
 Reglas de seguridad que se deben mantener:
 - Todo texto que venga de la hoja pasa por `esc()`.
@@ -84,7 +84,7 @@ Reglas de seguridad que se deben mantener:
 | `logo_fondo` | `blanco`, `oscuro` o `sin` | Automático (ver reglas de diseño) |
 | `titular` | Frase grande. Avisa si pasa de 32 caracteres | "Nos encantó verte." |
 | `google_resenas` | Enlace para dejar reseña | Sin bloque de reseña |
-| `texto_resenas` | Máximo 45 caracteres | "Toca las estrellas y cuéntale a Google" |
+| `texto_resenas` | Máximo 45 caracteres. Debajo de las estrellas siempre va el botón "Calificar en Google" | "¿Cómo te fue? Cuéntanos tu experiencia" |
 | `nota_resenas` | Línea bajo las estrellas | "20 segundos. Ayudas a que más gente nos encuentre." |
 | `catalogo` / `texto_catalogo` | Enlace / texto del botón (máximo 16) | Sin botón / "Ver catálogo" |
 | `whatsapp` | Solo dígitos. Si tiene 10 dígitos y empieza por 3, se le antepone `57`. Debe quedar de 11 a 15 dígitos | Sin botón |
@@ -107,19 +107,20 @@ Una fila activa que no tenga **ningún** botón válido (contando la reseña) se
 
 La columna `estilo` elige la plantilla (`PLANTILLAS` en `generar.mjs`). Las dos comparten exactamente la misma estructura HTML y los mismos tokens; solo cambia el CSS.
 
-### "Mostrador" con toldo de marca (`plantilla.html`, por defecto)
+### "Mostrador": foto limpia, toldo y mosaico (`plantilla.html`, por defecto)
 
-- **Toldo de marca:** la parte de arriba (portada opcional, logo, nombre, slogan y titular) va en el color del negocio (`--marca`), con texto en `--sobre`. `textoSobre()` da `#ffffff` o `#000000` (`TEXTO_OSCURO`) con umbral 0.179, así que cualquier color da al menos 4.58:1. El borde inferior es curvo y el tiquete de reseña se monta sobre él.
-- **Color secundario automático** (`--acento`): `colorDelLogo()` saca el color con carácter más repetido del logo (sin su fondo, blancos ni grises). Si no hay o se parece al principal, se usa el principal. `legibleSobre()` lo oscurece hasta 3:1 sobre el papel. Va en la franja del tiquete, las estrellas, los íconos de las filas y la inicial.
-- **Abajo, papel cálido** (`--papel #f4efe6`). Texto `--tinta #1a1712` y secundario `--gris #6b655a` (5:1). Nunca `opacity` en textos: baja el contraste.
+- **El color de la marca va solo arriba** (`--marca`, en el toldo), con texto en `--sobre`. Abajo, fondo claro neutro (`--fondo #f5f5f4`, sin beige) y piezas blancas. A página completa se veía pesado. `textoSobre()` da `#ffffff` o `#000000` (`TEXTO_OSCURO`) con umbral 0.179, así que cualquier color da al menos 4.58:1.
+- **Foto limpia arriba:** la portada tiene corte neto: **nada de difuminados ni degradados** entre la foto y el color (el usuario lo rechazó). El toldo sube 28 px sobre la foto con esquinas redondeadas y el logo se monta en el borde. Con o sin foto, todo va centrado; sin foto, el titular crece. El borde inferior del toldo es curvo.
+- **Color casi blanco:** si `color` tiene luminancia > 0.7 y el logo trae un color con carácter, ese pasa a ser `--marca` y el robot avisa ⚠ (caso De Quei Matti con `#ffffff`).
+- **Color secundario automático** (`--acento`): `colorDelLogo()` saca el color con carácter más repetido del logo (sin su fondo, blancos ni grises). Si no hay o se parece al principal, se usa el principal. `paletaMarca()` lo oscurece hasta 3:1 sobre el blanco. Va en el botón del tiquete, las estrellas y la inicial. `--sobre-acento` es el texto del botón (4.58:1 o más).
+- **Acciones en mosaico, para no parecer Linktree:** la primera (`.tl.pri`) va a todo el ancho, llena del color de la marca; las demás, en dos columnas, blancas, con el ícono en un círculo `--tinte` arriba y el texto abajo. Una acción que queda sola en su fila (`.tl:nth-child(even):last-child`) ocupa el ancho, con ícono a la izquierda y flecha. `--icono` queda a 3:1 sobre el tinte. `--tinta` y `--gris` (4.6:1 sobre blanco) son los textos. Nunca `opacity` en textos: baja el contraste.
 - **Estructura**, de arriba abajo:
-  1. Toldo: portada (si hay), logo, nombre y slogan centrados, y titular `h2` en Unbounded 800, `clamp(30px, 10vw, 44px)`. Con `nombre_en_logo` = `si`, el nombre se oculta en pantalla (`.nombre-en-logo .nom-txt`).
-  2. Reseña: tiquete blanco con franja del acento, la "G" de Google sin modificar, **5 estrellas de contorno vacías** y la nota bajo una línea perforada. Una ola breve las ilumina y vuelven a quedar vacías: **nunca se muestran llenas**, para no sugerir una calificación.
-  3. Acciones en filas de carta (ícono, texto y flecha), separadas por líneas de 1 px.
-  4. Wi-Fi (si hay): una fila más que se despliega.
-  5. Redes sociales en círculos de 48 px, centrados, en el color de la marca.
-  6. Pie opcional.
-- Tipografías: Unbounded 800 (titular) e Inter 500 (resto).
+  1. Toldo (`.toldo`): portada (si hay), logo en medallón (o cápsula si es ancho, clase `apilada`), nombre (`h1`), slogan (`p`) y titular `h2` en Unbounded 800, `clamp(32px, 9.6vw, 44px)` con foto y `clamp(36px, 11vw, 50px)` sin foto. Con `nombre_en_logo` = `si`, el nombre se oculta en pantalla (`.nombre-en-logo .nom-txt`).
+  2. Reseña: tiquete blanco montado entre el toldo y el fondo claro, con sombra de dos capas teñida con la marca (`--sombra-cerca`, `--sombra-lejos`). Lleva la "G" de Google sin modificar, **5 estrellas de contorno vacías como adorno**, el botón en píldora **"Calificar en Google →"** y la nota bajo una línea perforada. Toda la pieza es un solo enlace. Una ola breve ilumina las estrellas y vuelven a quedar vacías: **nunca se muestran llenas**, para no sugerir una calificación.
+  3. Acciones en mosaico. La reseña sigue mandando por tamaño, sombra y posición.
+  4. Wi-Fi (si hay): una pieza blanca a lo ancho que se despliega.
+  5. Cierre (`<footer class="base">`): redes en círculos de 48 px en el color de la marca (ícono en `--sobre`) y pie opcional.
+- Tipografías: Unbounded 800 (titular) y Figtree 500 y 700 (resto; 700 en el nombre, el botón de reseña y la acción principal). Figtree pesa menos que Inter: 11 KB por peso. Mientras carga Unbounded se usa `Unbounded Respaldo` (fuente del sistema con `size-adjust: 116%`), para que el titular no mueva la reseña.
 
 ### "Premium" (`plantilla-premium.html`, `estilo` = `premium`)
 
@@ -127,7 +128,7 @@ Negro profundo, la reseña como pieza de oro, botones cuadrados satinados con fi
 
 ### Comunes a ambos temas
 
-- **Movimiento:** la entrada es escalonada y termina antes de 0.6 s. La respuesta al tocar es inmediata. `:hover` solo dentro de `(hover: hover) and (pointer: fine)`; ahí las estrellas se llenan hasta la que se señala. Todo tiene su versión en `prefers-reduced-motion`. Ver la skill `micro-interacciones`.
+- **Movimiento:** en Mostrador la página aparece ya lista. Solo el tiquete se posa y hay un único momento protagonista: la ola de las estrellas termina en una luz que recorre una vez el botón "Calificar en Google", todo antes de 0.85 s (ver `/impeccable animate`). En Premium, la entrada es escalonada y su destello es aparte. La respuesta al tocar es inmediata: la pieza se hunde (`scale(.975)`), el ícono del mosaico se llena y la flecha avanza; el botón de reseña se oscurece y su flecha avanza. `:hover` solo dentro de `(hover: hover) and (pointer: fine)`, con una respuesta parecida. Las estrellas no se llenan nunca, ni con hover. Todo tiene su versión en `prefers-reduced-motion`. Ver la skill `micro-interacciones`.
 - **Íconos:** los de marca van rellenos (`iconos.mjs`). Los genéricos (`ICONOS` en `generar.mjs`) son de trazo en un `viewBox` de 24.
 - **Placa del logo** (si `logo_fondo` está vacío):
   - Sin logo: inicial.
@@ -139,7 +140,7 @@ Negro profundo, la reseña como pieza de oro, botones cuadrados satinados con fi
 - **Restricciones técnicas:**
   - Mobile-first, `max-width` de 440 px (480 px en Premium), respeta `safe-area-inset`.
   - **Cero JavaScript en el cliente.**
-  - Fuentes servidas desde el propio sitio (`dist/fonts/`, copiadas desde `@fontsource`), sin pedidos a Google Fonts. Peso sin logo: unos 64 KB, más la portada si hay (máximo 70 KB).
+  - Fuentes servidas desde el propio sitio (`dist/fonts/`, copiadas desde `@fontsource`), sin pedidos a Google Fonts. Peso sin logo en Mostrador: unos 70 KB, más la portada si hay (máximo 70 KB).
   - `color-scheme: light only` en Mostrador, para que Android no oscurezca la página. `dark` en Premium.
   - Respeta `prefers-reduced-motion`.
   - `noindex` y `robots.txt` con `Disallow: /`.
@@ -147,6 +148,8 @@ Negro profundo, la reseña como pieza de oro, botones cuadrados satinados con fi
 
 ## Particularidades conocidas
 
+- El robot avisa (sin detener el build) cuando un botón extra lleva a una red que ya está en los círculos, cuando dos acciones empiezan igual ("Pedir" y "Pedidos") y cuando el titular trae signos sobrantes (". !").
+- `PRODUCT.md` y `.impeccable/` son de la skill `impeccable` (instalada en local, fuera de Git): contexto del producto y diagnósticos de `/impeccable critique`.
 - Los tokens se reemplazan en secuencia. Un texto de la hoja que contenga `{{OTRO_TOKEN}}` se expande. No es XSS, pero es un error.
 - `fonts` no está reservado como `id`, a diferencia de `logos`. Un negocio con ese id chocaría con la carpeta de la tipografía.
 - Los SVG de `logos/` se publican sin limpiar.
