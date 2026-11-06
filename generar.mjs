@@ -1055,6 +1055,8 @@ const FUENTES = {
   'inter-400.woff2': '@fontsource/inter/files/inter-latin-400-normal.woff2',
   'inter-500.woff2': '@fontsource/inter/files/inter-latin-500-normal.woff2',
   'inter-600.woff2': '@fontsource/inter/files/inter-latin-600-normal.woff2',
+  'figtree-500.woff2': '@fontsource/figtree/files/figtree-latin-500-normal.woff2',
+  'figtree-700.woff2': '@fontsource/figtree/files/figtree-latin-700-normal.woff2',
 };
 await mkdir(`${SALIDA}/fonts`, { recursive: true });
 for (const [destino, origen] of Object.entries(FUENTES)) {
