@@ -1,9 +1,11 @@
 # Robot que publica las tarjetas.
 # Se activa solo cuando:
 #   1) subes cambios al repositorio (push)
-#   2) pasan 10 minutos (lee la hoja y publica si hay cambios)
+#   2) pasan 10 minutos (lee la hoja y publica solo si algo cambió)
 #   3) lo pides a mano (pestaña Actions → "Publicar tarjetas" → Run workflow)
 #   4) presionas "Tarjetas → Publicar ahora" en tu hoja de Google (opcional, ver la guía)
+# Publica en dos lugares: GitHub Pages (la dirección actual) y Cloudflare Pages (el dominio propio).
+# Si una publicación falla, la reintenta sola.
 name: Publicar tarjetas
 
 on:
@@ -27,6 +29,9 @@ concurrency:
 jobs:
   construir:
     runs-on: ubuntu-latest
+    outputs:
+      cambio: ${{ steps.revisar.outputs.cambio }}
+      huella: ${{ steps.huella.outputs.valor }}
     steps:
       # Versiones que corren en Node 24 (GitHub retiró Node 20 de las acciones)
       - uses: actions/checkout@v6
@@ -45,17 +50,105 @@ jobs:
           PIE_TEXTO: ${{ vars.PIE_TEXTO }}
           PIE_URL: ${{ vars.PIE_URL }}
           SITIO_URL: ${{ vars.SITIO_URL }}
+
+      # Huella de todo lo construido. Si es igual a la última publicada, no hace falta publicar.
+      # Incluye si Cloudflare está configurado, para publicar apenas se agreguen sus secretos.
+      - name: Calcular la huella de las páginas
+        id: huella
+        env:
+          CON_CLOUDFLARE: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
+        run: |
+          suma=$(find dist -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -c1-40)
+          echo "valor=$suma-cf-$CON_CLOUDFLARE" >> "$GITHUB_OUTPUT"
+      - name: Buscar la última publicación
+        id: anterior
+        uses: actions/cache/restore@v5
+        with:
+          path: .ultima-publicacion
+          key: publicado-${{ steps.huella.outputs.valor }}
+          lookup-only: true
+      - name: Decidir si hay que publicar
+        id: revisar
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "${{ steps.anterior.outputs.cache-hit }}" = "true" ]; then
+            echo "Sin cambios desde la última publicación. No se publica."
+            echo "cambio=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "cambio=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/configure-pages@v6
+        if: steps.revisar.outputs.cambio == 'true'
       - uses: actions/upload-pages-artifact@v5
+        if: steps.revisar.outputs.cambio == 'true'
         with:
           path: dist
+      - name: Guardar las páginas para Cloudflare
+        if: steps.revisar.outputs.cambio == 'true'
+        uses: actions/upload-artifact@v6
+        with:
+          name: paginas
+          path: dist
+          retention-days: 1
 
   publicar:
     needs: construir
+    if: needs.construir.outputs.cambio == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.despliegue.outputs.page_url }}
+      url: ${{ steps.despliegue.outputs.page_url || steps.reintento.outputs.page_url }}
     steps:
+      # GitHub a veces responde "Deployment failed, try again later": se espera un momento y se reintenta
       - id: despliegue
         uses: actions/deploy-pages@v5
+        continue-on-error: true
+      - name: Esperar antes de reintentar
+        if: steps.despliegue.outcome == 'failure'
+        run: sleep 90
+      - id: reintento
+        if: steps.despliegue.outcome == 'failure'
+        uses: actions/deploy-pages@v5
+
+  cloudflare:
+    needs: construir
+    if: needs.construir.outputs.cambio == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Traer las páginas construidas
+        uses: actions/download-artifact@v7
+        with:
+          name: paginas
+          path: dist
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Publicar en Cloudflare Pages (proyecto fides-tarjetas)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::notice::Cloudflare aún no está configurado (faltan los secretos). Se omite."
+            exit 0
+          fi
+          for intento in 1 2 3; do
+            if npx --yes wrangler@4.151.3 pages deploy dist --project-name=fides-tarjetas --branch=main --commit-dirty=true; then
+              exit 0
+            fi
+            echo "::warning::Cloudflare no respondió bien (intento $intento de 3)."
+            [ "$intento" -lt 3 ] && sleep 60
+          done
+          exit 1
+
+  # Solo si las dos publicaciones salieron bien se anota la huella, para no repetir la próxima vez
+  recordar:
+    needs: [construir, publicar, cloudflare]
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "${{ needs.construir.outputs.huella }}" > .ultima-publicacion
+      - uses: actions/cache/save@v5
+        continue-on-error: true
+        with:
+          path: .ultima-publicacion
+          key: publicado-${{ needs.construir.outputs.huella }}
