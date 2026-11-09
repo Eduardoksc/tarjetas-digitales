@@ -133,12 +133,14 @@ jobs:
             exit 0
           fi
           for intento in 1 2 3; do
-            if npx --yes wrangler@4.151.3 pages deploy dist --project-name=fides-tarjetas --branch=main --commit-dirty=true; then
+            if npx --yes wrangler@4.151.3 pages deploy dist --project-name=fides-tarjetas --branch=main --commit-dirty=true 2>&1 | tee salida.txt; then
               exit 0
             fi
             echo "::warning::Cloudflare no respondió bien (intento $intento de 3)."
             [ "$intento" -lt 3 ] && sleep 60
           done
+          # Deja el motivo como aviso visible sin iniciar sesión (sin el número de cuenta)
+          grep -iE "error|✘|code:|not found|authentication|permission" salida.txt | sed "s/$CLOUDFLARE_ACCOUNT_ID/<cuenta>/g" | tail -6 | while IFS= read -r linea; do echo "::error::$linea"; done
           exit 1
 
   # Solo si las dos publicaciones salieron bien se anota la huella, para no repetir la próxima vez
