@@ -18,13 +18,14 @@ Hoja de Google  ──(robot de GitHub)──►  Una página por negocio  ─�
 5. **Íconos que corresponden a cada botón:** bolsa para pedidos, tienda para sedes, cubiertos para el menú, calendario para citas, y "Pide en Rappi" automático con un enlace de Rappi.
 6. **La reseña es un tiquete con cinco estrellas vacías y un botón "Calificar en Google →".** Una ola breve ilumina las estrellas, pero **no se muestran llenas**, para no presionar al cliente a poner cinco. Todo el tiquete lleva a la reseña de Google, donde el cliente elige su calificación.
 7. **Acciones en mosaico** (menú, WhatsApp, pedidos…). La primera de la lista va a todo el ancho, en el color de la marca: pon primero la más importante con `orden_botones`. Las demás van en dos columnas, con el ícono arriba y el texto abajo. Si una queda sola, ocupa todo el ancho. Al tocar un botón, se hunde y su ícono se llena, para que el cliente sepa que funcionó. En Premium son botones cuadrados con filo dorado.
-8. **Redes sociales en círculos** al final de la página: Instagram, Facebook, TikTok, YouTube, X y Telegram.
-9. **El nombre no se repite** si el logo ya lo trae escrito (columna `nombre_en_logo`).
-10. **Vínculos con nombre:** puedes usar Insertar → Vínculo con un texto corto; el robot usa el enlace real.
-11. **Logos que siempre se ven bien.** El robot recorta márgenes y pone el logo en una placa que se adapta a su forma. Si el logo trae su propio fondo liso (como un JPG con fondo crema), la placa toma ese color. Si trae un fondo con degradado, se muestra tal cual con las esquinas redondeadas.
-12. **Textos editables desde la hoja:** el titular, el nombre de cada botón y la nota debajo de las estrellas.
-13. **Actualizaciones rápidas:** el robot lee la hoja directamente y corre cada 10 minutos (GitHub a veces lo retrasa; usa "Publicar ahora" para verlo al momento).
-14. **Compatibilidad con celulares viejos:** logos en PNG/JPG, sin funciones recientes del navegador, y se le pide al navegador que no oscurezca la página por su cuenta.
+8. **Formulario a WhatsApp** (en un botón extra): el cliente elige el motivo con un toque, escribe su nombre y la fecha, y te llega a WhatsApp un mensaje ordenado. Ver "Formulario a WhatsApp" en la sección de botones.
+9. **Redes sociales en círculos** al final de la página: Instagram, Facebook, TikTok, YouTube, X y Telegram.
+10. **El nombre no se repite** si el logo ya lo trae escrito (columna `nombre_en_logo`).
+11. **Vínculos con nombre:** puedes usar Insertar → Vínculo con un texto corto; el robot usa el enlace real.
+12. **Logos que siempre se ven bien.** El robot recorta márgenes y pone el logo en una placa que se adapta a su forma. Si el logo trae su propio fondo liso (como un JPG con fondo crema), la placa toma ese color. Si trae un fondo con degradado, se muestra tal cual con las esquinas redondeadas.
+13. **Textos editables desde la hoja:** el titular, el nombre de cada botón y la nota debajo de las estrellas.
+14. **Actualizaciones rápidas:** el robot lee la hoja directamente y corre cada 10 minutos (GitHub a veces lo retrasa; usa "Publicar ahora" para verlo al momento).
+15. **Compatibilidad con celulares viejos:** logos en PNG/JPG, sin funciones recientes del navegador, y se le pide al navegador que no oscurezca la página por su cuenta.
 
 ### Cómo actualizar tu repositorio
 
@@ -97,7 +98,7 @@ Mira `ejemplo-negocios.csv`: tiene filas de ejemplo con todo esto.
 | `estado` | `activo` (también `si` o `activa`). Cualquier otra cosa, por ejemplo `pausado`, oculta la página | La página se oculta |
 | `logo_fondo` | `blanco` (placa blanca), `oscuro` (placa oscura, para logos blancos) o `sin` (el logo va directo sobre el color) | Se elige solo (ver abajo) |
 | `orden_botones` | Nombres separados por coma: `catalogo`, `whatsapp`, `boton4` a `boton9`. La reseña siempre va arriba, no hace falta ponerla | `catalogo, whatsapp, boton4` y así hasta `boton9` |
-| `boton4_icono` a `boton9_icono` | `instagram`, `facebook`, `tiktok`, `youtube`, `x`, `telegram`, `maps`, `waze`, `menu`, `catalogo`, `domicilio`, `tienda`, `reservas`, `llamar`, `correo`, `horario`, `promos`, `pago`, `web`, `enlace` | Se elige solo según el enlace |
+| `boton4_icono` a `boton9_icono` | `instagram`, `facebook`, `tiktok`, `youtube`, `x`, `telegram`, `maps`, `waze`, `menu`, `catalogo`, `domicilio`, `tienda`, `reservas`, `llamar`, `correo`, `horario`, `promos`, `pago`, `formulario`, `web`, `enlace` | Se elige solo según el enlace |
 
 Consejo: en `estado` y `logo_fondo` pon una lista desplegable en **Datos → Validación de datos**, así no te equivocas al escribir.
 
@@ -160,6 +161,38 @@ Si el ícono automático no es el que quieres, escribe el que prefieras en `boto
 | Escribir un correo | `hola@negocio.com` | "Enviar correo" |
 
 El ícono sale solo. Si el número o el correo no están completos, el robot avisa con un ⚠ y no muestra el botón. **En Google Sheets no empieces la celda con `+`**, porque lo toma como una fórmula: escribe `tel:` antes, como en el ejemplo. Los números fijos de 7 dígitos sin el 60 ya no se pueden marcar en Colombia, así que el robot no los acepta. El correo no admite asunto ni copias (`?subject=`, `?bcc=`).
+
+**Formulario a WhatsApp.** También solo en `boton4_url` a `boton9_url`. Sirve para que el cliente pida algo con sus datos, sin escribir todo desde cero: una misa en la parroquia, una cita en la barbería, una reserva, un encargo. Al tocar el botón sube una hoja con:
+
+- **¿Qué necesitas?**: las opciones que tú escribas, como botones grandes. Es obligatorio.
+- **Nombre**: obligatorio.
+- **Detalle o fecha**: opcional.
+
+Al tocar "Enviar por WhatsApp" se abre WhatsApp con este mensaje, listo para enviar al número de la columna `whatsapp`:
+
+```
+*NUEVA SOLICITUD WEB*
+
+• *Nombre:* Rosa Gómez
+• *Motivo:* Misa de difuntos
+• *Detalle:* Por mi papá, domingo 7 a. m.
+```
+
+Cómo se escribe en la hoja:
+
+| Columna | Escribe | Ejemplo |
+|---|---|---|
+| `boton5_url` | `formulario:` y las opciones separadas por `\|` (la rayita vertical; en la mayoría de teclados está a la izquierda del 1 o con AltGr + 1) | `formulario: Intención de misa \| Misa de difuntos \| Acción de gracias \| Otro` |
+| `boton5_texto` | El texto del botón y el título de la hoja (unas 16 letras) | `Pedir una misa` |
+
+- Hasta **6 opciones**, de unas 24 letras cada una. Si pones más, el robot muestra las primeras 6 y avisa con un ⚠.
+- Si escribes solo `formulario` (sin opciones), el motivo queda como una caja para escribir.
+- **Necesita la columna `whatsapp`** con un número válido: es a donde llegan las solicitudes. Si falta, el robot avisa y no muestra el botón.
+- Ícono: una hoja con renglones. Si el texto dice "cita" o "reserva", sale el calendario; si dice "pedido" o "encargo", la bolsa. También lo puedes escoger en `boton5_icono`.
+- **No guardamos nada:** los datos van directo del celular del cliente a tu WhatsApp. El cliente siempre ve el mensaje antes de enviarlo.
+- **Celulares muy viejos** (o con JavaScript apagado): en lugar de los botones aparece una sola caja con "Nombre:", "Motivo:" y "Detalle o fecha:" ya escritos, para completar. El mensaje llega igual, solo que menos ordenado.
+
+Ideas por negocio: parroquia (intención de misa, bautizo, matrimonio, partida de bautismo), consultorio (valoración, control, urgencia), restaurante (almuerzo, cena, cumpleaños), peluquería (corte, color, uñas), veterinaria (baño, consulta, vacuna), taller (mantenimiento, frenos, diagnóstico), conjunto residencial (reservar salón, reportar daño), panadería (encargo de torta).
 
 **Cantidad.** Puedes tener hasta 8 acciones: catálogo, WhatsApp y `boton4` a `boton9`, además de la reseña, el Wi-Fi y las redes. Con más, el cliente tarda en encontrar lo que busca y la tarjeta se vuelve una lista; si necesitas más, júntalas en una página y pon un solo botón. Una columna `boton10_url` no se usa: el robot lo avisa con un ⚠. En Premium: con 1 botón queda ancho; con 2 o 4, en parejas; con 3, en fila; con 5, tres arriba y dos abajo; con 6 a 8, en parejas (con 7, el último queda ancho).
 

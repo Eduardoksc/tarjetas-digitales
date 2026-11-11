@@ -231,9 +231,64 @@
     .tl:hover { border-color: rgba(234, 202, 166, .6); }
     .redes a:hover { border-color: rgba(234, 202, 166, .7); transform: translateY(-2px); }
   }
+  /* ---------- Formulario a WhatsApp: hoja que sube desde abajo (botonN_url = "formulario: …") ----------
+     Sin JavaScript se abre con :target y trae una sola caja; con JavaScript, botones de motivo, nombre y detalle. */
+  [hidden] { display: none !important; }
+  .hoja { display: none; position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 10; flex-direction: column; justify-content: flex-end; align-items: center; text-align: left; }
+  html:not(.js) .hoja:target, .hoja.abierta { display: flex; }
+  .con-hoja { overflow: hidden; }
+  .hoja-velo { position: absolute; top: 0; right: 0; bottom: 0; left: 0; background: rgba(0, 0, 0, .7); animation: velo .2s ease-out; }
+  .hoja-caja {
+    position: relative; width: 100%; max-width: 480px; max-height: 92vh; max-height: 92dvh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    padding: 22px 22px 20px; padding-bottom: max(20px, env(safe-area-inset-bottom));
+    border: 1px solid var(--linea); border-bottom: 0; border-radius: 24px 24px 0 0; background: var(--sup) linear-gradient(180deg, var(--sup2), var(--sup)); color: var(--texto);
+    animation: hoja .32s var(--entra);
+  }
+  .hoja-caja:focus { outline: none; }
+  .hoja-caja::before { content: ""; display: block; width: 40px; height: 4px; margin: -10px auto 14px; border-radius: 4px; background: var(--linea); }
+  .hoja-x { position: absolute; top: 12px; right: 12px; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 1px solid var(--linea); border-radius: 50%; color: var(--texto); }
+  .hoja-x svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+  .hoja-tit { margin: 0 52px 6px 0; font-size: 1.15rem; font-weight: 600; line-height: 1.25; }
+  .fm-campo { margin: 14px 0 0; padding: 0; border: 0; min-width: 0; }
+  .fm-et { display: block; margin: 0 0 8px; padding: 0; font-size: .9rem; font-weight: 600; color: var(--texto); }
+  .fm-op { font-weight: 400; color: var(--suave); }
+  .hoja input, .hoja textarea {
+    display: block; width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid rgba(212, 176, 106, .55); border-radius: 12px;
+    background: var(--fondo); color: var(--texto); font: inherit; font-size: 1rem; line-height: 1.4; -webkit-appearance: none; appearance: none;
+  }
+  .hoja textarea { resize: vertical; }
+  .fm-sin-js textarea { min-height: 170px; }
+  .hoja input:focus, .hoja textarea:focus { outline: 2px solid var(--oro); outline-offset: 1px; }
+  .fm-chips { display: grid; grid-template-columns: 1fr 1fr; grid-gap: 8px; }
+  .fm-chips label { position: relative; display: block; }
+  .fm-chips label:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .fm-chips input { position: absolute; top: 0; left: 0; width: 1px; height: 1px; min-height: 0; padding: 0; opacity: 0; }
+  .fm-chips span {
+    display: flex; align-items: center; justify-content: center; height: 100%; min-height: 52px; padding: 8px 10px; border: 1px solid rgba(212, 176, 106, .55); border-radius: 14px;
+    font-weight: 600; font-size: .9rem; line-height: 1.2; text-align: center; overflow-wrap: anywhere; cursor: pointer;
+    transition: background-color .15s var(--entra), color .15s var(--entra), transform .15s var(--entra);
+  }
+  .fm-chips input:checked + span { background: var(--oro); border-color: var(--oro); color: var(--negro); }
+  .fm-chips input:focus-visible + span { outline: 2px solid var(--oro); outline-offset: 2px; }
+  .fm-chips span:active { transform: scale(.97); transition-duration: .08s; }
+  .fm-error { display: none; margin: 6px 0 0; font-size: .85rem; font-weight: 600; color: #ff8f80; }
+  .mal .fm-error { display: block; }
+  .mal input:not([type=radio]), .mal .fm-chips span { border-color: #ff8f80; }
+  .fm-enviar {
+    display: flex; align-items: center; justify-content: center; width: 100%; min-height: 54px; margin-top: 18px; padding: 10px 16px; border: 0; border-radius: 14px;
+    background: var(--oro-a) linear-gradient(135deg, var(--oro-a), var(--oro) 55%, var(--oro-b)); color: var(--negro); font: inherit; font-size: 1rem; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent;
+    transition: transform .2s var(--entra), filter .2s var(--entra);
+  }
+  .fm-enviar svg { width: 22px; height: 22px; margin-right: 10px; fill: currentColor; }
+  .fm-enviar:active { transform: scale(.975); filter: brightness(.92); transition-duration: .08s; }
+  .fm-enviar:focus-visible, .hoja-x:focus-visible { outline: 2px solid var(--oro); outline-offset: 3px; }
+  .fm-priv { margin: 10px 0 0; font-size: .8rem; text-align: center; color: var(--suave); }
+  @keyframes hoja { from { transform: translateY(100%); } }
+  @keyframes velo { from { opacity: 0; } }
   @media (prefers-reduced-motion: reduce) {
-    .cab, h2, .res, .tl, .res::after, .redes a, .res .est path, .wifi { animation: none; }
-    .res, .tl, .redes a, .wifi summary, .fl { transition: none; }
+    .cab, h2, .res, .tl, .res::after, .redes a, .res .est path, .wifi, .hoja-caja, .hoja-velo { animation: none; }
+    .res, .tl, .redes a, .wifi summary, .fl, .fm-chips span, .fm-enviar { transition: none; }
+    .fm-chips span:active, .fm-enviar:active { transform: none; }
   }
 </style>
 </head>
@@ -255,5 +310,6 @@
     {{WIFI_HTML}}
     <footer class="base">{{REDES_HTML}}{{PIE_HTML}}</footer>
   </main>
+  {{FORMULARIOS_HTML}}
 </body>
 </html>

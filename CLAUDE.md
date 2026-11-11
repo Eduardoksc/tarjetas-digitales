@@ -23,6 +23,7 @@ Qué esperar con `ejemplo-negocios.csv`:
 - `dist/001/` y `dist/estilonorte/` (alias), con el logo SVG `estilo-norte.svg`.
 - `dist/002/`, sin logo (muestra la inicial), con `logo_fondo=blanco` y `estilo=premium`.
 - `dist/001/` tiene Wi-Fi para clientes y redes sociales.
+- `dist/001/` (Mostrador, "Agenda tu cita") y `dist/002/` (Premium, "Haz tu pedido") tienen un formulario a WhatsApp; ábrelo directo con `#solicitud-4` o `#solicitud-5`.
 - `003` está `pausado`: no se genera.
 - Se generan también `dist/index.html`, `dist/404.html`, `dist/robots.txt`, `dist/fonts/` y `dist/logos/`.
 - La consola muestra `✔` por negocio y `⚠` por cada problema. El resumen final cuenta páginas, pausadas y advertencias.
@@ -64,7 +65,7 @@ Flujo de `generar.mjs`:
 5. **`htmlPagina()`** reemplaza los tokens con `replaceAll` en secuencia.
 6. Escribe `dist/<id>/index.html` y, si hay alias, una copia idéntica en `dist/<alias>/index.html`. `dist/` se borra completo al inicio de cada build.
 
-Tokens de la plantilla: `{{TITULO}}`, `{{COLOR}}`, `{{COLOR_TEXTO}}`, `{{COLOR_ICONO}}`, `{{CAB_CLASE}}`, `{{NOMBRE}}`, `{{LOGO_HTML}}`, `{{SLOGAN_HTML}}`, `{{TITULAR}}`, `{{RESENA_HTML}}`, `{{N_BOTONES}}`, `{{BOTONES}}`, `{{REDES_HTML}}`, `{{PIE_HTML}}`, `{{COLOR_ACENTO}}`, `{{COLOR_ACENTO_TEXTO}}`, `{{COLOR_TINTA}}`, `{{COLOR_GRIS}}`, `{{COLOR_TINTE}}`, `{{COLOR_ICONO_MOSAICO}}`, `{{COLOR_SOMBRA}}`, `{{TOLDO_CLASE}}`, `{{PORTADA_HTML}}`, `{{WIFI_HTML}}`, `{{DESCRIPCION}}`, `{{META_ENLACES}}`. `{{NOMBRE}}` sale envuelto en `<span class="nom-txt">`, `{{SLOGAN_HTML}}` es un `<p class="slogan">` fuera del `h1` y `{{CAB_CLASE}}` puede incluir `nombre-en-logo`. `{{TOLDO_CLASE}}` puede incluir `con-portada` y `sin-resena`. `{{DESCRIPCION}}` es el slogan o "Contacto y enlaces de <nombre>."; `{{META_ENLACES}}` son `og:url`, `og:image` (portada, o logo que no sea SVG) y `twitter:card`. Los `{{COLOR_*}}` de la paleta salen de `paletaMarca()`; Premium no los usa.
+Tokens de la plantilla: `{{TITULO}}`, `{{COLOR}}`, `{{COLOR_TEXTO}}`, `{{COLOR_ICONO}}`, `{{CAB_CLASE}}`, `{{NOMBRE}}`, `{{LOGO_HTML}}`, `{{SLOGAN_HTML}}`, `{{TITULAR}}`, `{{RESENA_HTML}}`, `{{N_BOTONES}}`, `{{BOTONES}}`, `{{REDES_HTML}}`, `{{PIE_HTML}}`, `{{COLOR_ACENTO}}`, `{{COLOR_ACENTO_TEXTO}}`, `{{COLOR_TINTA}}`, `{{COLOR_GRIS}}`, `{{COLOR_TINTE}}`, `{{COLOR_ICONO_MOSAICO}}`, `{{COLOR_SOMBRA}}`, `{{TOLDO_CLASE}}`, `{{PORTADA_HTML}}`, `{{WIFI_HTML}}`, `{{DESCRIPCION}}`, `{{META_ENLACES}}`, `{{FORMULARIOS_HTML}}`. `{{NOMBRE}}` sale envuelto en `<span class="nom-txt">`, `{{SLOGAN_HTML}}` es un `<p class="slogan">` fuera del `h1` y `{{CAB_CLASE}}` puede incluir `nombre-en-logo`. `{{TOLDO_CLASE}}` puede incluir `con-portada` y `sin-resena`. `{{DESCRIPCION}}` es el slogan o "Contacto y enlaces de <nombre>."; `{{META_ENLACES}}` son `og:url`, `og:image` (portada, o logo que no sea SVG) y `twitter:card`. Los `{{COLOR_*}}` de la paleta salen de `paletaMarca()`; Premium no los usa.
 
 Reglas de seguridad que se deben mantener:
 - Todo texto que venga de la hoja pasa por `esc()`.
@@ -93,6 +94,7 @@ Reglas de seguridad que se deben mantener:
 | `mensaje_whatsapp` | Texto que el **cliente** envía al negocio (`wa.me/<tel>?text=`) | "Hola, vi su tarjeta y quisiera más información." |
 | `texto_whatsapp` | Máximo 16 | "Escríbenos" |
 | `boton4_url`, `boton4_texto`, `boton4_icono` (y `boton5_*` a `boton9_*`, tope en `ULTIMO_BOTON_EXTRA`) | Página, teléfono o correo (`enlaceBoton()`). Teléfono sin `+`: celular `3…` o fijo `60…` de 10 dígitos, con o sin `57`, o `018000`; con `+`: 8 a 15 dígitos. Ícono según `elegirIcono()`: 1) `botonN_icono` (claves en `ICONOS_EXTRA`, con alias en `ALIAS_ICONO`), 2) `llamar` o `correo` si el enlace es `tel:` o `mailto:`, y red social o mapa por el dominio, 3) palabras del texto (`ICONO_POR_TEXTO`: "Pedidos" → domicilio, "Sedes" → tienda, "Citas" → reservas…), 4) servicio por dominio (`ICONO_POR_DOMINIO`: Rappi, DiDi Food, Doctoralia, Calendly, Booksy…), 5) globo | Sin botón, con aviso si es inválido. `boton10_url` o mayor: aviso. El texto por defecto depende del ícono (`TEXTO_ICONO`) o del dominio ("Pide en Rappi") |
+| `botonN_url` = `formulario: A \| B \| C` | Formulario a WhatsApp (`opcionesFormulario()`). Opciones separadas por `\|` (o salto de línea), máximo `MAX_OPCIONES` (6), unas 24 letras cada una. `formulario` sin opciones: el motivo se escribe. Necesita `whatsapp` válido. Ícono `formulario` (o `reservas`/`domicilio` según el texto, o `botonN_icono`). Texto por defecto "Haz tu solicitud" | Sin `whatsapp`: aviso y sin botón. Más de 6 opciones: aviso y se cortan |
 | `portada` | Foto (JPG, PNG o WEBP) en `logos/`. Se recorta a 900×500 y se comprime a 70 KB como máximo (`prepararPortada`) | Sin foto |
 | `wifi_red`, `wifi_clave` | Botón "Wi-Fi gratis" que despliega la red y la clave con `<details>` (sin JavaScript). Sin clave, dice "Red abierta" | Sin Wi-Fi. Clave sin red: avisa |
 | `orden_botones` | Claves `catalogo`, `whatsapp`, `boton4` a `boton9` (también acepta menu, wa, extra, extra1, extra2), separadas por coma, `;` o espacio. Las que falten se agregan en el orden por defecto | `catalogo, whatsapp, boton4` … `boton9` |
@@ -142,12 +144,22 @@ Negro profundo, la reseña como pieza de oro, botones cuadrados satinados con fi
 - **Límites de texto:** unos 16 caracteres por botón (en Premium son cuadrados), unos 32 en el titular y 45 en `texto_resenas`. Si los superas, el script avisa pero no corta.
 - **Restricciones técnicas:**
   - Mobile-first, `max-width` de 440 px (480 px en Premium), respeta `safe-area-inset`.
-  - **Cero JavaScript en el cliente.**
+  - **Cero JavaScript en el cliente**, con una sola excepción: el formulario a WhatsApp (ver abajo). Su script va solo en las tarjetas que tienen formulario, y sin él la hoja sigue funcionando.
   - Fuentes servidas desde el propio sitio (`dist/fonts/`, copiadas desde `@fontsource`), sin pedidos a Google Fonts. Peso sin logo en Mostrador: unos 70 KB, más la portada si hay (máximo 70 KB).
   - `color-scheme: light only` en Mostrador, para que Android no oscurezca la página. `dark` en Premium.
   - Respeta `prefers-reduced-motion`.
   - `noindex` y `robots.txt` con `Disallow: /`.
   - Pensado para celulares viejos: solo CSS ampliamente soportado y logos en PNG/JPG.
+
+### Formulario a WhatsApp (`botonN_url` = `formulario: …`)
+
+Hoja que sube desde abajo, en las dos plantillas (`{{FORMULARIOS_HTML}}`, al final del `<body>`). La genera `htmlFormularios()`; el botón del mosaico es `<a href="#solicitud-N" aria-haspopup="dialog">`.
+
+- **Sin JavaScript (respaldo):** `.hoja:target` la muestra, con una sola `<textarea name="text">` con la plantilla ya escrita y un `<input type="hidden" name="phone">`, en un `<form method="get" action="https://api.whatsapp.com/send" target="_blank">`. Cerrar es un enlace a `#`.
+- **Con JavaScript (`SCRIPT_FORMULARIO`, ES5, sin librerías):** pone la clase `js` en `<html>`, quita la caja única, muestra `.fm-con-js` (motivo en botones de radio, nombre, detalle), abre y cierra con la clase `abierta` sin tocar el hash, cierra con Escape, el velo o la X, mantiene el foco dentro de la hoja y lo devuelve al botón. Al enviar valida motivo y nombre (`.mal`, `aria-invalid`), arma `*NUEVA SOLICITUD WEB*` con `• *Nombre:*`, `• *Motivo:*` y `• *Detalle:*` (este solo si hay), abre `https://wa.me/<whatsapp>?text=` + `encodeURIComponent` en otra pestaña, limpia y cierra. Si se llega con `#solicitud-N` en la dirección, abre la versión completa.
+- **Datos:** no se guarda nada; el número sale de la columna `whatsapp` (solo dígitos) y las opciones pasan por `esc()`.
+- Estilos: `.hoja`, `.hoja-caja`, `.fm-*`. En Mostrador la opción elegida va en `--marca` y el botón de envío en verde WhatsApp (`#25d366` con texto `#0b3d1f`); en Premium, oro. Respeta `prefers-reduced-motion`.
+- No se ha probado en un celular real que `api.whatsapp.com/send` reciba bien el respaldo sin JavaScript (los espacios llegan como `+`).
 
 ## Particularidades conocidas
 

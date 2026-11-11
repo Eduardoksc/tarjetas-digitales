@@ -261,6 +261,61 @@
   .pie { margin: 0; font-size: .8rem; color: var(--gris); }
   .pie a { display: inline-block; min-height: 48px; padding: 15px 12px; text-decoration: underline; text-underline-offset: 3px; } /* área táctil de 48 px */
 
+  /* ---------- Formulario a WhatsApp: hoja que sube desde abajo (botonN_url = "formulario: …") ----------
+     Sin JavaScript se abre con :target y trae una sola caja; con JavaScript, botones de motivo, nombre y detalle. */
+  [hidden] { display: none !important; }
+  .hoja { display: none; position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 10; flex-direction: column; justify-content: flex-end; align-items: center; }
+  html:not(.js) .hoja:target, .hoja.abierta { display: flex; }
+  .con-hoja { overflow: hidden; }
+  .hoja-velo { position: absolute; top: 0; right: 0; bottom: 0; left: 0; background: rgba(12, 10, 9, .55); animation: velo .2s ease-out; }
+  .hoja-caja {
+    position: relative; width: 100%; max-width: 440px; max-height: 92vh; max-height: 92dvh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    padding: 22px 22px 20px; padding-bottom: max(20px, env(safe-area-inset-bottom));
+    border-radius: 24px 24px 0 0; background: #fff; color: var(--tinta); box-shadow: 0 -12px 40px -16px rgba(12, 10, 9, .4);
+    animation: hoja .32s var(--entra);
+  }
+  .hoja-caja:focus { outline: none; }
+  .hoja-caja::before { content: ""; display: block; width: 40px; height: 5px; margin: -10px auto 14px; border-radius: 5px; background: var(--regla); }
+  .hoja-x { position: absolute; top: 12px; right: 12px; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: var(--fondo); color: var(--tinta); }
+  .hoja-x svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+  .hoja-tit { margin: 0 52px 6px 0; font-size: 1.2rem; font-weight: 700; line-height: 1.25; }
+  .fm-campo { margin: 14px 0 0; padding: 0; border: 0; min-width: 0; }
+  .fm-et { display: block; margin: 0 0 8px; padding: 0; font-size: .95rem; font-weight: 700; }
+  .fm-op { font-weight: 500; color: var(--gris); }
+  .hoja input, .hoja textarea {
+    display: block; width: 100%; min-height: 48px; padding: 12px 14px; border: 1.5px solid var(--gris); border-radius: 12px;
+    background: #fff; color: var(--tinta); font: inherit; font-size: 1rem; line-height: 1.4; -webkit-appearance: none; appearance: none;
+  }
+  .hoja textarea { resize: vertical; }
+  .fm-sin-js textarea { min-height: 170px; }
+  .hoja input:focus, .hoja textarea:focus { outline: 2px solid var(--marca); outline-offset: 1px; border-color: var(--tinta); }
+  .fm-chips { display: grid; grid-template-columns: 1fr 1fr; grid-gap: 8px; }
+  .fm-chips label { position: relative; display: block; }
+  .fm-chips label:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .fm-chips input { position: absolute; top: 0; left: 0; width: 1px; height: 1px; min-height: 0; padding: 0; opacity: 0; }
+  .fm-chips span {
+    display: flex; align-items: center; justify-content: center; height: 100%; min-height: 52px; padding: 8px 10px; border: 1.5px solid var(--gris); border-radius: 14px;
+    font-weight: 700; font-size: .95rem; line-height: 1.2; text-align: center; overflow-wrap: anywhere; cursor: pointer;
+    transition: background-color .15s var(--entra), color .15s var(--entra), transform .15s var(--entra);
+  }
+  .fm-chips input:checked + span { background: var(--marca); border-color: var(--marca); color: var(--sobre); }
+  .fm-chips input:focus-visible + span { outline: 2px solid var(--tinta); outline-offset: 2px; }
+  .fm-chips span:active { transform: scale(.97); transition-duration: .08s; }
+  .fm-error { display: none; margin: 6px 0 0; font-size: .88rem; font-weight: 700; color: #b42318; }
+  .mal .fm-error { display: block; }
+  .mal input:not([type=radio]), .mal .fm-chips span { border-color: #b42318; }
+  .fm-enviar {
+    display: flex; align-items: center; justify-content: center; width: 100%; min-height: 54px; margin-top: 18px; padding: 10px 16px; border: 0; border-radius: 99px;
+    background: #25d366; color: #0b3d1f; font: inherit; font-size: 1.05rem; font-weight: 700; cursor: pointer; -webkit-tap-highlight-color: transparent;
+    transition: transform .2s var(--entra), filter .2s var(--entra);
+  }
+  .fm-enviar svg { width: 22px; height: 22px; margin-right: 10px; fill: currentColor; }
+  .fm-enviar:active { transform: scale(.975); filter: brightness(.92); transition-duration: .08s; }
+  .fm-enviar:focus-visible, .hoja-x:focus-visible { outline: 2px solid var(--tinta); outline-offset: 3px; }
+  .fm-priv { margin: 10px 0 0; font-size: .82rem; text-align: center; color: var(--gris); }
+  @keyframes hoja { from { transform: translateY(100%); } }
+  @keyframes velo { from { opacity: 0; } }
+
   /* ---------- Entrada: la página aparece ya lista; solo el tiquete se posa, y todo termina antes de 0.85 s ---------- */
   .res { animation: posa .42s var(--entra) backwards; }
   @keyframes posa { from { transform: translateY(14px); } }
@@ -279,7 +334,9 @@
     .redes a:hover { transform: translateY(-2px); box-shadow: 0 0 0 3px var(--fondo), 0 0 0 4.5px var(--marca); }
   }
   @media (prefers-reduced-motion: reduce) {
-    .res, .res .est path, .res .cta::after, .wf-panel { animation: none; }
+    .res, .res .est path, .res .cta::after, .wf-panel, .hoja-caja, .hoja-velo { animation: none; }
+    .fm-chips span, .fm-enviar { transition: none; }
+    .fm-chips span:active, .fm-enviar:active { transform: none; }
     .res, .res .cta, .fl, .tl, .tl::after, .tl .ic, .wifi .ic, .wifi summary, .wifi summary::after, .redes a { transition: none; }
     .res:hover, .res:active, .tl:hover, .tl:active, .wifi summary:hover, .wifi summary:active, .redes a:hover, .redes a:active { transform: none; }
     .res:active .fl, .res:hover .fl { transform: none; }
@@ -305,5 +362,6 @@
     {{WIFI_HTML}}
     <footer class="base">{{REDES_HTML}}{{PIE_HTML}}</footer>
   </main>
+  {{FORMULARIOS_HTML}}
 </body>
 </html>

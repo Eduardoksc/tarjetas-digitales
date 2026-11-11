@@ -146,6 +146,15 @@ function enlaceCorreo(valor) {
   return /^[a-z0-9_+-]+(\.[a-z0-9_+-]+)*@[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*\.[a-z]{2,}$/i.test(v) ? 'mailto:' + v : null;
 }
 
+// Formulario a WhatsApp: "formulario: Opción 1 | Opción 2 | Opción 3" en botonN_url.
+// Devuelve la lista de opciones (puede ir vacía: entonces el motivo se escribe), o null si no es un formulario.
+const MAX_OPCIONES = 6;
+function opcionesFormulario(valor) {
+  const m = (valor ?? '').trim().match(/^formulario\s*(?::(.*))?$/is);
+  if (!m) return null;
+  return (m[1] ?? '').split(/[|\n]/).map((x) => x.trim()).filter(Boolean);
+}
+
 // Enlace de un botón adicional: página web, teléfono o correo. Acepta también el número o el correo sin "tel:" ni "mailto:".
 function enlaceBoton(valor) {
   const v = (valor ?? '').normalize('NFKC').trim(); // NFKC convierte el "＠" ancho de algunos teclados en "@"
@@ -252,16 +261,17 @@ const ICONOS = {
   promos: '<path d="M3.5 12.4V4.5a1 1 0 0 1 1-1h7.9l8.1 8.1a1.5 1.5 0 0 1 0 2.1l-6.8 6.8a1.5 1.5 0 0 1-2.1 0z"/><circle cx="8.3" cy="8.3" r="1.5"/>',
   pago: '<rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h3.5"/>',
   correo: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 7l8.5 6.5L20.5 7"/>',
+  formulario: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2.8h6V4M8.5 10h7M8.5 13.5h7M8.5 17h4"/>',
   wifi: '<path d="M2.5 9a14 14 0 0 1 19 0M5.6 12.4a9.5 9.5 0 0 1 12.8 0M8.7 15.8a5 5 0 0 1 6.6 0"/><circle cx="12" cy="19.3" r=".8"/>',
 };
 
 // Ícono de cada botón: 1) el que se escribe en botonN_icono, 2) el de la red o el mapa según el enlace,
 // 3) según el texto del botón ("Pedidos" → bolsa, "Sedes" → tienda), 4) según el servicio (Rappi, Doctoralia…), 5) globo.
-const ICONOS_EXTRA = ['instagram', 'facebook', 'tiktok', 'youtube', 'x', 'telegram', 'maps', 'waze', 'menu', 'catalogo', 'domicilio', 'tienda', 'reservas', 'llamar', 'correo', 'horario', 'promos', 'pago', 'web', 'enlace'];
+const ICONOS_EXTRA = ['instagram', 'facebook', 'tiktok', 'youtube', 'x', 'telegram', 'maps', 'waze', 'menu', 'catalogo', 'domicilio', 'tienda', 'reservas', 'llamar', 'correo', 'horario', 'promos', 'pago', 'formulario', 'web', 'enlace'];
 const ALIAS_ICONO = {
   twitter: 'x', mapa: 'maps', ubicacion: 'maps', google_maps: 'maps', pagina: 'web', sitio: 'web', link: 'enlace',
   carta: 'menu', productos: 'catalogo', pedidos: 'domicilio', domicilios: 'domicilio', rappi: 'domicilio', sedes: 'tienda', local: 'tienda',
-  citas: 'reservas', cita: 'reservas', agenda: 'reservas', reserva: 'reservas', telefono: 'llamar', email: 'correo', mail: 'correo', promociones: 'promos', pagos: 'pago',
+  citas: 'reservas', cita: 'reservas', agenda: 'reservas', reserva: 'reservas', telefono: 'llamar', email: 'correo', mail: 'correo', promociones: 'promos', pagos: 'pago', solicitud: 'formulario', pedido: 'formulario',
 };
 const TEXTO_ICONO = {
   instagram: 'Instagram',
@@ -282,6 +292,7 @@ const TEXTO_ICONO = {
   horario: 'Horario',
   promos: 'Promociones',
   pago: 'Medios de pago',
+  formulario: 'Haz tu solicitud',
   web: 'Nuestra web',
   enlace: 'Más info',
 };
@@ -919,6 +930,32 @@ async function prepararNegocio(fila, num) {
   }
 
   for (const n of BOTONES_EXTRA) {
+    const opciones = opcionesFormulario(g(`boton${n}_url`));
+    if (opciones) {
+      if (!tel) {
+        avisar(`${etiqueta}: boton${n}_url es un formulario, pero falta un número de WhatsApp válido en la columna whatsapp, que es a donde llegan las solicitudes. Se omite.`);
+        continue;
+      }
+      if (opciones.length > MAX_OPCIONES) avisar(`${etiqueta}: el formulario de boton${n} tiene ${opciones.length} opciones; se muestran las primeras ${MAX_OPCIONES}.`);
+      const lista = [...new Set(opciones)].slice(0, MAX_OPCIONES);
+      for (const o of lista) if (o.length > 24) avisar(`${etiqueta}: la opción "${o.slice(0, 24)}…" del formulario de boton${n} es larga (${o.length} letras); en el botón caben unas 24.`);
+      let icono = 'formulario';
+      const forzado = normalizar(g(`boton${n}_icono`));
+      const t = normalizar(g(`boton${n}_texto`));
+      if (forzado) {
+        const clave = ALIAS_ICONO[forzado] ?? forzado;
+        if (ICONOS[clave] || MARCAS[clave]) icono = clave;
+        else avisar(`${etiqueta}: el ícono "${g(`boton${n}_icono`)}" de boton${n}_icono no existe. Se usa el de formulario.`);
+      } else if (/reserva|cita|agend|turno|consulta/.test(t)) icono = 'reservas';
+      else if (/domicilio|pedido|pide|encarg/.test(t)) icono = 'domicilio';
+      disponibles['boton' + n] = {
+        icono,
+        texto: texto(`boton${n}_texto`, TEXTO_ICONO.formulario),
+        url: `#solicitud-${n}`,
+        formulario: { id: `solicitud-${n}`, opciones: lista, tel },
+      };
+      continue;
+    }
     const url = enlaceBoton(g(`boton${n}_url`));
     if (url === null) avisar(`${etiqueta}: "${g(`boton${n}_url`).slice(0, 40)}" en boton${n}_url no sirve. Usa una página (https://…), un teléfono (3001234567 o tel:+573001234567) o un correo (hola@negocio.com). Se omite.`);
     else if (url) {
@@ -980,10 +1017,10 @@ async function prepararNegocio(fila, num) {
   const paleta = paletaMarca(marca, secundario);
 
   // Botones que se confunden entre sí: misma red dos veces, o textos que empiezan igual ("Pedir" y "Pedidos")
-  const dominio = (u) => new URL(u).hostname.replace(/^www\./, '');
+  const dominio = (u) => (u.startsWith('#') ? '' : new URL(u).hostname.replace(/^www\./, '')); // un formulario no tiene dominio
   const acciones = botones.filter((b) => b.icono !== 'resenas');
   for (const b of acciones) {
-    const red = redes.find((r) => dominio(r.url) === dominio(b.url));
+    const red = dominio(b.url) && redes.find((r) => dominio(r.url) === dominio(b.url));
     if (red) avisar(`${etiqueta}: el botón "${b.texto}" lleva a ${red.nombre}, que ya sale en los círculos de redes. Quita uno de los dos.`);
   }
   const inicios = acciones.map((b) => normalizar(b.texto).replace(/^_+/, '').replace(/^(ver|el|la|los|las|tu|su)_/, '').slice(0, 4));
@@ -1035,7 +1072,7 @@ function htmlBotones(botones) {
     .map(
       // La primera acción va a todo el ancho, llena del color de la marca; las demás, en mosaico
       (b, i) =>
-        `<a class="tl${i === 0 ? ' pri' : ''}" href="${esc(b.url)}" rel="noopener">` +
+        `<a class="tl${i === 0 ? ' pri' : ''}" href="${esc(b.url)}"${b.formulario ? ' aria-haspopup="dialog"' : ' rel="noopener"'}>` +
         `<span class="ic">${svgIcono(b.icono)}</span>` +
         `<span class="tx">${esc(b.texto)}</span></a>`
     )
@@ -1065,6 +1102,122 @@ function htmlWifi(wifi) {
     `<details class="wifi"><summary><span class="ic">${svgIcono('wifi')}</span><span class="tx">Wi-Fi gratis</span></summary>` +
     `<div class="wf-panel"><span class="wf-dato"><span class="wf-et">Red</span><span class="wf-red">${esc(wifi.red)}</span></span>${clave}</div></details>`
   );
+}
+
+// ---------- Formulario a WhatsApp ----------
+// Sin JavaScript: el botón abre la hoja con :target y el cliente llena una sola caja con la plantilla ya escrita,
+// que se envía tal cual a WhatsApp (formulario GET a api.whatsapp.com/send, que lee "phone" y "text").
+// Con JavaScript (casi siempre): la caja se cambia por botones de motivo, nombre y detalle, y el mensaje sale ordenado.
+const X_CERRAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+const ENCABEZADO_SOLICITUD = '*NUEVA SOLICITUD WEB*';
+
+function htmlFormulario(b) {
+  const { id, opciones, tel } = b.formulario;
+  const t = esc(b.texto);
+  const pista = opciones.length ? ` (${opciones.join(', ')})` : '';
+  const plantilla = `${ENCABEZADO_SOLICITUD}\n\nNombre: \nMotivo${pista}: \nDetalle o fecha: `;
+  const motivo = opciones.length
+    ? `<fieldset class="fm-campo"><legend class="fm-et">¿Qué necesitas?</legend><div class="fm-chips">` +
+      opciones.map((o) => `<label><input type="radio" name="${id}-m" value="${esc(o)}"><span>${esc(o)}</span></label>`).join('') +
+      `</div><p class="fm-error" id="${id}-em">Elige una opción.</p></fieldset>`
+    : `<div class="fm-campo"><label class="fm-et" for="${id}-m">Motivo</label><input id="${id}-m" class="fm-motivo" maxlength="80" aria-describedby="${id}-em"><p class="fm-error" id="${id}-em">Escribe el motivo.</p></div>`;
+  return (
+    `<div class="hoja" id="${id}" role="dialog" aria-modal="true" aria-labelledby="${id}-t">` +
+    `<a class="hoja-velo" href="#" tabindex="-1" aria-hidden="true"></a>` +
+    `<form class="hoja-caja" action="https://api.whatsapp.com/send" method="get" target="_blank" data-wa="${tel}" tabindex="-1" novalidate>` +
+    `<input type="hidden" name="phone" value="${tel}">` +
+    `<a class="hoja-x" href="#" aria-label="Cerrar">${X_CERRAR}</a>` +
+    `<h2 class="hoja-tit" id="${id}-t">${t}</h2>` +
+    `<div class="fm-sin-js"><label class="fm-et" for="${id}-txt">Completa después de cada dos puntos</label>` +
+    `<textarea id="${id}-txt" name="text" rows="6">${esc(plantilla)}</textarea></div>` +
+    `<div class="fm-con-js" hidden>${motivo}` +
+    `<div class="fm-campo"><label class="fm-et" for="${id}-n">Nombre</label><input id="${id}-n" class="fm-nombre" autocomplete="name" maxlength="80" aria-describedby="${id}-en"><p class="fm-error" id="${id}-en">Escribe tu nombre.</p></div>` +
+    `<div class="fm-campo"><label class="fm-et" for="${id}-d">Detalle o fecha <span class="fm-op">(opcional)</span></label><textarea id="${id}-d" class="fm-detalle" rows="2" maxlength="300"></textarea></div>` +
+    `</div>` +
+    `<button class="fm-enviar" type="submit">${svgIcono('whatsapp')}Enviar por WhatsApp</button>` +
+    `<p class="fm-priv">Se abre WhatsApp con tu mensaje. No guardamos tus datos.</p>` +
+    `</form></div>`
+  );
+}
+
+// Script mínimo, solo en las tarjetas que tienen formulario. Si no corre, la hoja sigue funcionando con la caja única.
+const SCRIPT_FORMULARIO = `<script>
+(function () {
+  var d = document, raiz = d.documentElement, abierta = null, origen = null;
+  if (!d.querySelector || !window.encodeURIComponent || !raiz.classList) return;
+  raiz.classList.add('js');
+  function cerrar() {
+    if (!abierta) return;
+    abierta.classList.remove('abierta');
+    raiz.classList.remove('con-hoja');
+    if (location.hash === '#' + abierta.id && history.replaceState) history.replaceState(null, '', location.pathname + location.search);
+    abierta = null;
+    if (origen) origen.focus();
+  }
+  function abrir(h, o) {
+    cerrar();
+    abierta = h; origen = o;
+    h.classList.add('abierta');
+    raiz.classList.add('con-hoja');
+    h.querySelector('.hoja-caja').focus();
+  }
+  function marcar(campo, mal) {
+    campo.classList.toggle('mal', mal);
+    var c = campo.querySelector('input:not([type=radio])');
+    if (c) c.setAttribute('aria-invalid', mal ? 'true' : 'false');
+  }
+  var hojas = d.querySelectorAll('.hoja');
+  for (var i = 0; i < hojas.length; i++) (function (h) {
+    var f = h.querySelector('form'), sin = f.querySelector('.fm-sin-js'), con = f.querySelector('.fm-con-js');
+    sin.parentNode.removeChild(sin);
+    con.hidden = false;
+    var cierres = h.querySelectorAll('.hoja-velo, .hoja-x');
+    for (var j = 0; j < cierres.length; j++) cierres[j].addEventListener('click', function (e) { e.preventDefault(); cerrar(); });
+    var botones = d.querySelectorAll('a[href="#' + h.id + '"]');
+    for (var k = 0; k < botones.length; k++) botones[k].addEventListener('click', function (e) { e.preventDefault(); abrir(h, this); });
+    f.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var elegido = f.querySelector('input[type=radio]:checked'), escrito = f.querySelector('.fm-motivo');
+      var motivo = (elegido ? elegido.value : escrito ? escrito.value : '').trim();
+      var nombre = f.querySelector('.fm-nombre').value.trim(), detalle = f.querySelector('.fm-detalle').value.trim();
+      var campos = f.querySelectorAll('.fm-campo');
+      marcar(campos[0], !motivo);
+      marcar(campos[1], !nombre);
+      if (!motivo || !nombre) {
+        var primero = !motivo ? (campos[0].querySelector('input')) : f.querySelector('.fm-nombre');
+        primero.focus();
+        return;
+      }
+      var msg = '${ENCABEZADO_SOLICITUD}\\n\\n\\u2022 *Nombre:* ' + nombre + '\\n\\u2022 *Motivo:* ' + motivo + (detalle ? '\\n\\u2022 *Detalle:* ' + detalle : '');
+      var a = d.createElement('a');
+      a.href = 'https://wa.me/' + f.getAttribute('data-wa') + '?text=' + encodeURIComponent(msg);
+      a.target = '_blank'; a.rel = 'noopener';
+      d.body.appendChild(a); a.click(); d.body.removeChild(a);
+      f.reset();
+      for (var m = 0; m < campos.length; m++) marcar(campos[m], false);
+      cerrar();
+    });
+  })(hojas[i]);
+  d.addEventListener('keydown', function (e) {
+    if (!abierta) return;
+    if (e.key === 'Escape' || e.keyCode === 27) return cerrar();
+    if (e.key !== 'Tab') return;
+    // El foco no se sale de la hoja mientras está abierta
+    var foco = abierta.querySelectorAll('.hoja-x, input:not([type=hidden]), textarea, button');
+    var ini = foco[0], fin = foco[foco.length - 1];
+    if (e.shiftKey && (d.activeElement === ini || d.activeElement === abierta.querySelector('.hoja-caja'))) { e.preventDefault(); fin.focus(); }
+    else if (!e.shiftKey && d.activeElement === fin) { e.preventDefault(); ini.focus(); }
+  });
+  // Si alguien llega con el enlace directo (#solicitud-5), se abre la versión completa
+  var inicial = location.hash && d.getElementById(location.hash.slice(1));
+  if (inicial && inicial.classList.contains('hoja')) abrir(inicial, null);
+})();
+</script>`;
+
+function htmlFormularios(botones) {
+  const con = botones.filter((b) => b.formulario);
+  if (!con.length) return '';
+  return con.map(htmlFormulario).join('\n') + '\n' + SCRIPT_FORMULARIO;
 }
 
 function htmlRedes(redes) {
@@ -1141,7 +1294,8 @@ function htmlPagina(plantilla, n) {
     .replaceAll('{{N_BOTONES}}', String(n.botones.length))
     .replaceAll('{{BOTONES}}', htmlBotones(n.botones))
     .replaceAll('{{REDES_HTML}}', htmlRedes(n.redes))
-    .replaceAll('{{PIE_HTML}}', pie);
+    .replaceAll('{{PIE_HTML}}', pie)
+    .replaceAll('{{FORMULARIOS_HTML}}', htmlFormularios(n.botones));
 }
 
 const paginaSimple = (titulo, texto) => `<!doctype html>
