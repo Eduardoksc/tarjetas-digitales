@@ -155,6 +155,74 @@ function opcionesFormulario(valor) {
   return (m[1] ?? '').split(/[|\n]/).map((x) => x.trim()).filter(Boolean);
 }
 
+// Campos propios del formulario (columna botonN_campos): un campo por renglón o separados por ";".
+//   "Tipo de misa (desplegable): Comunitaria | Particular" → lista desplegable
+//   "Intención: Eterno descanso | Acción de gracias"      → opciones en botones grandes
+//   "(opcional)" quita la obligación. El tipo sale del nombre ("Fecha y hora" → calendario con reloj)
+//   o de una palabra entre paréntesis o corchetes: (fecha), (hora), (fecha y hora), (número), (teléfono), (correo), (texto largo), (texto).
+const MAX_CAMPOS = 8;
+const MAX_OPCIONES_LISTA = 12;
+const MARCAS_CAMPO = {
+  opcional: 'opcional', desplegable: 'desplegable', lista: 'desplegable', botones: 'botones',
+  fecha: 'date', hora: 'time', fecha_y_hora: 'datetime-local', numero: 'numero', telefono: 'tel', celular: 'tel',
+  correo: 'email', texto_largo: 'largo', texto: 'text',
+};
+function tipoPorNombre(nombre) {
+  const n = normalizar(nombre);
+  if (/fecha/.test(n) && /hora/.test(n)) return 'datetime-local';
+  if (/(^|_)(fecha|dia)(_|$)/.test(n)) return 'date';
+  if (/(^|_)hora(_|$)/.test(n)) return 'time';
+  if (/telefono|celular|whatsapp/.test(n)) return 'tel';
+  if (/correo|e_?mail/.test(n)) return 'email';
+  if (/intencion|detalle|mensaje|observacion|comentario|descripcion/.test(n)) return 'largo';
+  return 'text';
+}
+function camposFormulario(texto, donde) {
+  const lineas = texto.split(/[\n;]/).map((x) => x.trim()).filter(Boolean);
+  if (lineas.length > MAX_CAMPOS) avisar(`${donde} tiene ${lineas.length} campos; se usan los primeros ${MAX_CAMPOS}. Un formulario largo cansa al cliente.`);
+  return lineas.slice(0, MAX_CAMPOS).map((linea) => {
+    let opciones = [];
+    const dp = linea.indexOf(':');
+    // Solo hay opciones si van separadas por | o si el campo dice (desplegable) o (botones): "Hora: 7 a. m." es solo un nombre
+    if (dp > 0 && linea.slice(dp + 1).trim() && (linea.includes('|', dp) || /[([]\s*(desplegable|lista|botones)\s*[)\]]/i.test(linea.slice(0, dp)))) {
+      opciones = [...new Set(linea.slice(dp + 1).split('|').map((x) => x.trim()).filter(Boolean))];
+      linea = linea.slice(0, dp);
+    }
+    let opcional = false, forma = '', tipo = '';
+    linea = linea.replace(/[([]([^)\]]+)[)\]]/g, (todo, palabra) => {
+      const m = MARCAS_CAMPO[normalizar(palabra).replace(/^_+|_+$/g, '')];
+      if (!m) return todo; // un paréntesis normal, como "Nombre (completo)", se queda
+      if (m === 'opcional') opcional = true;
+      else if (m === 'desplegable' || m === 'botones') forma = m;
+      else tipo = m;
+      return '';
+    }).replace(/\s+/g, ' ').trim();
+    if (opciones.length) {
+      tipo = forma || 'botones';
+      const max = tipo === 'botones' ? MAX_OPCIONES : MAX_OPCIONES_LISTA;
+      if (opciones.length > max) avisar(`${donde}: "${linea}" tiene ${opciones.length} opciones; se usan las primeras ${max}.${tipo === 'botones' ? ' Con muchas, escribe (desplegable) después del nombre.' : ''}`);
+      opciones = opciones.slice(0, max);
+      if (tipo === 'botones') for (const o of opciones) if (o.length > 24) avisar(`${donde}: la opción "${o.slice(0, 24)}…" es larga (${o.length} letras); en el botón caben unas 24.`);
+    } else {
+      if (forma === 'desplegable') avisar(`${donde}: "${linea}" dice (desplegable) pero no tiene opciones. Escríbelas después de dos puntos, separadas por |.`);
+      tipo = tipo || tipoPorNombre(linea);
+    }
+    return { etiqueta: linea || 'Dato', enMensaje: linea || 'Dato', tipo, opciones, opcional };
+  });
+}
+// Sin botonN_campos: motivo (en botones, o para escribir si no hay opciones), nombre y detalle.
+// En el mensaje van en el orden de siempre: nombre, motivo, detalle.
+function camposPorDefecto(opciones, donde) {
+  if (opciones.length > MAX_OPCIONES) avisar(`${donde} tiene ${opciones.length} opciones; se muestran las primeras ${MAX_OPCIONES}.`);
+  const lista = [...new Set(opciones)].slice(0, MAX_OPCIONES);
+  for (const o of lista) if (o.length > 24) avisar(`${donde}: la opción "${o.slice(0, 24)}…" es larga (${o.length} letras); en el botón caben unas 24.`);
+  return [
+    { etiqueta: lista.length ? '¿Qué necesitas?' : 'Motivo', enMensaje: 'Motivo', tipo: lista.length ? 'botones' : 'text', opciones: lista, opcional: false, pos: 1 },
+    { etiqueta: 'Nombre', enMensaje: 'Nombre', tipo: 'text', opciones: [], opcional: false, pos: 0 },
+    { etiqueta: 'Detalle o fecha', enMensaje: 'Detalle', tipo: 'largo', opciones: [], opcional: true, pos: 2 },
+  ];
+}
+
 // Enlace de un botón adicional: página web, teléfono o correo. Acepta también el número o el correo sin "tel:" ni "mailto:".
 function enlaceBoton(valor) {
   const v = (valor ?? '').normalize('NFKC').trim(); // NFKC convierte el "＠" ancho de algunos teclados en "@"
@@ -936,9 +1004,9 @@ async function prepararNegocio(fila, num) {
         avisar(`${etiqueta}: boton${n}_url es un formulario, pero falta un número de WhatsApp válido en la columna whatsapp, que es a donde llegan las solicitudes. Se omite.`);
         continue;
       }
-      if (opciones.length > MAX_OPCIONES) avisar(`${etiqueta}: el formulario de boton${n} tiene ${opciones.length} opciones; se muestran las primeras ${MAX_OPCIONES}.`);
-      const lista = [...new Set(opciones)].slice(0, MAX_OPCIONES);
-      for (const o of lista) if (o.length > 24) avisar(`${etiqueta}: la opción "${o.slice(0, 24)}…" del formulario de boton${n} es larga (${o.length} letras); en el botón caben unas 24.`);
+      const campos = g(`boton${n}_campos`)
+        ? camposFormulario(g(`boton${n}_campos`), `${etiqueta}: boton${n}_campos`)
+        : camposPorDefecto(opciones, `${etiqueta}: el formulario de boton${n}`);
       let icono = 'formulario';
       const forzado = normalizar(g(`boton${n}_icono`));
       const t = normalizar(g(`boton${n}_texto`));
@@ -952,7 +1020,7 @@ async function prepararNegocio(fila, num) {
         icono,
         texto: texto(`boton${n}_texto`, TEXTO_ICONO.formulario),
         url: `#solicitud-${n}`,
-        formulario: { id: `solicitud-${n}`, opciones: lista, tel },
+        formulario: { id: `solicitud-${n}`, campos, tel },
       };
       continue;
     }
@@ -1111,41 +1179,86 @@ function htmlWifi(wifi) {
 const X_CERRAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ENCABEZADO_SOLICITUD = '*NUEVA SOLICITUD WEB*';
 
+function htmlCampo(c, i, id) {
+  const cid = `${id}-c${i}`;
+  const op = c.opcional ? ' <span class="fm-op">(opcional)</span>' : '';
+  const datos = ` data-et="${esc(c.enMensaje)}" data-tipo="${c.tipo}" data-pos="${c.pos ?? i}"${c.opcional ? '' : ' data-req="1"'}`;
+  const error = `<p class="fm-error" id="${cid}-e">${c.tipo === 'botones' || c.tipo === 'desplegable' ? 'Elige una opción.' : 'Completa este dato.'}</p>`;
+  if (c.tipo === 'botones') {
+    return (
+      `<fieldset class="fm-campo"${datos}><legend class="fm-et">${esc(c.etiqueta)}${op}</legend><div class="fm-chips">` +
+      c.opciones.map((o) => `<label><input type="radio" name="${cid}" value="${esc(o)}"><span>${esc(o)}</span></label>`).join('') +
+      `</div>${error}</fieldset>`
+    );
+  }
+  let control;
+  const req = c.opcional ? '' : ' aria-required="true"';
+  const desc = ` aria-describedby="${cid}-e"`;
+  if (c.tipo === 'desplegable') {
+    control = `<select id="${cid}"${req}${desc}><option value="">Elige una opción</option>${c.opciones.map((o) => `<option>${esc(o)}</option>`).join('')}</select>`;
+  } else if (c.tipo === 'largo') {
+    control = `<textarea id="${cid}" rows="2" maxlength="300"${req}${desc}></textarea>`;
+  } else {
+    const tipo = { numero: 'text', text: 'text' }[c.tipo] ?? c.tipo;
+    const extra =
+      c.tipo === 'numero' ? ' inputmode="numeric"'
+      : c.tipo === 'tel' ? ' autocomplete="tel"'
+      : c.tipo === 'email' ? ' autocomplete="email"'
+      : c.tipo === 'text' && /quien|nombre/.test(normalizar(c.etiqueta)) ? ' autocomplete="name"' : '';
+    control = `<input id="${cid}" type="${tipo}" maxlength="120"${extra}${req}${desc}>`;
+  }
+  return `<div class="fm-campo"${datos}><label class="fm-et" for="${cid}">${esc(c.etiqueta)}${op}</label>${control}${error}</div>`;
+}
+
+// "¿Por quién…?" no lleva dos puntos; "Intención" sí
+const conDosPuntos = (e) => (/[?:]$/.test(e) ? e : e + ':');
+
 function htmlFormulario(b) {
-  const { id, opciones, tel } = b.formulario;
-  const t = esc(b.texto);
-  const pista = opciones.length ? ` (${opciones.join(', ')})` : '';
-  const plantilla = `${ENCABEZADO_SOLICITUD}\n\nNombre: \nMotivo${pista}: \nDetalle o fecha: `;
-  const motivo = opciones.length
-    ? `<fieldset class="fm-campo"><legend class="fm-et">¿Qué necesitas?</legend><div class="fm-chips">` +
-      opciones.map((o) => `<label><input type="radio" name="${id}-m" value="${esc(o)}"><span>${esc(o)}</span></label>`).join('') +
-      `</div><p class="fm-error" id="${id}-em">Elige una opción.</p></fieldset>`
-    : `<div class="fm-campo"><label class="fm-et" for="${id}-m">Motivo</label><input id="${id}-m" class="fm-motivo" maxlength="80" aria-describedby="${id}-em"><p class="fm-error" id="${id}-em">Escribe el motivo.</p></div>`;
+  const { id, campos, tel } = b.formulario;
+  const plantilla =
+    `${ENCABEZADO_SOLICITUD}\n*${b.texto}*\n\n` +
+    campos.map((c) => conDosPuntos(c.etiqueta) + (c.opciones.length ? ` (${c.opciones.join(' / ')})` : '') + ' ').join('\n');
   return (
     `<div class="hoja" id="${id}" role="dialog" aria-modal="true" aria-labelledby="${id}-t">` +
     `<a class="hoja-velo" href="#" tabindex="-1" aria-hidden="true"></a>` +
     `<form class="hoja-caja" action="https://api.whatsapp.com/send" method="get" target="_blank" data-wa="${tel}" tabindex="-1" novalidate>` +
     `<input type="hidden" name="phone" value="${tel}">` +
     `<a class="hoja-x" href="#" aria-label="Cerrar">${X_CERRAR}</a>` +
-    `<h2 class="hoja-tit" id="${id}-t">${t}</h2>` +
-    `<div class="fm-sin-js"><label class="fm-et" for="${id}-txt">Completa después de cada dos puntos</label>` +
-    `<textarea id="${id}-txt" name="text" rows="6">${esc(plantilla)}</textarea></div>` +
-    `<div class="fm-con-js" hidden>${motivo}` +
-    `<div class="fm-campo"><label class="fm-et" for="${id}-n">Nombre</label><input id="${id}-n" class="fm-nombre" autocomplete="name" maxlength="80" aria-describedby="${id}-en"><p class="fm-error" id="${id}-en">Escribe tu nombre.</p></div>` +
-    `<div class="fm-campo"><label class="fm-et" for="${id}-d">Detalle o fecha <span class="fm-op">(opcional)</span></label><textarea id="${id}-d" class="fm-detalle" rows="2" maxlength="300"></textarea></div>` +
-    `</div>` +
+    `<h2 class="hoja-tit" id="${id}-t">${esc(b.texto)}</h2>` +
+    `<div class="fm-sin-js"><label class="fm-et" for="${id}-txt">Completa después de cada pregunta</label>` +
+    `<textarea id="${id}-txt" name="text" rows="${Math.min(4 + campos.length, 11)}">${esc(plantilla)}</textarea></div>` +
+    `<div class="fm-con-js" hidden>${campos.map((c, i) => htmlCampo(c, i, id)).join('')}</div>` +
     `<button class="fm-enviar" type="submit">${svgIcono('whatsapp')}Enviar por WhatsApp</button>` +
     `<p class="fm-priv">Se abre WhatsApp con tu mensaje. No guardamos tus datos.</p>` +
     `</form></div>`
   );
 }
 
-// Script mínimo, solo en las tarjetas que tienen formulario. Si no corre, la hoja sigue funcionando con la caja única.
+// Script mínimo (ES5, sin librerías), solo en las tarjetas que tienen formulario.
+// Si no corre, la hoja sigue funcionando con la caja única.
 const SCRIPT_FORMULARIO = `<script>
 (function () {
   var d = document, raiz = d.documentElement, abierta = null, origen = null;
   if (!d.querySelector || !window.encodeURIComponent || !raiz.classList) return;
   raiz.classList.add('js');
+  var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  var DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+  function dos(n) { return (n < 10 ? '0' : '') + n; }
+  function hora12(t) {
+    var p = t.split(':'), h = +p[0], m = p[1];
+    if (isNaN(h) || !m) return t;
+    return (h % 12 || 12) + ':' + m.slice(0, 2) + (h < 12 ? ' a. m.' : ' p. m.');
+  }
+  // "2026-11-15T07:00" → "domingo 15 de noviembre de 2026, 7:00 a. m." (los celulares viejos sin calendario dejan el texto tal cual)
+  function legible(tipo, v) {
+    if (tipo === 'time') return hora12(v);
+    if (tipo !== 'date' && tipo !== 'datetime-local') return v;
+    var p = v.split('T'), f = p[0].split('-');
+    if (f.length !== 3) return v;
+    var a = +f[0], me = +f[1], di = +f[2], fecha = new Date(a, me - 1, di);
+    if (isNaN(fecha.getTime()) || !MESES[me - 1]) return v;
+    return DIAS[fecha.getDay()] + ' ' + di + ' de ' + MESES[me - 1] + ' de ' + a + (p[1] ? ', ' + hora12(p[1]) : '');
+  }
   function cerrar() {
     if (!abierta) return;
     abierta.classList.remove('abierta');
@@ -1157,13 +1270,24 @@ const SCRIPT_FORMULARIO = `<script>
   function abrir(h, o) {
     cerrar();
     abierta = h; origen = o;
+    // No se puede pedir una fecha que ya pasó
+    var hoy = new Date(), dia = hoy.getFullYear() + '-' + dos(hoy.getMonth() + 1) + '-' + dos(hoy.getDate());
+    var fechas = h.querySelectorAll('input[type=date], input[type=datetime-local]');
+    for (var i = 0; i < fechas.length; i++) fechas[i].min = fechas[i].type === 'date' ? dia : dia + 'T00:00';
     h.classList.add('abierta');
     raiz.classList.add('con-hoja');
     h.querySelector('.hoja-caja').focus();
   }
+  function valor(campo) {
+    if (campo.getAttribute('data-tipo') === 'botones') {
+      var r = campo.querySelector('input:checked');
+      return r ? r.value : '';
+    }
+    return campo.querySelector('input, select, textarea').value.replace(/^\\s+|\\s+$/g, '');
+  }
   function marcar(campo, mal) {
-    campo.classList.toggle('mal', mal);
-    var c = campo.querySelector('input:not([type=radio])');
+    campo.className = campo.className.replace(/ mal\\b/g, '') + (mal ? ' mal' : '');
+    var c = campo.querySelector('input:not([type=radio]), select, textarea');
     if (c) c.setAttribute('aria-invalid', mal ? 'true' : 'false');
   }
   var hojas = d.querySelectorAll('.hoja');
@@ -1177,24 +1301,26 @@ const SCRIPT_FORMULARIO = `<script>
     for (var k = 0; k < botones.length; k++) botones[k].addEventListener('click', function (e) { e.preventDefault(); abrir(h, this); });
     f.addEventListener('submit', function (e) {
       e.preventDefault();
-      var elegido = f.querySelector('input[type=radio]:checked'), escrito = f.querySelector('.fm-motivo');
-      var motivo = (elegido ? elegido.value : escrito ? escrito.value : '').trim();
-      var nombre = f.querySelector('.fm-nombre').value.trim(), detalle = f.querySelector('.fm-detalle').value.trim();
-      var campos = f.querySelectorAll('.fm-campo');
-      marcar(campos[0], !motivo);
-      marcar(campos[1], !nombre);
-      if (!motivo || !nombre) {
-        var primero = !motivo ? (campos[0].querySelector('input')) : f.querySelector('.fm-nombre');
-        primero.focus();
-        return;
+      var campos = f.querySelectorAll('.fm-campo'), lineas = [], primero = null;
+      for (var m = 0; m < campos.length; m++) {
+        var c = campos[m], v = valor(c), mal = !v && c.getAttribute('data-req') === '1';
+        marcar(c, mal);
+        if (mal && !primero) primero = c.querySelector('input, select, textarea');
+        if (v) {
+          var et = c.getAttribute('data-et');
+          lineas.push({ pos: +c.getAttribute('data-pos'), txt: '\\u2022 *' + (/[?:]$/.test(et) ? et : et + ':') + '* ' + legible(c.getAttribute('data-tipo'), v) });
+        }
       }
-      var msg = '${ENCABEZADO_SOLICITUD}\\n\\n\\u2022 *Nombre:* ' + nombre + '\\n\\u2022 *Motivo:* ' + motivo + (detalle ? '\\n\\u2022 *Detalle:* ' + detalle : '');
+      if (primero) { primero.focus(); return; }
+      lineas.sort(function (a, b) { return a.pos - b.pos; });
+      var msg = '${ENCABEZADO_SOLICITUD}\\n*' + h.querySelector('.hoja-tit').textContent + '*\\n';
+      for (var n = 0; n < lineas.length; n++) msg += '\\n' + lineas[n].txt;
       var a = d.createElement('a');
       a.href = 'https://wa.me/' + f.getAttribute('data-wa') + '?text=' + encodeURIComponent(msg);
       a.target = '_blank'; a.rel = 'noopener';
       d.body.appendChild(a); a.click(); d.body.removeChild(a);
       f.reset();
-      for (var m = 0; m < campos.length; m++) marcar(campos[m], false);
+      for (var q = 0; q < campos.length; q++) marcar(campos[q], false);
       cerrar();
     });
   })(hojas[i]);
@@ -1203,7 +1329,7 @@ const SCRIPT_FORMULARIO = `<script>
     if (e.key === 'Escape' || e.keyCode === 27) return cerrar();
     if (e.key !== 'Tab') return;
     // El foco no se sale de la hoja mientras está abierta
-    var foco = abierta.querySelectorAll('.hoja-x, input:not([type=hidden]), textarea, button');
+    var foco = abierta.querySelectorAll('.hoja-x, input:not([type=hidden]), select, textarea, button');
     var ini = foco[0], fin = foco[foco.length - 1];
     if (e.shiftKey && (d.activeElement === ini || d.activeElement === abierta.querySelector('.hoja-caja'))) { e.preventDefault(); fin.focus(); }
     else if (!e.shiftKey && d.activeElement === fin) { e.preventDefault(); ini.focus(); }

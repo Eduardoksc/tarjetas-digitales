@@ -172,10 +172,11 @@ Al tocar "Enviar por WhatsApp" se abre WhatsApp con este mensaje, listo para env
 
 ```
 *NUEVA SOLICITUD WEB*
+*Agenda tu cita*
 
 • *Nombre:* Rosa Gómez
-• *Motivo:* Misa de difuntos
-• *Detalle:* Por mi papá, domingo 7 a. m.
+• *Motivo:* Corte y barba
+• *Detalle:* Sábado 10 a. m.
 ```
 
 Cómo se escribe en la hoja:
@@ -191,6 +192,44 @@ Cómo se escribe en la hoja:
 - Ícono: una hoja con renglones. Si el texto dice "cita" o "reserva", sale el calendario; si dice "pedido" o "encargo", la bolsa. También lo puedes escoger en `boton5_icono`.
 - **No guardamos nada:** los datos van directo del celular del cliente a tu WhatsApp. El cliente siempre ve el mensaje antes de enviarlo.
 - **Celulares muy viejos** (o con JavaScript apagado): en lugar de los botones aparece una sola caja con "Nombre:", "Motivo:" y "Detalle o fecha:" ya escritos, para completar. El mensaje llega igual, solo que menos ordenado.
+
+**Formulario con tus propias preguntas.** Si necesitas otras preguntas (por ejemplo, para las misas), agrega la columna `boton5_campos` (o la del botón que uses) y escribe **una pregunta por renglón**. En Google Sheets, **Alt + Enter** hace un renglón nuevo dentro de la celda. También puedes separarlas con `;`. En `boton5_url` basta con escribir `formulario`.
+
+Ejemplo para una parroquia (`boton5_texto` = `Pedir una misa`):
+
+```
+Intención: Eterno descanso | Salud y recuperación | Acción de gracias | Intenciones particulares
+¿Por quién se ofrece la misa?
+¿Quién ofrece la misa?
+Fecha y hora
+Tipo de misa (desplegable): Comunitaria | Particular
+```
+
+| Si escribes | Aparece |
+|---|---|
+| `Intención: A \| B \| C` | Las opciones como botones grandes (hasta 6) |
+| `Tipo de misa (desplegable): A \| B` | Una lista desplegable (hasta 12 opciones) |
+| `Fecha y hora` | Calendario con reloj. No deja escoger días que ya pasaron |
+| `Fecha` / `Hora` | Solo calendario / solo reloj |
+| `Teléfono` o `Celular` | Teclado de números |
+| `Intención`, `Detalle`, `Mensaje` u `Observaciones` (sin opciones) | Una caja grande |
+| Cualquier otra pregunta | Una caja de una línea |
+| `(opcional)` al final | Esa pregunta no es obligatoria. **Las demás sí lo son** |
+
+Si el tipo automático no te sirve, escríbelo entre paréntesis: `(fecha)`, `(hora)`, `(fecha y hora)`, `(número)`, `(teléfono)`, `(correo)`, `(texto largo)`. Máximo 8 preguntas: un formulario largo cansa al cliente.
+
+Te llega así (las fechas, escritas en palabras):
+
+```
+*NUEVA SOLICITUD WEB*
+*Pedir una misa*
+
+• *Intención:* Eterno descanso
+• *¿Por quién se ofrece la misa?* Rosa Gómez
+• *¿Quién ofrece la misa?* Familia Gómez Pérez
+• *Fecha y hora:* domingo 15 de noviembre de 2026, 7:30 p. m.
+• *Tipo de misa:* Comunitaria
+```
 
 Ideas por negocio: parroquia (intención de misa, bautizo, matrimonio, partida de bautismo), consultorio (valoración, control, urgencia), restaurante (almuerzo, cena, cumpleaños), peluquería (corte, color, uñas), veterinaria (baño, consulta, vacuna), taller (mantenimiento, frenos, diagnóstico), conjunto residencial (reservar salón, reportar daño), panadería (encargo de torta).
 

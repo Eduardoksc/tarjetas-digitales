@@ -256,9 +256,17 @@
     display: block; width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid rgba(212, 176, 106, .55); border-radius: 12px;
     background: var(--fondo); color: var(--texto); font: inherit; font-size: 1rem; line-height: 1.4; -webkit-appearance: none; appearance: none;
   }
+  .hoja select {
+    display: block; width: 100%; min-height: 48px; padding: 12px 40px 12px 14px; border: 1px solid rgba(212, 176, 106, .55); border-radius: 12px; color: var(--texto); font: inherit; font-size: 1rem;
+    -webkit-appearance: none; appearance: none;
+    background: var(--fondo) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d4b06a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;
+    background-size: 20px;
+  }
+  .hoja select option { background: var(--sup); color: var(--texto); }
+  .hoja input::-webkit-calendar-picker-indicator { filter: invert(.8); }
   .hoja textarea { resize: vertical; }
   .fm-sin-js textarea { min-height: 170px; }
-  .hoja input:focus, .hoja textarea:focus { outline: 2px solid var(--oro); outline-offset: 1px; }
+  .hoja input:focus, .hoja textarea:focus, .hoja select:focus { outline: 2px solid var(--oro); outline-offset: 1px; }
   .fm-chips { display: grid; grid-template-columns: 1fr 1fr; grid-gap: 8px; }
   .fm-chips label { position: relative; display: block; }
   .fm-chips label:last-child:nth-child(odd) { grid-column: 1 / -1; }
@@ -273,7 +281,7 @@
   .fm-chips span:active { transform: scale(.97); transition-duration: .08s; }
   .fm-error { display: none; margin: 6px 0 0; font-size: .85rem; font-weight: 600; color: #ff8f80; }
   .mal .fm-error { display: block; }
-  .mal input:not([type=radio]), .mal .fm-chips span { border-color: #ff8f80; }
+  .mal input:not([type=radio]), .mal select, .mal textarea, .mal .fm-chips span { border-color: #ff8f80; }
   .fm-enviar {
     display: flex; align-items: center; justify-content: center; width: 100%; min-height: 54px; margin-top: 18px; padding: 10px 16px; border: 0; border-radius: 14px;
     background: var(--oro-a) linear-gradient(135deg, var(--oro-a), var(--oro) 55%, var(--oro-b)); color: var(--negro); font: inherit; font-size: 1rem; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent;

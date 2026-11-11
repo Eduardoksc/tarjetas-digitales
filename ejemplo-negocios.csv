@@ -1,4 +1,9 @@
-id,estado,nombre,slogan,color,logo,logo_fondo,titular,google_resenas,texto_resenas,nota_resenas,catalogo,texto_catalogo,whatsapp,mensaje_whatsapp,texto_whatsapp,boton4_url,boton4_texto,boton4_icono,boton5_url,boton5_texto,boton5_icono,orden_botones,alias,estilo,nombre_en_logo,portada,wifi_red,wifi_clave,instagram,facebook,tiktok,youtube,x,telegram
-001,activo,Estilo Norte,Barbería y peluquería,#1F6F5C,estilo-norte.svg,,Nos encantó verte.,https://g.page/r/ejemplo/review,,,https://example.com/catalogo,,300 123 4567,Hola Estilo Norte quiero agendar una cita,,formulario: Corte | Barba | Corte y barba | Color,Agenda tu cita,,https://maps.app.goo.gl/ejemplo,,,,estilonorte,,,,EstiloNorte_Clientes,corte2026,@estilonorte,,,,,
-002,activo,Café Aroma,Café de origen,#7A3E1D,,blanco,Gracias por venir.,https://g.page/r/ejemplo2/review,,,,,3001234567,,Pedir,https://example.com/tienda,Tienda en línea,web,formulario: Pedido para recoger | Encargo de torta | Evento,Haz tu pedido,,,,premium,,,,,,cafearoma,,,,
-003,pausado,Negocio pausado,,#B83A5B,,,,https://g.page/r/ejemplo3/review,,,,,3001112233,,,,,,,,,,,,,,,,,,,,,
+id,estado,nombre,slogan,color,logo,logo_fondo,titular,google_resenas,texto_resenas,nota_resenas,catalogo,texto_catalogo,whatsapp,mensaje_whatsapp,texto_whatsapp,boton4_url,boton4_texto,boton4_icono,boton5_url,boton5_texto,boton5_icono,orden_botones,alias,estilo,nombre_en_logo,portada,wifi_red,wifi_clave,instagram,facebook,tiktok,youtube,x,telegram,boton4_campos
+001,activo,Estilo Norte,Barbería y peluquería,#1F6F5C,estilo-norte.svg,,Nos encantó verte.,https://g.page/r/ejemplo/review,,,https://example.com/catalogo,,300 123 4567,Hola Estilo Norte quiero agendar una cita,,formulario: Corte | Barba | Corte y barba | Color,Agenda tu cita,,https://maps.app.goo.gl/ejemplo,,,,estilonorte,,,,EstiloNorte_Clientes,corte2026,@estilonorte,,,,,,
+002,activo,Café Aroma,Café de origen,#7A3E1D,,blanco,Gracias por venir.,https://g.page/r/ejemplo2/review,,,,,3001234567,,Pedir,https://example.com/tienda,Tienda en línea,web,formulario: Pedido para recoger | Encargo de torta | Evento,Haz tu pedido,,,,premium,,,,,,cafearoma,,,,,
+003,pausado,Negocio pausado,,#B83A5B,,,,https://g.page/r/ejemplo3/review,,,,,3001112233,,,,,,,,,,,,,,,,,,,,,,
+004,activo,Parroquia San José,Comunidad de fe,#7A2E3A,,,Aquí estamos para ti.,,,,,,3001234567,,,formulario,Pedir una misa,,https://maps.app.goo.gl/ejemplo3,,,boton4 whatsapp boton5,,,,,,,,,,,,,"Intención: Eterno descanso | Salud y recuperación | Acción de gracias | Intenciones particulares
+¿Por quién se ofrece la misa?
+¿Quién ofrece la misa?
+Fecha y hora
+Tipo de misa (desplegable): Comunitaria | Particular"
