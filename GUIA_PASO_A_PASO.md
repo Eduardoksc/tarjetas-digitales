@@ -19,13 +19,14 @@ Hoja de Google  ──(robot de GitHub)──►  Una página por negocio  ─�
 6. **La reseña es un tiquete con cinco estrellas vacías y un botón "Calificar en Google →".** Una ola breve ilumina las estrellas, pero **no se muestran llenas**, para no presionar al cliente a poner cinco. Todo el tiquete lleva a la reseña de Google, donde el cliente elige su calificación.
 7. **Acciones en mosaico** (menú, WhatsApp, pedidos…). La primera de la lista va a todo el ancho, en el color de la marca: pon primero la más importante con `orden_botones`. Las demás van en dos columnas, con el ícono arriba y el texto abajo. Si una queda sola, ocupa todo el ancho. Al tocar un botón, se hunde y su ícono se llena, para que el cliente sepa que funcionó. En Premium son botones cuadrados con filo dorado.
 8. **Formulario a WhatsApp** (en un botón extra): el cliente elige el motivo con un toque, escribe su nombre y la fecha, y te llega a WhatsApp un mensaje ordenado. Ver "Formulario a WhatsApp" en la sección de botones.
-9. **Redes sociales en círculos** al final de la página: Instagram, Facebook, TikTok, YouTube, X y Telegram.
-10. **El nombre no se repite** si el logo ya lo trae escrito (columna `nombre_en_logo`).
-11. **Vínculos con nombre:** puedes usar Insertar → Vínculo con un texto corto; el robot usa el enlace real.
-12. **Logos que siempre se ven bien.** El robot recorta márgenes y pone el logo en una placa que se adapta a su forma. Si el logo trae su propio fondo liso (como un JPG con fondo crema), la placa toma ese color. Si trae un fondo con degradado, se muestra tal cual con las esquinas redondeadas.
-13. **Textos editables desde la hoja:** el titular, el nombre de cada botón y la nota debajo de las estrellas.
-14. **Actualizaciones rápidas:** el robot lee la hoja directamente y corre cada 10 minutos (GitHub a veces lo retrasa; usa "Publicar ahora" para verlo al momento).
-15. **Compatibilidad con celulares viejos:** logos en PNG/JPG, sin funciones recientes del navegador, y se le pide al navegador que no oscurezca la página por su cuenta.
+9. **Subtítulo, etiqueta y lienzo** (opcionales), y **contador de visitas y toques** (ver PASO 4): una línea corta bajo el texto de cada botón ("Elige el día y la hora"), una etiqueta como "Nuevo" y un fondo suave que se queda quieto al bajar (`lienzo`: formas, puntos o arcos). Ver la sección de botones y la de colores.
+10. **Redes sociales en círculos** al final de la página: Instagram, Facebook, TikTok, YouTube, X y Telegram.
+11. **El nombre no se repite** si el logo ya lo trae escrito (columna `nombre_en_logo`).
+12. **Vínculos con nombre:** puedes usar Insertar → Vínculo con un texto corto; el robot usa el enlace real.
+13. **Logos que siempre se ven bien.** El robot recorta márgenes y pone el logo en una placa que se adapta a su forma. Si el logo trae su propio fondo liso (como un JPG con fondo crema), la placa toma ese color. Si trae un fondo con degradado, se muestra tal cual con las esquinas redondeadas.
+14. **Textos editables desde la hoja:** el titular, el nombre de cada botón y la nota debajo de las estrellas.
+15. **Actualizaciones rápidas:** el robot lee la hoja directamente y corre cada 10 minutos (GitHub a veces lo retrasa; usa "Publicar ahora" para verlo al momento).
+16. **Compatibilidad con celulares viejos:** logos en PNG/JPG, sin funciones recientes del navegador, y se le pide al navegador que no oscurezca la página por su cuenta.
 
 ### Cómo actualizar tu repositorio
 
@@ -237,6 +238,16 @@ Ideas por negocio: parroquia (intención de misa, bautizo, matrimonio, partida d
 
 **Orden.** En `orden_botones` escribe los nombres separados por comas, por ejemplo `whatsapp, catalogo`. Un botón sin datos simplemente no aparece.
 
+**Subtítulo y etiqueta (opcionales).** Debajo del texto de un botón puedes poner una línea corta que explique qué hace, y en la esquina una etiqueta pequeña para llamar la atención:
+
+| Botón | Subtítulo | Etiqueta |
+|---|---|---|
+| Catálogo | `detalle_catalogo` | `etiqueta_catalogo` |
+| WhatsApp | `detalle_whatsapp` | `etiqueta_whatsapp` |
+| Botón 4 a 9 | `boton4_detalle` … `boton9_detalle` | `boton4_etiqueta` … `boton9_etiqueta` |
+
+Ejemplo: `boton4_texto` = `Agenda tu cita`, `boton4_detalle` = `Elige el día y la hora`, `boton4_etiqueta` = `Nuevo`. El subtítulo cabe en unas 30 letras y la etiqueta en unas 10; si te pasas, el robot avisa con un ⚠. Úsalos con medida: si todos los botones tienen etiqueta, ninguna resalta.
+
 **Tarjeta sin reseña.** Si `google_resenas` está vacía, no sale el bloque de estrellas y las acciones suben. Sirve para consultorios, conjuntos residenciales y negocios que no buscan reseñas.
 
 ## Vista previa al compartir
@@ -258,6 +269,17 @@ Las apps guardan la vista previa de cada enlace durante un tiempo, así que un c
 El toldo de arriba lleva el color del negocio. El texto encima se vuelve blanco o negro solo, según qué tan claro sea el color, para que siempre se lea. Abajo, la reseña va en un tiquete blanco, con las estrellas y su botón en el color secundario que el robot saca del logo (más oscuro si hace falta para que se vean bien).
 
 Escribe el color como `#B83A5B` (6 letras o números después del `#`). Si es incorrecto, el robot avisa y usa uno por defecto.
+
+**Lienzo de fondo (opcional).** En la columna `lienzo` puedes poner un fondo suave, del color del negocio, que se queda quieto mientras el cliente baja por la página:
+
+| `lienzo` | Cómo se ve |
+|---|---|
+| `formas` | Dos círculos grandes y suaves a los lados y un aro abajo |
+| `puntos` | Una trama de puntos pequeños |
+| `arcos` | Arcos finos que bajan desde arriba, como ondas |
+| (vacío) | Fondo claro liso, como siempre |
+
+En Premium el lienzo va en dorado muy tenue.
 
 **Por qué el color puede verse distinto en cada celular.** La pantalla de cada aparato muestra los colores a su manera, y algunos navegadores de Android oscurecen las páginas por su cuenta. La página ya le pide al navegador que no lo haga, pero la diferencia de pantalla a pantalla no se puede eliminar.
 
@@ -320,6 +342,15 @@ git push -u origin main
 ## PASO 4: Variables de GitHub
 
 **Settings → Secrets and variables → Actions → pestaña Variables**: `SHEET_ID` y `SHEET_GID` (lectura directa) y/o `SHEET_CSV_URL` (respaldo). Opcional: `PIE_TEXTO` y `PIE_URL` para un pie en cada página, y `SITIO_URL` solo cuando pases a un dominio propio (por ejemplo `https://t.tumarca.co`).
+
+**Medir visitas y toques (opcional).** Para saber cuántas personas abren cada tarjeta, qué botones tocan, a qué hora y si llegaron por el QR o por el NFC:
+1. En Cloudflare, ve a **Storage & databases → D1 → Create database** y llámala `fides-contador`.
+2. Ve a **Workers & Pages → fides-tarjetas → Settings → Bindings → Add → D1 database**. En *Variable name* escribe `CONTADOR` y elige `fides-contador`. Guarda.
+3. En GitHub, crea la variable `CONTADOR_URL` con la dirección de las tarjetas en Cloudflare, por ejemplo `https://t.fides-link.com`.
+4. Publica de nuevo ("Publicar cambios ahora" o Actions → Run workflow).
+5. Al imprimir: el **QR** debe llevar `?o=qr` al final (`https://t.fides-link.com/001/?o=qr`) y el **chip NFC** `?o=nfc`. Así se sabe cómo llegó cada persona. Los QR que ya imprimiste siguen funcionando; esas visitas cuentan "sin origen".
+
+No se guarda ningún dato de la persona: solo se suma 1 por hora, tarjeta y botón. Si no haces estos pasos, las tarjetas funcionan igual y no se cuenta nada. Las visitas que entran por la dirección vieja de GitHub (`github.io`) no se cuentan.
 
 ## PASO 5: Activa la publicación
 

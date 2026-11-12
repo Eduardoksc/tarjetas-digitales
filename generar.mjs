@@ -19,11 +19,18 @@ const TITULAR_DEFECTO = 'Nos encantó verte.';
 const TEXTO_RESENAS_DEFECTO = '¿Cómo te fue? Cuéntanos tu experiencia'; // el botón ya dice "Calificar en Google"
 const NOTA_RESENAS_DEFECTO = '20 segundos. Ayudas a que más gente nos encuentre.';
 const MAX_TEXTO_BOTON = 16; // los botones cuadrados tienen poco espacio
+const MAX_DETALLE = 30; // subtítulo bajo el texto del botón ("Únete y acumula puntos")
+const MAX_ETIQUETA = 10; // etiqueta pequeña en la esquina ("Nuevo")
+// Fondo que se queda quieto mientras se baja por la página (columna lienzo)
+const LIENZOS = ['formas', 'puntos', 'arcos'];
 const ULTIMO_BOTON_EXTRA = 9; // botones adicionales: boton4 a boton9. Con catálogo y WhatsApp son 8 acciones como máximo
 const BOTONES_EXTRA = Array.from({ length: ULTIMO_BOTON_EXTRA - 3 }, (_, i) => String(i + 4)); // ['4', '5', … '9']
 const MENSAJE_DEFECTO = 'Hola, vi su tarjeta y quisiera más información.';
 const PIE_TEXTO = process.env.PIE_TEXTO ?? ''; // ej: "Tarjeta digital por E.S.C"
 const PIE_URL = process.env.PIE_URL ?? ''; // ej: "https://tudominio.co"
+// Contador propio (opcional): dirección donde corre en Cloudflare, ej. https://t.fides-link.com.
+// Con ella, cada botón web pasa por <CONTADOR_URL>/ir/<id>/<botón>, que suma el toque y lleva al enlace real.
+const CONTADOR_URL = (process.env.CONTADOR_URL ?? '').trim().replace(/\/+$/, '');
 // Dirección pública del sitio, para la imagen de la vista previa al compartir (WhatsApp, Facebook…).
 // Sin la variable SITIO_URL, en GitHub se deduce del repositorio. Al pasar a un dominio propio, basta con crear SITIO_URL.
 const [DUENO_REPO, NOMBRE_REPO] = (process.env.GITHUB_REPOSITORY ?? '').split('/');
@@ -295,6 +302,9 @@ function paletaMarca(marca, secundario) {
     tinte,
     iconoMosaico: legibleSobre(marca, tinte, 3),
     sombra: oscurecer(marca, 0.5),
+    // Lienzo de fondo: suave para no competir con las piezas blancas ni bajar el contraste del pie
+    lienzoSuave: mezclar('#f5f5f4', marca, 0.12),
+    lienzoTrazo: mezclar('#f5f5f4', marca, 0.26),
   };
 }
 
@@ -907,8 +917,8 @@ async function prepararNegocio(fila, num) {
     avisar(`${etiqueta}: el "id" debe usar solo letras minúsculas, números o guiones (ej: 001). Se omite.`);
     return null;
   }
-  if (id === 'logos') {
-    avisar(`${etiqueta}: "logos" es un nombre reservado. Se omite.`);
+  if (['logos', 'fonts', 'ir'].includes(id)) {
+    avisar(`${etiqueta}: "${id}" es un nombre reservado. Se omite.`);
     return null;
   }
   const estado = normalizar(g('estado'));
@@ -1040,8 +1050,24 @@ async function prepararNegocio(fila, num) {
     }
   }
 
+  // Subtítulo y etiqueta opcionales: botonN_detalle / botonN_etiqueta, detalle_catalogo / etiqueta_catalogo…
+  for (const [clave, b] of Object.entries(disponibles)) {
+    if (clave === 'resenas') continue;
+    const [colDetalle, colEtiqueta] = clave.startsWith('boton') ? [`${clave}_detalle`, `${clave}_etiqueta`] : [`detalle_${clave}`, `etiqueta_${clave}`];
+    b.detalle = g(colDetalle);
+    b.etiqueta = g(colEtiqueta);
+    if (b.detalle.length > MAX_DETALLE) avisar(`${etiqueta}: el subtítulo "${b.detalle.slice(0, 24)}…" de ${colDetalle} tiene ${b.detalle.length} letras; caben unas ${MAX_DETALLE}. Acórtalo.`);
+    if (b.etiqueta.length > MAX_ETIQUETA) avisar(`${etiqueta}: la etiqueta "${b.etiqueta}" de ${colEtiqueta} tiene ${b.etiqueta.length} letras; caben unas ${MAX_ETIQUETA} (ej: Nuevo). Acórtala.`);
+  }
+
+  let lienzo = normalizar(g('lienzo'));
+  if (lienzo && !LIENZOS.includes(lienzo)) {
+    avisar(`${etiqueta}: el lienzo "${g('lienzo')}" no existe. Escribe ${LIENZOS.join(', ')} o déjalo vacío. Se usa sin lienzo.`);
+    lienzo = '';
+  }
+
   const botones = ordenarBotones(g('orden_botones'), etiqueta)
-    .map((clave) => disponibles[clave])
+    .map((clave) => disponibles[clave] && { ...disponibles[clave], clave })
     .filter(Boolean);
 
   if (botones.length === 0) {
@@ -1125,6 +1151,7 @@ async function prepararNegocio(fila, num) {
     botones: botones.filter((b) => b.icono !== 'resenas'),
     redes,
     nombreEnLogo,
+    lienzo,
     estilo: estilo || 'mostrador',
   };
 }
@@ -1135,14 +1162,24 @@ const FLECHA = '<svg class="fl" viewBox="0 0 24 24" aria-hidden="true"><path d="
 const G_GOOGLE =
   '<svg class="g" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
 
-function htmlBotones(botones) {
+// Con contador, los enlaces web pasan por /ir/ para sumar el toque. Teléfono, correo y formularios van directo.
+const contadorListo = () => Boolean(CONTADOR_URL) && urlSegura(CONTADOR_URL + '/') === CONTADOR_URL + '/';
+function enlace(id, clave, url) {
+  return contadorListo() && /^https:\/\//.test(url) ? `${CONTADOR_URL}/ir/${id}/${clave}` : url;
+}
+
+function htmlBotones(botones, id) {
   return botones
     .map(
       // La primera acción va a todo el ancho, llena del color de la marca; las demás, en mosaico
       (b, i) =>
-        `<a class="tl${i === 0 ? ' pri' : ''}" href="${esc(b.url)}"${b.formulario ? ' aria-haspopup="dialog"' : ' rel="noopener"'}>` +
+        `<a class="tl${i === 0 ? ' pri' : ''}" href="${esc(enlace(id, b.clave, b.url))}"${b.formulario ? ' aria-haspopup="dialog"' : ' rel="noopener"'}>` +
         `<span class="ic">${svgIcono(b.icono)}</span>` +
-        `<span class="tx">${esc(b.texto)}</span></a>`
+        (b.detalle
+          ? `<span class="txs"><span class="tx">${esc(b.texto)}</span><span class="det">${esc(b.detalle)}</span></span>`
+          : `<span class="tx">${esc(b.texto)}</span>`) +
+        (b.etiqueta ? `<span class="eti">${esc(b.etiqueta)}</span>` : '') +
+        `</a>`
     )
     .join('\n      ');
 }
@@ -1151,7 +1188,7 @@ function htmlResena(n) {
   if (!n.resena) return '';
   return (
     // Sin "cinco estrellas": la calificación la elige el cliente en Google, aquí no se sugiere ninguna
-    `<a class="res" href="${esc(n.resena.url)}" rel="noopener" aria-label="${esc(n.resena.texto)}. Abre Google para calificar">` +
+    `<a class="res" href="${esc(enlace(n.id, 'resenas', n.resena.url))}" rel="noopener" aria-label="${esc(n.resena.texto)}. Abre Google para calificar">` +
     `<span class="arr">${G_GOOGLE}<span>${esc(n.resena.texto)}</span></span>` +
     `<span class="est" aria-hidden="true">${ESTRELLA.repeat(5)}</span>` +
     // Un botón claro: las estrellas son adorno, la calificación se elige en Google
@@ -1346,10 +1383,10 @@ function htmlFormularios(botones) {
   return con.map(htmlFormulario).join('\n') + '\n' + SCRIPT_FORMULARIO;
 }
 
-function htmlRedes(redes) {
+function htmlRedes(redes, id) {
   if (!redes.length) return '';
   const enlaces = redes
-    .map((r) => `<a href="${esc(r.url)}" rel="noopener" aria-label="${r.nombre}">${svgIcono(r.clave)}</a>`)
+    .map((r) => `<a href="${esc(enlace(id, r.clave, r.url))}" rel="noopener" aria-label="${r.nombre}">${svgIcono(r.clave)}</a>`)
     .join('\n      ');
   return `<nav class="redes" aria-label="Redes sociales">\n      ${enlaces}\n    </nav>`;
 }
@@ -1408,6 +1445,8 @@ function htmlPagina(plantilla, n) {
     .replaceAll('{{COLOR_TINTE}}', n.tinte)
     .replaceAll('{{COLOR_ICONO_MOSAICO}}', n.iconoMosaico)
     .replaceAll('{{COLOR_SOMBRA}}', n.sombra)
+    .replaceAll('{{COLOR_LIENZO}}', n.lienzoSuave)
+    .replaceAll('{{COLOR_LIENZO_TRAZO}}', n.lienzoTrazo)
     .replaceAll('{{TOLDO_CLASE}}', (n.portada ? ' con-portada' : '') + (n.resena ? '' : ' sin-resena'))
     .replaceAll('{{PORTADA_HTML}}', n.portada ? `<img class="portada" src="${esc(n.portada.src)}" alt="" width="900" height="500" decoding="async">` : '')
     .replaceAll('{{WIFI_HTML}}', htmlWifi(n.wifi))
@@ -1418,11 +1457,13 @@ function htmlPagina(plantilla, n) {
     .replaceAll('{{TITULAR}}', esc(n.titular))
     .replaceAll('{{RESENA_HTML}}', htmlResena(n))
     .replaceAll('{{N_BOTONES}}', String(n.botones.length))
-    .replaceAll('{{BOTONES}}', htmlBotones(n.botones))
-    .replaceAll('{{REDES_HTML}}', htmlRedes(n.redes))
+    .replaceAll('{{BOTONES}}', htmlBotones(n.botones, n.id))
+    .replaceAll('{{REDES_HTML}}', htmlRedes(n.redes, n.id))
     .replaceAll('{{PIE_HTML}}', pie)
+    .replaceAll('{{LIENZO_CLASE}}', n.lienzo ? `lz lz-${n.lienzo}` : '')
     .replaceAll('{{FORMULARIOS_HTML}}', htmlFormularios(n.botones));
 }
+
 
 const paginaSimple = (titulo, texto) => `<!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -1509,11 +1550,23 @@ for (const n of negocios) {
     await mkdir(`${SALIDA}/${carpeta}`, { recursive: true });
     await writeFile(`${SALIDA}/${carpeta}/index.html`, html);
   }
+  // Mapa de enlaces que usa el contador (/ir/<id>/<botón>): solo los https que el robot ya validó
+  if (contadorListo()) {
+    const mapa = {};
+    for (const b of [n.resena, ...n.botones].filter(Boolean)) if (/^https:\/\//.test(b.url)) mapa[b.clave] = b.url;
+    for (const r of n.redes) mapa[r.clave] = r.url;
+    await writeFile(`${SALIDA}/${n.id}/enlaces.json`, JSON.stringify(mapa));
+  }
   console.log(`  ✔ ${n.id}${n.alias ? ' / ' + n.alias : ''} — ${n.nombre} (${n.botones.length + (n.resena ? 1 : 0)} botones${n.estilo === 'premium' ? ', premium' : ''})`);
 }
 
 await writeFile(`${SALIDA}/index.html`, paginaSimple('Tarjeta digital', 'Escanea la tarjeta de un negocio para ver su página.'));
 await writeFile(`${SALIDA}/404.html`, paginaSimple('Esta tarjeta no está disponible', 'Pídele al negocio que la revise o intenta de nuevo más tarde.'));
 await writeFile(`${SALIDA}/robots.txt`, 'User-agent: *\nDisallow: /\n');
+if (CONTADOR_URL && !contadorListo()) console.log(`⚠ CONTADOR_URL "${CONTADOR_URL}" no es una dirección https válida. Los botones van directo y no se cuentan.`);
+// En Cloudflare, el contador solo corre en las páginas: fuentes, logos y mapas de enlaces se sirven sin gastar cupo.
+// Va siempre, porque las visitas se cuentan aunque no haya CONTADOR_URL.
+await writeFile(`${SALIDA}/_routes.json`, JSON.stringify({ version: 1, include: ['/*'], exclude: ['/fonts/*', '/logos/*', '/*/enlaces.json', '/robots.txt', '/404.html'] }));
+if (contadorListo()) console.log(`  · Contador activo: los botones pasan por ${CONTADOR_URL}/ir/…`);
 
 console.log(`\nListo: ${negocios.length} páginas creadas, ${pausados} pausadas, ${advertencias.length} advertencias.`);

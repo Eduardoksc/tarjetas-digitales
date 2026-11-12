@@ -36,6 +36,7 @@ Variables útiles para pruebas:
 - `SHEET_XLSX_FILE`: junto con `SHEET_CSV_FILE`, un `.xlsx` de la hoja para probar los vínculos con nombre.
 - `PIE_TEXTO` / `PIE_URL`: pie de página opcional.
 - `SITIO_URL`: dirección pública, para `og:url` y `og:image`. Sin ella, en Actions se deduce de `GITHUB_REPOSITORY`; en local, esas etiquetas se omiten y la consola lo dice con un `·`.
+- `CONTADOR_URL`: dirección https donde corre el contador en Cloudflare (ej. `https://t.fides-link.com`, variable `vars.CONTADOR_URL` en Actions). Con ella, los enlaces https de reseña, botones y redes salen como `<CONTADOR_URL>/ir/<id>/<clave>` (`enlace()`), se escribe `dist/<id>/enlaces.json` con los destinos reales . `dist/_routes.json` se escribe siempre. Teléfono, correo y formularios van directo. Vacía o inválida: enlaces directos (inválida avisa con `⚠`).
 
 `fallar()` termina con código 1. Pasa si no hay hoja configurada, si faltan las columnas `id`, `estado` o `nombre`, si la hoja está vacía o si no queda **ningún negocio activo**. En ese último caso Actions no publica y el sitio anterior sigue en línea; esta protección no se debe quitar.
 
@@ -53,6 +54,7 @@ Archivos:
 - `logos/`: archivos de logo referenciados por la columna `logo`.
 - `ejemplo-negocios.csv`: datos de ejemplo con todas las columnas.
 - `.github/workflows/publicar.yml`: corre en push a `main`, cada 10 min (cron), a mano y con `repository_dispatch` (`actualizar-hoja`).
+- `functions/` y `servidor/contador.js`: contador de visitas y toques en Cloudflare Pages Functions con una base D1 (ver "Contador de visitas y toques"). Solo corre en Cloudflare; el job `cloudflare` del workflow los publica junto con `dist/`.
 - `apps-script/boton-publicar.gs`: menú opcional "Tarjetas → Publicar cambios ahora" en la hoja. Dispara `repository_dispatch` con un token de GitHub.
 - `GUIA_PASO_A_PASO.md`: manual del operador. Si cambias columnas, valores o comportamiento visible, actualízalo también.
 
@@ -65,14 +67,15 @@ Flujo de `generar.mjs`:
 5. **`htmlPagina()`** reemplaza los tokens con `replaceAll` en secuencia.
 6. Escribe `dist/<id>/index.html` y, si hay alias, una copia idéntica en `dist/<alias>/index.html`. `dist/` se borra completo al inicio de cada build.
 
-Tokens de la plantilla: `{{TITULO}}`, `{{COLOR}}`, `{{COLOR_TEXTO}}`, `{{COLOR_ICONO}}`, `{{CAB_CLASE}}`, `{{NOMBRE}}`, `{{LOGO_HTML}}`, `{{SLOGAN_HTML}}`, `{{TITULAR}}`, `{{RESENA_HTML}}`, `{{N_BOTONES}}`, `{{BOTONES}}`, `{{REDES_HTML}}`, `{{PIE_HTML}}`, `{{COLOR_ACENTO}}`, `{{COLOR_ACENTO_TEXTO}}`, `{{COLOR_TINTA}}`, `{{COLOR_GRIS}}`, `{{COLOR_TINTE}}`, `{{COLOR_ICONO_MOSAICO}}`, `{{COLOR_SOMBRA}}`, `{{TOLDO_CLASE}}`, `{{PORTADA_HTML}}`, `{{WIFI_HTML}}`, `{{DESCRIPCION}}`, `{{META_ENLACES}}`, `{{FORMULARIOS_HTML}}`. `{{NOMBRE}}` sale envuelto en `<span class="nom-txt">`, `{{SLOGAN_HTML}}` es un `<p class="slogan">` fuera del `h1` y `{{CAB_CLASE}}` puede incluir `nombre-en-logo`. `{{TOLDO_CLASE}}` puede incluir `con-portada` y `sin-resena`. `{{DESCRIPCION}}` es el slogan o "Contacto y enlaces de <nombre>."; `{{META_ENLACES}}` son `og:url`, `og:image` (portada, o logo que no sea SVG) y `twitter:card`. Los `{{COLOR_*}}` de la paleta salen de `paletaMarca()`; Premium no los usa.
+Tokens de la plantilla: `{{TITULO}}`, `{{COLOR}}`, `{{COLOR_TEXTO}}`, `{{COLOR_ICONO}}`, `{{CAB_CLASE}}`, `{{NOMBRE}}`, `{{LOGO_HTML}}`, `{{SLOGAN_HTML}}`, `{{TITULAR}}`, `{{RESENA_HTML}}`, `{{N_BOTONES}}`, `{{BOTONES}}`, `{{REDES_HTML}}`, `{{PIE_HTML}}`, `{{COLOR_ACENTO}}`, `{{COLOR_ACENTO_TEXTO}}`, `{{COLOR_TINTA}}`, `{{COLOR_GRIS}}`, `{{COLOR_TINTE}}`, `{{COLOR_ICONO_MOSAICO}}`, `{{COLOR_SOMBRA}}`, `{{TOLDO_CLASE}}`, `{{PORTADA_HTML}}`, `{{WIFI_HTML}}`, `{{DESCRIPCION}}`, `{{META_ENLACES}}`, `{{FORMULARIOS_HTML}}`, `{{LIENZO_CLASE}}`, `{{COLOR_LIENZO}}`, `{{COLOR_LIENZO_TRAZO}}`. `{{LIENZO_CLASE}}` va en `<body class>` y es `lz lz-formas`, `lz lz-puntos`, `lz lz-arcos` o vacío.  `{{NOMBRE}}` sale envuelto en `<span class="nom-txt">`, `{{SLOGAN_HTML}}` es un `<p class="slogan">` fuera del `h1` y `{{CAB_CLASE}}` puede incluir `nombre-en-logo`. `{{TOLDO_CLASE}}` puede incluir `con-portada` y `sin-resena`. `{{DESCRIPCION}}` es el slogan o "Contacto y enlaces de <nombre>."; `{{META_ENLACES}}` son `og:url`, `og:image` (portada, o logo que no sea SVG) y `twitter:card`. Los `{{COLOR_*}}` de la paleta salen de `paletaMarca()`; Premium no los usa.
 
 Reglas de seguridad que se deben mantener:
 - Todo texto que venga de la hoja pasa por `esc()`.
 - Todo enlace pasa por `urlSegura()`, que solo acepta http(s), lo fuerza a `https:` y agrega `https://` si falta. Rechaza otros esquemas, enlaces con usuario o clave y direcciones numéricas.
 - Solo `boton4_url` a `boton9_url` usan `enlaceBoton()`, que además acepta teléfono (`enlaceLlamada()`, siempre `tel:` con solo dígitos y `+`) y correo (`enlaceCorreo()`, sin `?subject=` ni `?bcc=`). Reseñas, catálogo, redes, logo y pie siguen solo con http(s).
 - Los colores pasan por `colorHex()`, que acepta solo 6 dígitos hex.
-- `id` y `alias` pasan por `slugValido()`, y el nombre de logo por `/^[\w. -]+$/`. Así no se puede escribir fuera de `dist/` ni leer fuera de `logos/`.
+- `id` y `alias` pasan por `slugValido()`, y el nombre de logo por `/^[\w. -]+$/`. `logos`, `fonts` e `ir` están reservados como `id`.
+- `/ir/<id>/<clave>` solo redirige a un `https://` que esté en `dist/<id>/enlaces.json` (escrito por el robot); cualquier otra cosa vuelve a `/<id>/`. No es una redirección abierta. El contador no guarda IP ni datos de la persona. Así no se puede escribir fuera de `dist/` ni leer fuera de `logos/`.
 
 ## Columnas de la hoja (pestaña Negocios)
 
@@ -102,6 +105,9 @@ Reglas de seguridad que se deben mantener:
 | `estilo` | `premium` (normalizado, así que `Premium` también vale) usa `plantilla-premium.html` | Tema Mostrador. Otro valor: avisa y usa Mostrador |
 | `nombre_en_logo` | `si` oculta el nombre en pantalla cuando el logo ya lo trae escrito. Lo deja para lectores de pantalla y Google | Se muestra el nombre. Sin logo, avisa y lo muestra |
 | `instagram`, `facebook`, `tiktok`, `youtube`, `x`, `telegram` | Enlace completo o solo el usuario (`@usuario`). El enlace debe ser de esa red (`enlaceRed`). Se muestran como círculos centrados al final (`{{REDES_HTML}}`) | Sin círculo. Si es inválido, avisa |
+| `botonN_detalle`, `detalle_catalogo`, `detalle_whatsapp` | Subtítulo bajo el texto del botón (`.det`), en gris en el mosaico y en `--sobre` en la acción principal. Avisa si pasa de `MAX_DETALLE` (30) | Sin subtítulo |
+| `botonN_etiqueta`, `etiqueta_catalogo`, `etiqueta_whatsapp` | Píldora pequeña (`.eti`, ej. "Nuevo"): en la esquina en el mosaico, junto al texto en los botones anchos. `--acento` (en la principal, `--sobre` con texto `--marca`; en Premium, oro). Avisa si pasa de `MAX_ETIQUETA` (10) | Sin etiqueta |
+| `lienzo` | `formas`, `puntos` o `arcos` (`LIENZOS`): fondo fijo detrás de la página (`body.lz::before`, `position: fixed`) que no se mueve al bajar. En Mostrador usa `lienzoSuave`/`lienzoTrazo` de `paletaMarca()` (12 % y 26 % de la marca sobre `--fondo`); en Premium, oro muy tenue | Sin lienzo. Otro valor: avisa |
 | `alias` | Mismo patrón que `id`. Se ignora si choca con un id (incluso pausado) o con otro alias | Sin alias |
 
 \* Obligatorias: si falta alguno de esos encabezados, el build falla.
@@ -145,7 +151,7 @@ Negro profundo, la reseña como pieza de oro, botones cuadrados satinados con fi
 - **Límites de texto:** unos 16 caracteres por botón (en Premium son cuadrados), unos 32 en el titular y 45 en `texto_resenas`. Si los superas, el script avisa pero no corta.
 - **Restricciones técnicas:**
   - Mobile-first, `max-width` de 440 px (480 px en Premium), respeta `safe-area-inset`.
-  - **Cero JavaScript en el cliente**, con una sola excepción: el formulario a WhatsApp (ver abajo). Su script va solo en las tarjetas que tienen formulario, y sin él la hoja sigue funcionando.
+  - **Cero JavaScript en el cliente**, con una sola excepción: el formulario a WhatsApp (ver abajo). Su script va solo en las tarjetas que tienen formulario, y sin él la hoja sigue funcionando. La medición de visitas y toques se hace en el servidor (ver "Contador de visitas y toques"), no en la página.
   - Fuentes servidas desde el propio sitio (`dist/fonts/`, copiadas desde `@fontsource`), sin pedidos a Google Fonts. Peso sin logo en Mostrador: unos 70 KB, más la portada si hay (máximo 70 KB).
   - `color-scheme: light only` en Mostrador, para que Android no oscurezca la página. `dark` en Premium.
   - Respeta `prefers-reduced-motion`.
@@ -164,12 +170,25 @@ Hoja que sube desde abajo, en las dos plantillas (`{{FORMULARIOS_HTML}}`, al fin
 - Estilos: `.hoja`, `.hoja-caja`, `.fm-*`. En Mostrador la opción elegida va en `--marca` y el botón de envío en verde WhatsApp (`#25d366` con texto `#0b3d1f`); en Premium, oro. Respeta `prefers-reduced-motion`.
 - No se ha probado en un celular real que `api.whatsapp.com/send` reciba bien el respaldo sin JavaScript (los espacios llegan como `+`).
 
+## Contador de visitas y toques (`functions/`)
+
+Promesa de fides-link.com: "cuántos te visitaron, qué tocaron y cuándo". Se mide en el servidor, sin JavaScript en la tarjeta.
+
+- `functions/_middleware.js`: cuenta una **visita** en cada GET (200 o 304) a `/<slug>/` o `/<slug>/index.html`. `?o=qr` u `?o=nfc` en la dirección dicen cómo llegó (el QR impreso y el chip NFC deben llevarlo).
+- `functions/ir/[id]/[boton].js`: cuenta un **toque** y responde 302 al enlace real (`enlaces.json`), con `Cache-Control: no-store`.
+- `servidor/contador.js`: `contar()` hace un upsert en la tabla `eventos (dia, hora, id, tipo, boton, origen, n)` de la base D1 enlazada como `CONTADOR`, con la hora de Colombia (UTC-5). Crea la tabla si no existe. Si no hay base enlazada o falla, la tarjeta sigue igual. Ignora robots y vistas previas (`ROBOT`, prefetch).
+- `_routes.json` excluye fuentes, logos y `enlaces.json`, para no gastar el cupo gratuito (100.000 invocaciones al día; D1: 100.000 filas escritas al día).
+- Las visitas por alias se guardan con el alias como `id`.
+- Probar en local: `npx wrangler@4.151.3 pages dev dist --d1 CONTADOR=prueba --persist-to <carpeta>` con un `dist/` construido con `CONTADOR_URL`.
+- Panel del cliente: diseño "Resumen" elegido; todavía no existe. Solo se cuentan toques a "Calificar en Google", no reseñas.
+
 ## Particularidades conocidas
 
 - El robot avisa (sin detener el build) cuando un botón extra lleva a una red que ya está en los círculos, cuando dos acciones empiezan igual ("Pedir" y "Pedidos") y cuando el titular trae signos sobrantes (". !").
 - `PRODUCT.md` y `.impeccable/` son de la skill `impeccable` (instalada en local, fuera de Git): contexto del producto y diagnósticos de `/impeccable critique`.
 - Los tokens se reemplazan en secuencia. Un texto de la hoja que contenga `{{OTRO_TOKEN}}` se expande. No es XSS, pero es un error.
-- `fonts` no está reservado como `id`, a diferencia de `logos`. Un negocio con ese id chocaría con la carpeta de la tipografía.
+- Las visitas que entran por la copia de GitHub Pages (`github.io`) no se cuentan: el contador solo corre en Cloudflare. Los toques sí, porque los botones apuntan a `CONTADOR_URL`.
+- El formulario a WhatsApp, el Wi-Fi, los teléfonos y los correos no pasan por el contador.
 - Los SVG de `logos/` se publican sin limpiar.
 - La vista previa al compartir depende de quien la genere: `robots.txt` (`Disallow: /`) puede dejar sin datos a los rastreadores que lo respetan, como el de X. No se ha probado en un chat real, porque requiere publicar.
 - El workflow despliega en cada ejecución (cada 10 min) aunque no haya cambios.

@@ -50,6 +50,7 @@ jobs:
           PIE_TEXTO: ${{ vars.PIE_TEXTO }}
           PIE_URL: ${{ vars.PIE_URL }}
           SITIO_URL: ${{ vars.SITIO_URL }}
+          CONTADOR_URL: ${{ vars.CONTADOR_URL }}
 
       # Huella de todo lo construido. Si es igual a la última publicada, no hace falta publicar.
       # Incluye si Cloudflare está configurado, para publicar apenas se agreguen sus secretos.
@@ -115,6 +116,12 @@ jobs:
     if: needs.construir.outputs.cambio == 'true'
     runs-on: ubuntu-latest
     steps:
+      # El contador de visitas y toques (functions/ y servidor/) se publica junto con las páginas
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout: |
+            functions
+            servidor
       - name: Traer las páginas construidas
         uses: actions/download-artifact@v7
         with:
