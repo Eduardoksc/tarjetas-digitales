@@ -350,6 +350,14 @@ git push -u origin main
 4. Publica de nuevo ("Publicar cambios ahora" o Actions → Run workflow).
 5. Al imprimir: el **QR** debe llevar `?o=qr` al final (`https://t.fides-link.com/001/?o=qr`) y el **chip NFC** `?o=nfc`. Así se sabe cómo llegó cada persona. Los QR que ya imprimiste siguen funcionando; esas visitas cuentan "sin origen".
 
+**Panel de resultados para el cliente (opcional).** Cada negocio puede ver sus números del mes en su celular:
+1. En la hoja, agrega la columna `clave_panel` (si no existe).
+2. En la fila del negocio, inventa una clave de **12 letras o números o más, sin espacios**, difícil de adivinar. Por ejemplo, tres palabras y cuatro números: `tijera-luna-cafe-4821`. No uses el nombre del negocio ni su teléfono.
+3. Publica. El enlace del cliente queda así: `https://t.fides-link.com/panel/001?k=tijera-luna-cafe-4821` (cambia `001` por su id y la clave por la suya).
+4. Envíaselo por WhatsApp y dile que lo guarde en favoritos. Muestra las visitas del mes, la comparación con el mes anterior, qué botones tocaron más, si llegaron por QR o NFC y su mejor día y hora. Abajo puede ver los meses anteriores.
+
+Quien tenga el enlace ve los números, así que solo dáselo al dueño. Si se filtra, cambia la clave en la hoja y publica: el enlace viejo deja de funcionar. Las llamadas, los correos, los formularios y el Wi-Fi no se cuentan.
+
 No se guarda ningún dato de la persona: solo se suma 1 por hora, tarjeta y botón. Si no haces estos pasos, las tarjetas funcionan igual y no se cuenta nada. Las visitas que entran por la dirección vieja de GitHub (`github.io`) no se cuentan.
 
 ## PASO 5: Activa la publicación

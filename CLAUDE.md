@@ -24,6 +24,7 @@ Qué esperar con `ejemplo-negocios.csv`:
 - `dist/002/`, sin logo (muestra la inicial), con `logo_fondo=blanco` y `estilo=premium`.
 - `dist/001/` tiene Wi-Fi para clientes y redes sociales.
 - `dist/001/` (Mostrador, "Agenda tu cita") y `dist/002/` (Premium, "Haz tu pedido") tienen el formulario a WhatsApp por defecto, y `dist/004/` (parroquia, "Pedir una misa") uno con campos propios (`boton4_campos`). Ábrelos directo con `#solicitud-4` o `#solicitud-5`.
+- `dist/001/panel.json` (columna `clave_panel` = `panel-prueba-001`): el panel de resultados, que solo corre en Cloudflare (`/panel/001?k=panel-prueba-001`).
 - `003` está `pausado`: no se genera.
 - Se generan también `dist/index.html`, `dist/404.html`, `dist/robots.txt`, `dist/fonts/` y `dist/logos/`.
 - La consola muestra `✔` por negocio y `⚠` por cada problema. El resumen final cuenta páginas, pausadas y advertencias.
@@ -74,7 +75,8 @@ Reglas de seguridad que se deben mantener:
 - Todo enlace pasa por `urlSegura()`, que solo acepta http(s), lo fuerza a `https:` y agrega `https://` si falta. Rechaza otros esquemas, enlaces con usuario o clave y direcciones numéricas.
 - Solo `boton4_url` a `boton9_url` usan `enlaceBoton()`, que además acepta teléfono (`enlaceLlamada()`, siempre `tel:` con solo dígitos y `+`) y correo (`enlaceCorreo()`, sin `?subject=` ni `?bcc=`). Reseñas, catálogo, redes, logo y pie siguen solo con http(s).
 - Los colores pasan por `colorHex()`, que acepta solo 6 dígitos hex.
-- `id` y `alias` pasan por `slugValido()`, y el nombre de logo por `/^[\w. -]+$/`. `logos`, `fonts` e `ir` están reservados como `id`.
+- `id` y `alias` pasan por `slugValido()`, y el nombre de logo por `/^[\w. -]+$/`. `logos`, `fonts`, `ir` y `panel` están reservados como `id`.
+- El panel (`/panel/<id>?k=`) solo se abre con la clave correcta: `panel.json` guarda la huella PBKDF2 (10.000 vueltas, sal `fides-panel:<id>`), nunca la clave, y el middleware lo bloquea al público en Cloudflare (en la copia de `github.io` sí es visible, por eso la clave debe tener 12 caracteres o más). La clave nunca se escribe en la consola, porque los registros de Actions son públicos.
 - `/ir/<id>/<clave>` solo redirige a un `https://` que esté en `dist/<id>/enlaces.json` (escrito por el robot); cualquier otra cosa vuelve a `/<id>/`. No es una redirección abierta. El contador no guarda IP ni datos de la persona. Así no se puede escribir fuera de `dist/` ni leer fuera de `logos/`.
 
 ## Columnas de la hoja (pestaña Negocios)
@@ -109,6 +111,7 @@ Reglas de seguridad que se deben mantener:
 | `botonN_etiqueta`, `etiqueta_catalogo`, `etiqueta_whatsapp` | Píldora pequeña (`.eti`, ej. "Nuevo"): en la esquina en el mosaico, junto al texto en los botones anchos. `--acento` (en la principal, `--sobre` con texto `--marca`; en Premium, oro). Avisa si pasa de `MAX_ETIQUETA` (10) | Sin etiqueta |
 | `lienzo` | `formas`, `puntos` o `arcos` (`LIENZOS`): fondo fijo detrás de la página (`body.lz::before`, `position: fixed`) que no se mueve al bajar. En Mostrador usa `lienzoSuave`/`lienzoTrazo` de `paletaMarca()` (12 % y 26 % de la marca sobre `--fondo`); en Premium, oro muy tenue | Sin lienzo. Otro valor: avisa |
 | `alias` | Mismo patrón que `id`. Se ignora si choca con un id (incluso pausado) o con otro alias | Sin alias |
+| `clave_panel` | Clave del panel de resultados del cliente, 12 caracteres o más sin espacios. El robot escribe `dist/<id>/panel.json` con su huella, el nombre, los colores y el texto de cada botón (WhatsApp lleva "(WhatsApp)") | Sin panel. Corta o con espacios: avisa |
 
 \* Obligatorias: si falta alguno de esos encabezados, el build falla.
 
@@ -180,7 +183,8 @@ Promesa de fides-link.com: "cuántos te visitaron, qué tocaron y cuándo". Se m
 - `_routes.json` excluye fuentes, logos y `enlaces.json`, para no gastar el cupo gratuito (100.000 invocaciones al día; D1: 100.000 filas escritas al día).
 - Las visitas por alias se guardan con el alias como `id`.
 - Probar en local: `npx wrangler@4.151.3 pages dev dist --d1 CONTADOR=prueba --persist-to <carpeta>` con un `dist/` construido con `CONTADOR_URL`.
-- Panel del cliente: diseño "Resumen" elegido; todavía no existe. Solo se cuentan toques a "Calificar en Google", no reseñas.
+- **Panel del cliente** (`functions/panel/[id].js` + `servidor/panel.js`, diseño "Resumen"): `/panel/<id>?k=<clave_panel>&mes=AAAA-MM` (hasta 24 meses atrás). Se arma en el servidor, sin JavaScript, con `Cache-Control: no-store`, `noindex` y `no-referrer`. Muestra visitas del mes (cifra en Unbounded), la comparación con el mes anterior (en el mes en curso, contra los mismos días), "Lo que más tocaron" (barras, hasta 8), "Cómo llegaron" (solo si hay QR o NFC) y "Tu mejor momento" (día y franja de 2 horas, desde 20 visitas). Suma las visitas del alias. Clave mala o sin panel: 404 "Enlace no válido". Abrir el panel no cuenta como visita.
+- Solo se cuentan toques a "Calificar en Google", no reseñas. El resumen mensual por WhatsApp todavía no existe.
 
 ## Particularidades conocidas
 

@@ -7,7 +7,7 @@
 import { readFile, writeFile, mkdir, rm, copyFile } from 'node:fs/promises';
 import { existsSync, readdirSync } from 'node:fs';
 import { extname } from 'node:path';
-import { createHash } from 'node:crypto';
+import { createHash, pbkdf2Sync } from 'node:crypto';
 import { inflateRawSync } from 'node:zlib';
 import { MARCAS } from './iconos.mjs';
 
@@ -917,7 +917,7 @@ async function prepararNegocio(fila, num) {
     avisar(`${etiqueta}: el "id" debe usar solo letras minúsculas, números o guiones (ej: 001). Se omite.`);
     return null;
   }
-  if (['logos', 'fonts', 'ir'].includes(id)) {
+  if (['logos', 'fonts', 'ir', 'panel'].includes(id)) {
     avisar(`${etiqueta}: "${id}" es un nombre reservado. Se omite.`);
     return null;
   }
@@ -1060,6 +1060,13 @@ async function prepararNegocio(fila, num) {
     if (b.etiqueta.length > MAX_ETIQUETA) avisar(`${etiqueta}: la etiqueta "${b.etiqueta}" de ${colEtiqueta} tiene ${b.etiqueta.length} letras; caben unas ${MAX_ETIQUETA} (ej: Nuevo). Acórtala.`);
   }
 
+  // Clave del panel de resultados: la inventa el operador y se la da al cliente. Nunca se escribe en la consola.
+  let clavePanel = g('clave_panel');
+  if (clavePanel && (clavePanel.length < 12 || /\s/.test(clavePanel))) {
+    avisar(`${etiqueta}: la clave_panel debe tener al menos 12 letras o números, sin espacios. No se crea el panel.`);
+    clavePanel = '';
+  }
+
   let lienzo = normalizar(g('lienzo'));
   if (lienzo && !LIENZOS.includes(lienzo)) {
     avisar(`${etiqueta}: el lienzo "${g('lienzo')}" no existe. Escribe ${LIENZOS.join(', ')} o déjalo vacío. Se usa sin lienzo.`);
@@ -1152,6 +1159,7 @@ async function prepararNegocio(fila, num) {
     redes,
     nombreEnLogo,
     lienzo,
+    clavePanel,
     estilo: estilo || 'mostrador',
   };
 }
@@ -1544,6 +1552,8 @@ for (const n of negocios) {
   }
 }
 
+const ITERACIONES_PANEL = 10000; // pocas, porque Cloudflare gratis da 10 ms por visita al panel
+let paneles = 0;
 for (const n of negocios) {
   const html = htmlPagina(plantillas[n.estilo], n);
   for (const carpeta of [n.id, n.alias].filter(Boolean)) {
@@ -1557,6 +1567,19 @@ for (const n of negocios) {
     for (const r of n.redes) mapa[r.clave] = r.url;
     await writeFile(`${SALIDA}/${n.id}/enlaces.json`, JSON.stringify(mapa));
   }
+  // Panel de resultados (/panel/<id>?k=<clave>): solo se guarda la huella de la clave, nunca la clave
+  if (n.clavePanel) {
+    const nombres = { resenas: 'Calificar en Google' };
+    for (const b of n.botones) nombres[b.clave] = b.clave === 'whatsapp' && !/whatsapp/i.test(b.texto) ? `${b.texto} (WhatsApp)` : b.texto;
+    for (const r of n.redes) nombres[r.clave] = r.nombre;
+    const sal = `fides-panel:${n.id}`;
+    const huellaClave = pbkdf2Sync(n.clavePanel, sal, ITERACIONES_PANEL, 32, 'sha256').toString('hex');
+    await writeFile(
+      `${SALIDA}/${n.id}/panel.json`,
+      JSON.stringify({ nombre: n.nombre, alias: n.alias, marca: n.color, tinta: n.tinta, gris: n.gris, tinte: n.tinte, sal, iteraciones: ITERACIONES_PANEL, huella: huellaClave, botones: nombres })
+    );
+    paneles++;
+  }
   console.log(`  ✔ ${n.id}${n.alias ? ' / ' + n.alias : ''} — ${n.nombre} (${n.botones.length + (n.resena ? 1 : 0)} botones${n.estilo === 'premium' ? ', premium' : ''})`);
 }
 
@@ -1568,5 +1591,6 @@ if (CONTADOR_URL && !contadorListo()) console.log(`⚠ CONTADOR_URL "${CONTADOR_
 // Va siempre, porque las visitas se cuentan aunque no haya CONTADOR_URL.
 await writeFile(`${SALIDA}/_routes.json`, JSON.stringify({ version: 1, include: ['/*'], exclude: ['/fonts/*', '/logos/*', '/*/enlaces.json', '/robots.txt', '/404.html'] }));
 if (contadorListo()) console.log(`  · Contador activo: los botones pasan por ${CONTADOR_URL}/ir/…`);
+if (paneles) console.log(`  · Panel de resultados para ${paneles} negocio(s): /panel/<id>?k=<clave_panel>`);
 
 console.log(`\nListo: ${negocios.length} páginas creadas, ${pausados} pausadas, ${advertencias.length} advertencias.`);
