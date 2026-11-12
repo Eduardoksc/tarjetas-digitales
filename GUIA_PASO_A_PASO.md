@@ -76,7 +76,7 @@ Pestaña **Negocios**, fila 1 con estos encabezados (el orden no importa; solo a
 | `instagram`, `facebook`, `tiktok`, `youtube`, `x`, `telegram` | El usuario (`@minegocio`) o el enlace completo de cada red. Salen como círculos con el ícono al final de la página | No |
 | `alias` | Nombre corto extra para el enlace, ej. `estilonorte` | No |
 
-**Íconos de los botones:** el robot elige el ícono solo, según el texto del botón y el enlace. "Pedidos" o "Domicilios" muestran una bolsa de entrega; "Sedes" o "Tiendas", una tienda; "Menú" o "Carta", cubiertos; "Citas", "Agendar" o "Reservas", un calendario (sirve para barberías, consultorios, spas…). Un enlace de **Rappi** muestra la bolsa y el texto "Pide en Rappi"; uno de Doctoralia, Calendly o Booksy, el calendario. Si quieres otro, escríbelo en `boton4_icono`: `menu`, `catalogo`, `domicilio`, `tienda`, `reservas`, `llamar`, `correo`, `horario`, `promos`, `pago`, `maps`, `web`.
+**Íconos de los botones:** el robot elige el ícono solo, según el texto del botón y el enlace. "Pedidos" o "Domicilios" muestran una bolsa de entrega; "Sedes" o "Tiendas", una tienda; "Menú" o "Carta", cubiertos; "Citas", "Agendar" o "Reservas", un calendario (sirve para barberías, consultorios, spas…). Un enlace de **Rappi** muestra la bolsa y el texto "Pide en Rappi"; uno de Doctoralia, Calendly o Booksy, el calendario. Si quieres otro, elígelo de la lista en `boton4_icono` o escribe una palabra en español: el robot entiende mayúsculas, plurales y muchas palabras ("Iglesia", "Misas", "Grupos", "Requisitos", "Matrimonios", "Consultorio", "Barbería", "Conjunto", "Ayuda"…). Íconos disponibles: `menu`, `catalogo`, `domicilio`, `tienda`, `reservas`, `llamar`, `correo`, `horario`, `promos`, `pago`, `maps`, `waze`, `web`, `enlace`, `formulario`, `iglesia`, `personas`, `boda`, `salud`, `casa`, `documento`, `tijeras`, `info`. Si escribes una palabra que no conoce, el robot avisa y elige uno solo.
 
 **Color secundario:** no hay que escribirlo. El robot lo saca del logo (por ejemplo, el verde de BA CU) y lo usa en las estrellas y los íconos.
 
@@ -99,7 +99,7 @@ Mira `ejemplo-negocios.csv`: tiene filas de ejemplo con todo esto.
 | `estado` | `activo` (también `si` o `activa`). Cualquier otra cosa, por ejemplo `pausado`, oculta la página | La página se oculta |
 | `logo_fondo` | `blanco` (placa blanca), `oscuro` (placa oscura, para logos blancos) o `sin` (el logo va directo sobre el color) | Se elige solo (ver abajo) |
 | `orden_botones` | Nombres separados por coma: `catalogo`, `whatsapp`, `boton4` a `boton9`. La reseña siempre va arriba, no hace falta ponerla | `catalogo, whatsapp, boton4` y así hasta `boton9` |
-| `boton4_icono` a `boton9_icono` | `instagram`, `facebook`, `tiktok`, `youtube`, `x`, `telegram`, `maps`, `waze`, `menu`, `catalogo`, `domicilio`, `tienda`, `reservas`, `llamar`, `correo`, `horario`, `promos`, `pago`, `formulario`, `web`, `enlace` | Se elige solo según el enlace |
+| `boton4_icono` a `boton9_icono` | Los de la lista de la hoja (`maps`, `menu`, `reservas`, `horario`, `iglesia`, `personas`, `boda`, `salud`, `casa`, `documento`, `tijeras`, `info`…) o una palabra en español que el robot entienda | Se elige solo según el enlace |
 
 Consejo: en `estado` y `logo_fondo` pon una lista desplegable en **Datos → Validación de datos**, así no te equivocas al escribir.
 
@@ -353,7 +353,9 @@ git push -u origin main
 **Panel de resultados para el cliente (opcional).** Cada negocio puede ver sus números del mes en su celular:
 1. En la hoja, agrega la columna `clave_panel` (si no existe).
 2. En la fila del negocio, inventa una clave de **12 letras o números o más, sin espacios**, difícil de adivinar. Por ejemplo, tres palabras y cuatro números: `tijera-luna-cafe-4821`. No uses el nombre del negocio ni su teléfono.
-3. Publica. El enlace del cliente queda así: `https://t.fides-link.com/panel/001?k=tijera-luna-cafe-4821` (cambia `001` por su id y la clave por la suya).
+3. Publica. Para no armar el enlace a mano, agrega en la hoja una columna `enlace_panel` (el robot la ignora) con esta fórmula en la fila 2 y arrástrala hacia abajo, cambiando `A2` por la celda del id y `Z2` por la de `clave_panel`:
+   `=SI(Z2="";"";"https://t.fides-link.com/panel/"&A2&"?k="&Z2)`
+   El enlace queda así: `https://t.fides-link.com/panel/001?k=tijera-luna-cafe-4821` (cambia `001` por su id y la clave por la suya).
 4. Envíaselo por WhatsApp y dile que lo guarde en favoritos. Muestra las visitas del mes, la comparación con el mes anterior, qué botones tocaron más, si llegaron por QR o NFC y su mejor día y hora. Abajo puede ver los meses anteriores.
 
 Quien tenga el enlace ve los números, así que solo dáselo al dueño. Si se filtra, cambia la clave en la hoja y publica: el enlace viejo deja de funcionar. Las llamadas, los correos, los formularios y el Wi-Fi no se cuentan.

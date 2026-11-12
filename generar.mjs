@@ -341,16 +341,57 @@ const ICONOS = {
   correo: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 7l8.5 6.5L20.5 7"/>',
   formulario: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2.8h6V4M8.5 10h7M8.5 13.5h7M8.5 17h4"/>',
   wifi: '<path d="M2.5 9a14 14 0 0 1 19 0M5.6 12.4a9.5 9.5 0 0 1 12.8 0M8.7 15.8a5 5 0 0 1 6.6 0"/><circle cx="12" cy="19.3" r=".8"/>',
+  iglesia: '<path d="M12 2.5v5M10 4.5h4"/><path d="M5 21v-9.5l7-4 7 4V21"/><path d="M3 21h18"/><path d="M10 21v-3.5a2 2 0 0 1 4 0V21"/>',
+  personas: '<circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="9" r="2.6"/><path d="M16.2 14.2A4.6 4.6 0 0 1 21 19"/>',
+  boda: '<circle cx="9" cy="14.5" r="5"/><circle cx="15" cy="14.5" r="5"/><path d="M12 3.2l1.8 1.8L12 6.8 10.2 5z"/>',
+  salud: '<path d="M9.2 3.5h5.6v5.7h5.7v5.6h-5.7v5.7H9.2v-5.7H3.5V9.2h5.7z"/>',
+  casa: '<path d="M3.5 11L12 4l8.5 7"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5.5h4V20"/>',
+  documento: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 15.5h6"/>',
+  tijeras: '<circle cx="6.5" cy="17.5" r="2.8"/><circle cx="17.5" cy="17.5" r="2.8"/><path d="M8.6 15.6L19 4M15.4 15.6L5 4"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".6"/>',
 };
 
 // Ícono de cada botón: 1) el que se escribe en botonN_icono, 2) el de la red o el mapa según el enlace,
 // 3) según el texto del botón ("Pedidos" → bolsa, "Sedes" → tienda), 4) según el servicio (Rappi, Doctoralia…), 5) globo.
-const ICONOS_EXTRA = ['instagram', 'facebook', 'tiktok', 'youtube', 'x', 'telegram', 'maps', 'waze', 'menu', 'catalogo', 'domicilio', 'tienda', 'reservas', 'llamar', 'correo', 'horario', 'promos', 'pago', 'formulario', 'web', 'enlace'];
+const ICONOS_EXTRA = ['instagram', 'facebook', 'tiktok', 'youtube', 'x', 'telegram', 'maps', 'waze', 'menu', 'catalogo', 'domicilio', 'tienda', 'reservas', 'llamar', 'correo', 'horario', 'promos', 'pago', 'formulario', 'web', 'enlace', 'iglesia', 'personas', 'boda', 'salud', 'casa', 'documento', 'tijeras', 'info'];
 const ALIAS_ICONO = {
   twitter: 'x', mapa: 'maps', ubicacion: 'maps', google_maps: 'maps', pagina: 'web', sitio: 'web', link: 'enlace',
   carta: 'menu', productos: 'catalogo', pedidos: 'domicilio', domicilios: 'domicilio', rappi: 'domicilio', sedes: 'tienda', local: 'tienda',
   citas: 'reservas', cita: 'reservas', agenda: 'reservas', reserva: 'reservas', telefono: 'llamar', email: 'correo', mail: 'correo', promociones: 'promos', pagos: 'pago', solicitud: 'formulario', pedido: 'formulario',
+  // Palabras comunes en español (sin tildes; el plural se entiende solo)
+  direccion: 'maps', localizacion: 'maps', llegar: 'maps', como_llegar: 'maps', mapas: 'maps',
+  comida: 'menu', restaurante: 'menu', platos: 'menu', bebidas: 'menu',
+  catalogo_de_productos: 'catalogo', servicio: 'catalogo', portafolio: 'catalogo', galeria: 'catalogo',
+  delivery: 'domicilio', bolsa: 'domicilio', compras: 'domicilio', comprar: 'domicilio', carrito: 'domicilio',
+  sede: 'tienda', sucursal: 'tienda', negocio: 'tienda', almacen: 'tienda',
+  calendario: 'reservas', turno: 'reservas', agendar: 'reservas', consulta: 'reservas',
+  llamada: 'llamar', celular: 'llamar', contacto: 'llamar', contactanos: 'llamar',
+  correo_electronico: 'correo', mensaje: 'correo',
+  hora: 'horario', reloj: 'horario', abierto: 'horario',
+  promo: 'promos', oferta: 'promos', descuento: 'promos', etiqueta: 'promos',
+  nequi: 'pago', daviplata: 'pago', tarjeta: 'pago', pagar: 'pago', dinero: 'pago',
+  formulario_de_contacto: 'formulario', inscripcion: 'formulario', registro: 'formulario', encuesta: 'formulario',
+  internet: 'web', sitio_web: 'web', globo: 'web', mundo: 'web',
+  vinculo: 'enlace', mas: 'enlace',
+  parroquia: 'iglesia', templo: 'iglesia', capilla: 'iglesia', misa: 'iglesia', eucaristia: 'iglesia', cruz: 'iglesia', religion: 'iglesia',
+  persona: 'personas', gente: 'personas', grupo: 'personas', comunidad: 'personas', equipo: 'personas', nosotros: 'personas', usuarios: 'personas', pastoral: 'personas',
+  matrimonio: 'boda', anillo: 'boda', anillos: 'boda', novios: 'boda', bautismo: 'boda',
+  medico: 'salud', doctor: 'salud', consultorio: 'salud', clinica: 'salud', hospital: 'salud', odontologia: 'salud', especialidad: 'salud', cruz_medica: 'salud',
+  hogar: 'casa', inicio: 'casa', conjunto: 'casa', apartamento: 'casa', edificio: 'casa', administracion: 'casa', residentes: 'casa', inmobiliaria: 'casa',
+  requisito: 'documento', documentos: 'documento', tramite: 'documento', certificado: 'documento', archivo: 'documento', pdf: 'documento', papeles: 'documento', reglamento: 'documento',
+  tijera: 'tijeras', barberia: 'tijeras', peluqueria: 'tijeras', corte: 'tijeras', salon: 'tijeras', belleza: 'tijeras',
+  informacion: 'info', ayuda: 'info', preguntas: 'info', dudas: 'info', faq: 'info',
 };
+// Busca el ícono de una palabra de la hoja: exacta, por alias o sin plural ("Horarios" → horario)
+function claveIcono(palabra) {
+  const n = normalizar(palabra ?? '').replace(/^_+|_+$/g, '');
+  if (!n) return '';
+  for (const k of [n, n.replace(/es$/, ''), n.replace(/s$/, '')]) {
+    const clave = ALIAS_ICONO[k] ?? k;
+    if (ICONOS_EXTRA.includes(clave)) return clave;
+  }
+  return null;
+}
 const TEXTO_ICONO = {
   instagram: 'Instagram',
   facebook: 'Facebook',
@@ -373,6 +414,14 @@ const TEXTO_ICONO = {
   formulario: 'Haz tu solicitud',
   web: 'Nuestra web',
   enlace: 'Más info',
+  iglesia: 'Nuestra parroquia',
+  personas: 'Nosotros',
+  boda: 'Matrimonios',
+  salud: 'Servicios',
+  casa: 'Administración',
+  documento: 'Requisitos',
+  tijeras: 'Servicios',
+  info: 'Más información',
 };
 // Palabras del texto del botón (ya normalizado: sin tildes y en minúsculas)
 const ICONO_POR_TEXTO = [
@@ -387,6 +436,13 @@ const ICONO_POR_TEXTO = [
   ['promos', /promo|oferta|descuento/],
   ['pago', /pago|paga|nequi|daviplata/],
   ['catalogo', /catalogo|producto|servicio/],
+  ['iglesia', /misa|eucarist|parroquia|capilla|templo|iglesia/],
+  ['boda', /boda|matrimonio|bautizo|bautismo/],
+  ['personas', /grupo|comunidad|equipo|nosotros|pastoral/],
+  ['documento', /requisito|documento|tramite|certificado|reglamento/],
+  ['salud', /salud|medic|doctor|odontolog|especialidad/],
+  ['tijeras', /corte|barber|peluquer/],
+  ['casa', /conjunto|administracion|residente|apartamento/],
 ];
 // Servicios conocidos por su dominio
 const ICONO_POR_DOMINIO = [
@@ -397,9 +453,9 @@ const TEXTO_DOMINIO = { 'rappi.com.co': 'Pide en Rappi', 'rappi.com': 'Pide en R
 
 function elegirIcono({ forzado, texto, url, defecto, etiqueta, columna }) {
   if (forzado) {
-    const clave = ALIAS_ICONO[forzado] ?? forzado;
-    if (ICONOS_EXTRA.includes(clave)) return clave;
-    avisar(`${etiqueta}: el ícono "${forzado}" de ${columna} no existe. Usa: ${ICONOS_EXTRA.join(', ')}. Se elige automático.`);
+    const clave = claveIcono(forzado);
+    if (clave) return clave;
+    avisar(`${etiqueta}: el ícono "${forzado}" de ${columna} no existe. Elige uno de la lista de la hoja: ${ICONOS_EXTRA.join(', ')}. Se elige automático.`);
   }
   if (url.startsWith('tel:')) return 'llamar'; // aunque el texto diga otra cosa ("Consulta"): lo que hace es llamar
   if (url.startsWith('mailto:')) return 'correo';
@@ -1021,8 +1077,8 @@ async function prepararNegocio(fila, num) {
       const forzado = normalizar(g(`boton${n}_icono`));
       const t = normalizar(g(`boton${n}_texto`));
       if (forzado) {
-        const clave = ALIAS_ICONO[forzado] ?? forzado;
-        if (ICONOS[clave] || MARCAS[clave]) icono = clave;
+        const clave = claveIcono(forzado);
+        if (clave) icono = clave;
         else avisar(`${etiqueta}: el ícono "${g(`boton${n}_icono`)}" de boton${n}_icono no existe. Se usa el de formulario.`);
       } else if (/reserva|cita|agend|turno|consulta/.test(t)) icono = 'reservas';
       else if (/domicilio|pedido|pide|encarg/.test(t)) icono = 'domicilio';
