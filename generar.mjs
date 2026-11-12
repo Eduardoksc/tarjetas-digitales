@@ -955,9 +955,15 @@ const NOMBRES_CLAVE = {
 
 function ordenarBotones(texto, etiqueta) {
   const pedidos = [];
-  for (const parte of (texto ?? '').split(/[,;\s]+/).filter(Boolean)) {
-    const clave = NOMBRES_CLAVE[normalizar(parte)];
-    if (!clave) {
+  // "Botón 4" → boton4, para poder separar por espacios
+  const limpio = (texto ?? '').replace(/bot[oó]n\s+(\d)/gi, 'boton$1');
+  for (const parte of limpio.split(/[,;\s]+/).filter(Boolean)) {
+    // Acepta también el nombre de una columna del botón: boton4_texto → boton4, texto_whatsapp → whatsapp
+    const n = normalizar(parte).replace(/_(texto|url|icono|detalle|etiqueta|campos)$/, '').replace(/^(texto|detalle|etiqueta|mensaje)_/, '');
+    const clave = NOMBRES_CLAVE[n];
+    if (/^wifi/.test(n)) {
+      avisar(`${etiqueta}: el Wi-Fi siempre va después de los botones; no hace falta ponerlo en orden_botones.`);
+    } else if (!clave) {
       avisar(`${etiqueta}: "${parte}" no es un botón válido en orden_botones. Usa: catalogo, whatsapp o boton4 a boton${ULTIMO_BOTON_EXTRA}.`);
     } else if (!pedidos.includes(clave)) pedidos.push(clave);
   }
