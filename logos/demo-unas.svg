@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="100" cy="100" r="100" fill="#6E3557"/>
+  <circle cx="100" cy="100" r="88" fill="none" stroke="#E8B4C8" stroke-width="3"/>
+  <!-- Frasco de esmalte -->
+  <rect x="86" y="40" width="28" height="42" rx="5" fill="#E8B4C8"/>
+  <rect x="80" y="80" width="40" height="10" rx="3" fill="#E8B4C8"/>
+  <path d="M70 100 Q70 92 78 92 H122 Q130 92 130 100 V146 Q130 160 116 160 H84 Q70 160 70 146 Z" fill="none" stroke="#E8B4C8" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M80 128 Q100 116 120 128 V144 Q120 151 113 151 H87 Q80 151 80 144 Z" fill="#E8B4C8"/>
+  <!-- Brillo -->
+  <path d="M146 58 v16 M138 66 h16" stroke="#E8B4C8" stroke-width="4" stroke-linecap="round"/>
+</svg>
