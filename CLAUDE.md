@@ -8,6 +8,18 @@ Generador de sitio estático de **tarjetas digitales para negocios locales de Co
 
 Todo el proyecto (código, comentarios, avisos, guía) está en **español**, con nombres de variables y funciones en español. Mantén ese idioma y el tono sencillo: quien opera el sistema no es programador.
 
+## Plan de trabajo (`plan/`)
+
+- `plan/PRD.md`: qué hace el producto, cuál es el MVP y qué queda fuera por ahora.
+- `plan/BACKLOG.md`: todas las tareas pendientes, numeradas y por prioridad.
+- `plan/SPRINT.md`: el sprint abierto (una semana, una meta que se puede probar).
+
+Reglas:
+- Trabaja en las tareas del sprint, una por sesión.
+- Una idea nueva que no está en el sprint va al backlog con su número; no se construye en ese momento. Si choca con "Qué queda fuera" del PRD, dilo antes.
+- Al terminar una tarea, márcala **Hecho** en `SPRINT.md` y en `BACKLOG.md`. Al cambiar el alcance, actualiza el PRD.
+- Precios y estrategia de venta no van en `plan/`: este repositorio es público (están en `Tarjetas/marketing/precios/`).
+
 ## Probar localmente
 
 No hay pruebas automáticas ni linter. Para probar, construye el sitio con el CSV de ejemplo:
