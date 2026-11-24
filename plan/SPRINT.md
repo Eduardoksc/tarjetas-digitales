@@ -13,7 +13,7 @@ Un sprint es una vuelta corta (una semana) que termina con algo que ya se puede 
 | B01 | Redirigir los QR viejos de `github.io` | Claude | Pendiente |
 | S1 | Sacar `panel.json` de la copia de GitHub Pages (con B01) | Claude | Pendiente |
 | S2 | Token del botón de la hoja con permiso mínimo | Claude + Eduardo | Pendiente |
-| S3 | Límite de pedidos y "fail open" en Cloudflare | Eduardo | Pendiente |
+| S3 | Límite de pedidos y "fail open" en Cloudflare | Eduardo | Guía lista; falta hacerlo |
 | S4 | Revisar editores de la hoja y fuerza de las claves de panel | Eduardo | Pendiente |
 | B02 | Probar el formulario en un celular real | Eduardo | Pendiente |
 | B03 | Probar la vista previa al compartir por WhatsApp | Eduardo | Pendiente |

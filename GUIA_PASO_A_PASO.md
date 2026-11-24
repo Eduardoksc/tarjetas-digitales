@@ -384,6 +384,21 @@ Es un sello por código al día. Diez claves equivocadas seguidas bloquean ese c
 
 No se guarda ningún dato de la persona: solo se suma 1 por hora, tarjeta y botón. Si no haces estos pasos, las tarjetas funcionan igual y no se cuenta nada. Las visitas que entran por la dirección vieja de GitHub (`github.io`) no se cuentan.
 
+**Proteger el cupo gratis de Cloudflare (hazlo antes de activar "Mis premios").** El plan gratis da 100.000 pedidos al día a las Functions (contador, panel, caja y sellos), compartidos por todas las tarjetas. Una persona con un programa podría gastarlos en minutos. Las páginas y las fotos no cuentan: esas siempre se sirven.
+
+1. **Qué pasa si se acaba el cupo.** En Cloudflare, ve a **Workers & Pages → fides-tarjetas → Settings** y busca la opción del límite diario de Functions (*Fail open* / *Fail closed*). Elige **Fail open**: si se acaba el cupo, las tarjetas siguen abriendo y solo se deja de contar ese día (el cupo vuelve a medianoche UTC, 7 p. m. en Colombia). Con *Fail closed*, las tarjetas mostrarían un error 1027.
+   - Ojo: con *Fail open* y el cupo agotado, la caja, el panel y los sellos dejan de funcionar hasta que se renueve, y los archivos `panel.json` y `caja.json` quedan visibles ese día (normalmente los esconde una Function). Por eso las claves de panel y de caja deben ser largas y al azar (tarea S4).
+2. **Una regla de límite de pedidos.** En el dominio **fides-link.com**, ve a **Security → WAF → Rate limiting rules → Create rule** (el plan gratis permite una regla, contada cada 10 segundos):
+   - Nombre: `Tarjetas: frenar abusos`.
+   - *If incoming requests match*: **Hostname** *equals* `t.fides-link.com`.
+   - *With the same characteristics*: **IP** (viene puesto).
+   - *When rate exceeds*: **30** pedidos cada **10 segundos**.
+   - *Then take action*: **Block**, durante **10 segundos**.
+   - Guarda con **Deploy**.
+
+   Una persona que abre una tarjeta hace 2 o 3 pedidos; 30 en 10 segundos solo los hace un programa. Si un negocio con muchos clientes en el mismo Wi-Fi se queja de bloqueos, sube el número a 60.
+3. **Revisa el consumo** de vez en cuando en **Workers & Pages → fides-tarjetas → Metrics**. Si pasa de 50.000 pedidos en un día normal, avísame para revisar.
+
 ## PASO 5: Activa la publicación
 
 **Settings → Pages → Source: GitHub Actions.** Luego **Actions → Publicar tarjetas → Run workflow**. Para ver los avisos de cada negocio, abre la ejecución y entra al paso **Crear las páginas desde la hoja**: ahí salen los ✔ de lo que se creó, los ⚠ de lo que hay que corregir y la fuente de datos que se usó.
