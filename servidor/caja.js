@@ -32,7 +32,15 @@ async function sha256(texto) {
   return [...new Uint8Array(bits)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 async function quien(request, id, hora) {
-  const ip = request.headers.get('cf-connecting-ip') ?? 'sin-ip';
+  let ip = request.headers.get('cf-connecting-ip') ?? 'sin-ip';
+  // IPv6: una conexión tiene millones de direcciones en su bloque /64, así que se cuenta el bloque
+  if (ip.includes(':')) {
+    const [izq, der = ''] = ip.toLowerCase().split('::');
+    const a = izq ? izq.split(':') : [];
+    const b = der ? der.split(':') : [];
+    const completa = [...a, ...Array(Math.max(0, 8 - a.length - b.length)).fill('0'), ...b];
+    ip = completa.slice(0, 4).map((x) => x.replace(/^0+(?=.)/, '')).join(':') + '::/64';
+  }
   return (await sha256(`${ip}|${id}|${hora}`)).slice(0, 16);
 }
 
