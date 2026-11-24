@@ -349,11 +349,22 @@ const ICONOS = {
   documento: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 15.5h6"/>',
   tijeras: '<circle cx="6.5" cy="17.5" r="2.8"/><circle cx="17.5" cy="17.5" r="2.8"/><path d="M8.6 15.6L19 4M15.4 15.6L5 4"/>',
   info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".6"/>',
+  // Fidelización y otros negocios (22 nov 2026)
+  regalo: '<rect x="3.5" y="8" width="17" height="4" rx="1"/><path d="M5 12v8.5h14V12M12 8v12.5"/><path d="M12 8C10.5 4 6.5 4 6.5 6.3 6.5 8 9.5 8 12 8zM12 8c1.5-4 5.5-4 5.5-1.7C17.5 8 14.5 8 12 8z"/>',
+  cumpleanos: '<path d="M4 21h16M5 21v-7.5A1.5 1.5 0 0 1 6.5 12h11a1.5 1.5 0 0 1 1.5 1.5V21"/><path d="M5 16.5c1.2 1 2.3 1 3.5 0s2.3-1 3.5 0 2.3 1 3.5 0 2.3-1 3.5 0"/><path d="M12 12V8.5"/><path d="M12 3.5c1.2 1.4 1.2 2.6 0 3.3-1.2-.7-1.2-1.9 0-3.3z"/>',
+  premio: '<path d="M8 3.5h8v6a4 4 0 0 1-8 0z"/><path d="M8 5.5H4.5V7A3.5 3.5 0 0 0 8 10.5M16 5.5h3.5V7a3.5 3.5 0 0 1-3.5 3.5"/><path d="M12 13.5v3.5M8 20.5h8M9.5 20.5V18h5v2.5"/>',
+  vip: '<path d="M3.5 8l4 4L12 5.5l4.5 6.5 4-4-1.8 10.5H5.3z"/><path d="M5.5 21h13"/>',
+  sellos: '<rect x="2.5" y="5" width="19" height="14" rx="2.5"/><circle cx="7.5" cy="10.5" r="1.6"/><circle cx="12" cy="10.5" r="1.6"/><circle cx="16.5" cy="10.5" r="1.6"/><path d="M6 15.5h12"/>',
+  descuento: '<circle cx="12" cy="12" r="9"/><path d="M8.5 15.5l7-7"/><circle cx="9" cy="9" r="1.2"/><circle cx="15" cy="15" r="1.2"/>',
+  cafe: '<path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5h-2"/><path d="M3 21.5h14"/><path d="M8 3.5c-.8 1 .8 2 0 3M12 3.5c-.8 1 .8 2 0 3"/>',
+  corazon: '<path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"/>',
+  compartir: '<circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="M8.2 10.8l7.6-4.1M8.2 13.2l7.6 4.1"/>',
+  mascotas: '<path d="M8 16.5c0-2.5 1.8-4.5 4-4.5s4 2 4 4.5c0 1.8-1.5 3-4 3s-4-1.2-4-3z"/><circle cx="6" cy="10.5" r="1.8"/><circle cx="9.5" cy="6.5" r="1.8"/><circle cx="14.5" cy="6.5" r="1.8"/><circle cx="18" cy="10.5" r="1.8"/>',
 };
 
 // Ícono de cada botón: 1) el que se escribe en botonN_icono, 2) el de la red o el mapa según el enlace,
 // 3) según el texto del botón ("Pedidos" → bolsa, "Sedes" → tienda), 4) según el servicio (Rappi, Doctoralia…), 5) globo.
-const ICONOS_EXTRA = ['instagram', 'facebook', 'tiktok', 'youtube', 'x', 'telegram', 'maps', 'waze', 'menu', 'catalogo', 'domicilio', 'tienda', 'reservas', 'llamar', 'correo', 'horario', 'promos', 'pago', 'formulario', 'web', 'enlace', 'iglesia', 'personas', 'boda', 'salud', 'casa', 'documento', 'tijeras', 'info'];
+const ICONOS_EXTRA = ['instagram', 'facebook', 'tiktok', 'youtube', 'x', 'telegram', 'maps', 'waze', 'menu', 'catalogo', 'domicilio', 'tienda', 'reservas', 'llamar', 'correo', 'horario', 'promos', 'pago', 'formulario', 'web', 'enlace', 'iglesia', 'personas', 'boda', 'salud', 'casa', 'documento', 'tijeras', 'info', 'regalo', 'cumpleanos', 'premio', 'vip', 'sellos', 'descuento', 'cafe', 'corazon', 'compartir', 'mascotas'];
 const ALIAS_ICONO = {
   twitter: 'x', mapa: 'maps', ubicacion: 'maps', google_maps: 'maps', pagina: 'web', sitio: 'web', link: 'enlace',
   carta: 'menu', productos: 'catalogo', pedidos: 'domicilio', domicilios: 'domicilio', rappi: 'domicilio', sedes: 'tienda', local: 'tienda',
@@ -368,7 +379,7 @@ const ALIAS_ICONO = {
   llamada: 'llamar', celular: 'llamar', contacto: 'llamar', contactanos: 'llamar',
   correo_electronico: 'correo', mensaje: 'correo',
   hora: 'horario', reloj: 'horario', abierto: 'horario',
-  promo: 'promos', oferta: 'promos', descuento: 'promos', etiqueta: 'promos',
+  promo: 'promos', oferta: 'promos', etiqueta: 'promos',
   nequi: 'pago', daviplata: 'pago', tarjeta: 'pago', pagar: 'pago', dinero: 'pago',
   formulario_de_contacto: 'formulario', inscripcion: 'formulario', registro: 'formulario', encuesta: 'formulario',
   internet: 'web', sitio_web: 'web', globo: 'web', mundo: 'web',
@@ -381,6 +392,16 @@ const ALIAS_ICONO = {
   requisito: 'documento', documentos: 'documento', tramite: 'documento', certificado: 'documento', archivo: 'documento', pdf: 'documento', papeles: 'documento', reglamento: 'documento',
   tijera: 'tijeras', barberia: 'tijeras', peluqueria: 'tijeras', corte: 'tijeras', salon: 'tijeras', belleza: 'tijeras',
   informacion: 'info', ayuda: 'info', preguntas: 'info', dudas: 'info', faq: 'info',
+  obsequio: 'regalo', regalar: 'regalo', regala: 'regalo', bono: 'regalo', gift: 'regalo', tarjeta_de_regalo: 'regalo', sorpresa: 'regalo',
+  cumple: 'cumpleanos', pastel: 'cumpleanos', torta: 'cumpleanos', ponque: 'cumpleanos', celebracion: 'cumpleanos', fiesta: 'cumpleanos',
+  premios: 'premio', mis_premios: 'premio', recompensa: 'premio', trofeo: 'premio', copa: 'premio', ganar: 'premio', logro: 'premio',
+  corona: 'vip', club: 'vip', exclusivo: 'vip', socio: 'vip', membresia: 'vip', miembro: 'vip',
+  sello: 'sellos', fidelidad: 'sellos', fidelizacion: 'sellos', puntos: 'sellos', cliente_frecuente: 'sellos', frecuente: 'sellos', acumula: 'sellos', visitas: 'sellos', tarjeta_de_sellos: 'sellos',
+  descuentos: 'descuento', porcentaje: 'descuento', rebaja: 'descuento', cupon: 'descuento',
+  cafeteria: 'cafe', tinto: 'cafe', taza: 'cafe', panaderia: 'cafe', desayuno: 'cafe', postres: 'cafe',
+  donar: 'corazon', donacion: 'corazon', donaciones: 'corazon', ofrenda: 'corazon', diezmo: 'corazon', favorito: 'corazon', amor: 'corazon', apoyo: 'corazon',
+  recomendar: 'compartir', recomiendanos: 'compartir', referidos: 'compartir', invitar: 'compartir', invita: 'compartir',
+  mascota: 'mascotas', perro: 'mascotas', gato: 'mascotas', veterinaria: 'mascotas', huella: 'mascotas', pet: 'mascotas',
 };
 // Busca el ícono de una palabra de la hoja: exacta, por alias o sin plural ("Horarios" → horario)
 function claveIcono(palabra) {
@@ -422,9 +443,28 @@ const TEXTO_ICONO = {
   documento: 'Requisitos',
   tijeras: 'Servicios',
   info: 'Más información',
+  regalo: 'Regala una tarjeta',
+  cumpleanos: 'Tu cumpleaños',
+  premio: 'Mis premios',
+  vip: 'Club VIP',
+  sellos: 'Acumula y gana',
+  descuento: 'Descuentos',
+  cafe: 'Nuestra carta',
+  corazon: 'Apóyanos',
+  compartir: 'Recomiéndanos',
+  mascotas: 'Mascotas',
 };
 // Palabras del texto del botón (ya normalizado: sin tildes y en minúsculas)
 const ICONO_POR_TEXTO = [
+  // Primero los de fidelización: "Regala una cita" es un regalo, no una reserva
+  ['cumpleanos', /cumple/],
+  ['regalo', /regal|obsequio/],
+  ['premio', /premio|recompensa/],
+  ['sellos', /cliente_frecuente|fidelidad|sellos|acumula/],
+  ['vip', /(^|_)(vip|club)(_|$)/],
+  ['descuento', /descuento|rebaja|cupon/],
+  ['compartir', /recomienda|comparte|referid|invita/],
+  ['corazon', /donar|donacion|ofrenda|diezmo/],
   ['domicilio', /domicilio|pedido|pide|delivery|rappi|didi|ifood/],
   ['menu', /(^|_)(menu|carta)(_|$)/],
   ['tienda', /sede|tienda|local|sucursal|punto_de_venta/],
@@ -433,7 +473,7 @@ const ICONO_POR_TEXTO = [
   ['llamar', /llama|telefono/],
   ['correo', /correo|e_?mail/],
   ['horario', /horario/],
-  ['promos', /promo|oferta|descuento/],
+  ['promos', /promo|oferta/],
   ['pago', /pago|paga|nequi|daviplata/],
   ['catalogo', /catalogo|producto|servicio/],
   ['iglesia', /misa|eucarist|parroquia|capilla|templo|iglesia/],
@@ -443,6 +483,8 @@ const ICONO_POR_TEXTO = [
   ['salud', /salud|medic|doctor|odontolog|especialidad/],
   ['tijeras', /corte|barber|peluquer/],
   ['casa', /conjunto|administracion|residente|apartamento/],
+  ['cafe', /(^|_)(cafe|cafeteria|tinto|panaderia)(_|$)/],
+  ['mascotas', /mascota|veterinari|perro|gato/],
 ];
 // Servicios conocidos por su dominio
 const ICONO_POR_DOMINIO = [
@@ -979,7 +1021,7 @@ async function prepararNegocio(fila, num) {
     avisar(`${etiqueta}: el "id" debe usar solo letras minúsculas, números o guiones (ej: 001). Se omite.`);
     return null;
   }
-  if (['logos', 'fonts', 'ir', 'panel'].includes(id)) {
+  if (['logos', 'fonts', 'ir', 'panel', 'caja'].includes(id)) {
     avisar(`${etiqueta}: "${id}" es un nombre reservado. Se omite.`);
     return null;
   }
@@ -1129,6 +1171,8 @@ async function prepararNegocio(fila, num) {
     clavePanel = '';
   }
 
+  const premios = leerPremios(g, etiqueta, clavePanel);
+
   let lienzo = normalizar(g('lienzo'));
   if (lienzo && !LIENZOS.includes(lienzo)) {
     avisar(`${etiqueta}: el lienzo "${g('lienzo')}" no existe. Escribe ${LIENZOS.join(', ')} o déjalo vacío. Se usa sin lienzo.`);
@@ -1222,8 +1266,129 @@ async function prepararNegocio(fila, num) {
     nombreEnLogo,
     lienzo,
     clavePanel,
+    premios,
     estilo: estilo || 'mostrador',
   };
+}
+
+// ---------- Mis premios: tarjeta de sellos por visitas o compras (B25) ----------
+// El cliente ve sus sellos y un código; el empleado suma el sello en la página de caja, con clave_caja.
+const MIN_SELLOS = 3;
+const MAX_SELLOS = 12;
+const MAX_PREMIO = 28; // "Corte gratis": solo lo ve el empleado en la caja, nunca el cliente
+const MAX_VIGENCIA = 40;
+const ICONO_SELLO_DEFECTO = 'hecho';
+
+// Pesos sin puntos ni signos: "$25.000" → 25000
+function pesosEnteros(valor) {
+  const limpio = String(valor ?? '').replace(/[$\s.,]/g, '').replace(/cop$/i, '');
+  return /^\d{3,9}$/.test(limpio) ? Number(limpio) : null;
+}
+const formatoPesos = (n) => '$' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+function leerPremios(g, etiqueta, clavePanel) {
+  const columnas = ['premio', 'premio_tipo', 'premio_meta', 'premio_valor_sello', 'premio_vigencia', 'premio_icono', 'clave_caja'];
+  if (!columnas.some((c) => g(c))) return null;
+  // La tarjeta nunca dice cuál es el premio: el cliente "reclama su obsequio" y el negocio decide qué le da.
+  // La columna premio es opcional y solo la verá el empleado en la página de caja (B25c).
+  const premio = g('premio');
+  if (premio.length > MAX_PREMIO) avisar(`${etiqueta}: el premio "${premio.slice(0, 24)}…" tiene ${premio.length} letras; caben unas ${MAX_PREMIO}. Acórtalo.`);
+
+  let tipo = normalizar(g('premio_tipo')) || 'visitas';
+  if (['visita', 'visitas'].includes(tipo)) tipo = 'visitas';
+  else if (['compra', 'compras'].includes(tipo)) tipo = 'compras';
+  else {
+    avisar(`${etiqueta}: premio_tipo "${g('premio_tipo')}" no existe. Escribe visitas o compras. Se usa visitas.`);
+    tipo = 'visitas';
+  }
+
+  const meta = Number(g('premio_meta'));
+  if (!Number.isInteger(meta) || meta < MIN_SELLOS || meta > MAX_SELLOS) {
+    avisar(`${etiqueta}: premio_meta debe ser el número de sellos para ganar, de ${MIN_SELLOS} a ${MAX_SELLOS} (ej: 8). No se muestra "Mis premios".`);
+    return null;
+  }
+
+  let valorSello = null;
+  if (tipo === 'compras') {
+    valorSello = pesosEnteros(g('premio_valor_sello'));
+    if (!valorSello) {
+      avisar(`${etiqueta}: con premio_tipo = compras, premio_valor_sello dice cuánto vale cada sello en pesos (ej: 25000). No se muestra "Mis premios".`);
+      return null;
+    }
+  } else if (g('premio_valor_sello')) {
+    avisar(`${etiqueta}: premio_valor_sello solo se usa con premio_tipo = compras. Se ignora.`);
+  }
+
+  const vigencia = g('premio_vigencia');
+  if (vigencia.length > MAX_VIGENCIA) avisar(`${etiqueta}: premio_vigencia tiene ${vigencia.length} letras; caben unas ${MAX_VIGENCIA} (ej: 31 de diciembre de 2026). Acórtala.`);
+
+  // Ícono de cada sello: uno de los genéricos (no marcas). Sin él, un visto bueno.
+  let icono = ICONO_SELLO_DEFECTO;
+  if (g('premio_icono')) {
+    const clave = claveIcono(g('premio_icono'));
+    if (clave && ICONOS[clave]) icono = clave;
+    else avisar(`${etiqueta}: el ícono "${g('premio_icono')}" de premio_icono no sirve para los sellos. Usa uno como tijeras, cafe, corazon, mascotas o salud. Se usa el visto bueno.`);
+  }
+
+  // La clave de caja la usa el empleado para sumar sellos. Nunca se escribe en la consola.
+  const claveCaja = g('clave_caja');
+  if (!claveCaja) {
+    avisar(`${etiqueta}: falta clave_caja (la clave con la que el empleado suma sellos, 12 letras o números o más). No se muestra "Mis premios".`);
+    return null;
+  }
+  if (claveCaja.length < 12 || /\s/.test(claveCaja)) {
+    avisar(`${etiqueta}: la clave_caja debe tener al menos 12 letras o números, sin espacios. No se muestra "Mis premios".`);
+    return null;
+  }
+  if (claveCaja === clavePanel) avisar(`${etiqueta}: clave_caja y clave_panel son iguales. Usa una distinta: la de caja la conocen los empleados.`);
+
+  return { premio, tipo, meta, valorSello, vigencia, icono, claveCaja };
+}
+
+const SELLO_HECHO = '<path d="M5 12.5l4.5 4.5L19 7.5"/>';
+
+function htmlPremiosPieza(n) {
+  const p = n.premios;
+  if (!p) return '';
+  const puntos = '<i></i>'.repeat(p.meta);
+  return (
+    `<a class="mp" href="#premios" aria-haspopup="dialog">` +
+    `<span class="ic">${svgIcono('premio')}</span>` +
+    `<span class="mp-txt"><span class="tx">Mis premios</span>` +
+    `<span class="det">Junta ${p.meta} sellos y reclama tu obsequio</span>` +
+    `<span class="mp-pts" aria-hidden="true">${puntos}</span></span></a>`
+  );
+}
+
+function htmlPremiosHoja(n) {
+  const p = n.premios;
+  if (!p) return '';
+  const icono = p.icono === ICONO_SELLO_DEFECTO ? SELLO_HECHO : ICONOS[p.icono];
+  let sellos = '';
+  for (let i = 1; i <= p.meta; i++) sellos += `<li class="pr-sello" data-n="${i}"><span class="pr-num">${i}</span><svg viewBox="0 0 24 24" aria-hidden="true">${icono}</svg></li>`;
+  sellos += `<li class="pr-sello pr-final"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONOS.regalo}</svg><span class="pr-oculto">Tu obsequio</span></li>`;
+  const total = p.meta + 1;
+  const columnas = total % 4 === 0 || total > 9 ? 4 : total % 3 === 0 ? 3 : 4;
+  const como =
+    p.tipo === 'compras'
+      ? `Un sello por cada ${formatoPesos(p.valorSello)} en compras. Al juntar ${p.meta}, <b>reclama tu obsequio</b> en caja.`
+      : `Un sello por visita. Al juntar ${p.meta}, <b>reclama tu obsequio</b> en caja.`;
+  const fino = [p.vigencia && `Vence: ${esc(p.vigencia)}`, 'Un sello por día'].filter(Boolean).join(' · ');
+  return (
+    `<div class="hoja hoja-premios" id="premios" role="dialog" aria-modal="true" aria-labelledby="premios-t">` +
+    `<a class="hoja-velo" href="#" tabindex="-1" aria-hidden="true"></a>` +
+    `<div class="hoja-caja" tabindex="-1">` +
+    `<a class="hoja-x" href="#" aria-label="Cerrar">${X_CERRAR}</a>` +
+    `<h2 class="hoja-tit" id="premios-t">Mis premios</h2>` +
+    `<p class="pr-sub">${esc(n.nombre)}</p>` +
+    `<p class="pr-grande" data-avance aria-live="polite">Junta <em>${p.meta} sellos</em></p>` +
+    `<p class="pr-como">${como}</p>` +
+    `<ol class="pr-sellos pr-c${columnas}" data-meta="${p.meta}">${sellos}</ol>` +
+    // El código lo crea y lo muestra el script de premios (B25b); mientras tanto queda oculto
+    `<div class="pr-codigo" hidden><span class="pr-et">Tu código</span><b data-codigo></b><span class="pr-ayuda">Muéstralo en caja para sumar tu sello</span></div>` +
+    `<p class="pr-fino">${fino}. No necesitas registrarte.</p>` +
+    `</div></div>`
+  );
 }
 
 const ESTRELLA = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.8l3 6.9 7.4.7-5.6 4.9 1.7 7.3L12 17.6 5.5 21.6l1.7-7.3L1.6 9.4l7.4-.7z"/></svg>';
@@ -1399,14 +1564,18 @@ const SCRIPT_FORMULARIO = `<script>
   }
   var hojas = d.querySelectorAll('.hoja');
   for (var i = 0; i < hojas.length; i++) (function (h) {
-    var f = h.querySelector('form'), sin = f.querySelector('.fm-sin-js'), con = f.querySelector('.fm-con-js');
-    sin.parentNode.removeChild(sin);
-    con.hidden = false;
+    var f = h.querySelector('form');
+    if (f) {
+      var sin = f.querySelector('.fm-sin-js'), con = f.querySelector('.fm-con-js');
+      sin.parentNode.removeChild(sin);
+      con.hidden = false;
+    }
     var cierres = h.querySelectorAll('.hoja-velo, .hoja-x');
     for (var j = 0; j < cierres.length; j++) cierres[j].addEventListener('click', function (e) { e.preventDefault(); cerrar(); });
     var botones = d.querySelectorAll('a[href="#' + h.id + '"]');
     for (var k = 0; k < botones.length; k++) botones[k].addEventListener('click', function (e) { e.preventDefault(); abrir(h, this); });
-    f.addEventListener('submit', function (e) {
+    // La hoja de "Mis premios" no tiene formulario: solo abre y cierra
+    if (f) f.addEventListener('submit', function (e) {
       e.preventDefault();
       var campos = f.querySelectorAll('.fm-campo'), lineas = [], primero = null;
       for (var m = 0; m < campos.length; m++) {
@@ -1447,10 +1616,12 @@ const SCRIPT_FORMULARIO = `<script>
 })();
 </script>`;
 
-function htmlFormularios(botones) {
-  const con = botones.filter((b) => b.formulario);
-  if (!con.length) return '';
-  return con.map(htmlFormulario).join('\n') + '\n' + SCRIPT_FORMULARIO;
+// Hojas que suben desde abajo: los formularios a WhatsApp y "Mis premios". El script abre y cierra todas.
+function htmlFormularios(n) {
+  const hojas = n.botones.filter((b) => b.formulario).map(htmlFormulario);
+  if (n.premios) hojas.push(htmlPremiosHoja(n));
+  if (!hojas.length) return '';
+  return hojas.join('\n') + '\n' + SCRIPT_FORMULARIO;
 }
 
 function htmlRedes(redes, id) {
@@ -1526,12 +1697,13 @@ function htmlPagina(plantilla, n) {
     .replaceAll('{{SLOGAN_HTML}}', sloganHtml)
     .replaceAll('{{TITULAR}}', esc(n.titular))
     .replaceAll('{{RESENA_HTML}}', htmlResena(n))
+    .replaceAll('{{PREMIOS_HTML}}', htmlPremiosPieza(n))
     .replaceAll('{{N_BOTONES}}', String(n.botones.length))
     .replaceAll('{{BOTONES}}', htmlBotones(n.botones, n.id))
     .replaceAll('{{REDES_HTML}}', htmlRedes(n.redes, n.id))
     .replaceAll('{{PIE_HTML}}', pie)
     .replaceAll('{{LIENZO_CLASE}}', n.lienzo ? `lz lz-${n.lienzo}` : '')
-    .replaceAll('{{FORMULARIOS_HTML}}', htmlFormularios(n.botones));
+    .replaceAll('{{FORMULARIOS_HTML}}', htmlFormularios(n));
 }
 
 
@@ -1616,6 +1788,7 @@ for (const n of negocios) {
 
 const ITERACIONES_PANEL = 10000; // pocas, porque Cloudflare gratis da 10 ms por visita al panel
 let paneles = 0;
+let cajas = 0;
 for (const n of negocios) {
   const html = htmlPagina(plantillas[n.estilo], n);
   for (const carpeta of [n.id, n.alias].filter(Boolean)) {
@@ -1642,6 +1815,17 @@ for (const n of negocios) {
     );
     paneles++;
   }
+  // Página de caja (/caja/<id>?k=<clave_caja>, B25c): reglas del programa y huella de la clave, nunca la clave
+  if (n.premios) {
+    const p = n.premios;
+    const sal = `fides-caja:${n.id}`;
+    const huellaClave = pbkdf2Sync(p.claveCaja, sal, ITERACIONES_PANEL, 32, 'sha256').toString('hex');
+    await writeFile(
+      `${SALIDA}/${n.id}/caja.json`,
+      JSON.stringify({ nombre: n.nombre, alias: n.alias, marca: n.color, premio: p.premio, tipo: p.tipo, meta: p.meta, valorSello: p.valorSello, vigencia: p.vigencia, sal, iteraciones: ITERACIONES_PANEL, huella: huellaClave })
+    );
+    cajas++;
+  }
   console.log(`  ✔ ${n.id}${n.alias ? ' / ' + n.alias : ''} — ${n.nombre} (${n.botones.length + (n.resena ? 1 : 0)} botones${n.estilo === 'premium' ? ', premium' : ''})`);
 }
 
@@ -1654,5 +1838,6 @@ if (CONTADOR_URL && !contadorListo()) console.log(`⚠ CONTADOR_URL "${CONTADOR_
 await writeFile(`${SALIDA}/_routes.json`, JSON.stringify({ version: 1, include: ['/*'], exclude: ['/fonts/*', '/logos/*', '/*/enlaces.json', '/robots.txt', '/404.html'] }));
 if (contadorListo()) console.log(`  · Contador activo: los botones pasan por ${CONTADOR_URL}/ir/…`);
 if (paneles) console.log(`  · Panel de resultados para ${paneles} negocio(s): /panel/<id>?k=<clave_panel>`);
+if (cajas) console.log(`  · Mis premios en ${cajas} negocio(s). La página de caja todavía no existe (B25c).`);
 
 console.log(`\nListo: ${negocios.length} páginas creadas, ${pausados} pausadas, ${advertencias.length} advertencias.`);

@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Mis premios: tres opciones</title>
+<style>
+  /* Muestra para decidir el diseño de B25 (premios por visitas o compras). No se publica. */
+  @font-face { font-family: "Unbounded"; font-weight: 800; font-display: swap; src: url("../fonts/unbounded-800.woff2") format("woff2"); }
+  @font-face { font-family: "Figtree"; font-weight: 500; font-display: swap; src: url("../fonts/figtree-500.woff2") format("woff2"); }
+  @font-face { font-family: "Figtree"; font-weight: 700; font-display: swap; src: url("../fonts/figtree-700.woff2") format("woff2"); }
+  :root { --fondo: #f5f5f4; --tinta: #1c1917; --gris: #57534e; --regla: #e7e5e4; --pagina: #e6e6e6; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--pagina); color: var(--tinta); font-family: "Figtree", system-ui, sans-serif; font-weight: 500; line-height: 1.45; }
+  .ancho { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+  .intro { padding-top: 32px; }
+  h1 { margin: 0 0 8px; font-family: "Unbounded", "Arial Black", sans-serif; font-weight: 800; font-size: clamp(26px, 5vw, 40px); line-height: 1.1; letter-spacing: -.01em; }
+  .intro p { max-width: 62ch; margin: 0 0 10px; color: var(--gris); }
+  .pasos { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin: 18px 0 6px; padding: 0; list-style: none; counter-reset: p; }
+  .pasos li { padding: 14px 16px; border-radius: 16px; background: #fff; font-size: .95rem; counter-increment: p; }
+  .pasos li::before { content: counter(p); display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; margin-right: 8px; border-radius: 50%; background: var(--tinta); color: #fff; font-weight: 700; font-size: .85rem; }
+  .elige { position: sticky; top: 0; z-index: 5; padding: 12px 0; background: var(--pagina); }
+  .elige .ancho { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .elige span { margin-right: 4px; font-weight: 700; }
+  .elige button { min-height: 44px; padding: 0 16px; border: 1.5px solid #a8a29e; border-radius: 999px; background: #fff; color: var(--tinta); font: inherit; font-weight: 700; cursor: pointer; }
+  .elige button[aria-pressed="true"] { border-color: var(--tinta); background: var(--tinta); color: #fff; }
+  .opcion { padding: 28px 0 36px; border-top: 1px solid #d6d3d1; }
+  .opcion h2 { margin: 0 0 4px; font-family: "Unbounded", "Arial Black", sans-serif; font-weight: 800; font-size: clamp(20px, 3.4vw, 26px); }
+  .opcion .que { max-width: 70ch; margin: 0 0 6px; color: var(--gris); }
+  .pros { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 18px; padding: 0; list-style: none; font-size: .9rem; }
+  .pros li::before { content: "+ "; font-weight: 700; }
+  .pros li.contra::before { content: "– "; }
+  .pantallas { display: flex; flex-wrap: wrap; gap: 28px; }
+  .pantalla figcaption { margin: 0 0 10px; font-weight: 700; font-size: .9rem; color: var(--gris); }
+  .pantalla { margin: 0; }
+
+  /* ---------- Celular ---------- */
+  .cel {
+    position: relative; width: 340px; max-width: calc(100vw - 48px); height: 700px; overflow: hidden;
+    border-radius: 34px; background: var(--fondo); box-shadow: 0 0 0 7px #1c1917, 0 28px 50px -24px rgba(0, 0, 0, .55);
+  }
+  .toldo { padding: 26px 20px 46px; border-radius: 0 0 50% 50% / 0 0 28px 28px; background: var(--marca); color: var(--sobre); text-align: center; }
+  .logo { display: flex; align-items: center; justify-content: center; width: 62px; height: 62px; margin: 0 auto 8px; border-radius: 50%; background: #fff; color: var(--marca); font-family: "Unbounded", sans-serif; font-weight: 800; font-size: 26px; }
+  .nom { margin: 0; font-weight: 700; font-size: .95rem; }
+  .tit { margin: 4px 0 0; font-family: "Unbounded", "Arial Black", sans-serif; font-weight: 800; font-size: 27px; line-height: 1.05; letter-spacing: -.01em; }
+  .tiq { position: relative; margin: -30px 16px 12px; padding: 14px; border-radius: 20px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 14px 26px -16px var(--marca); text-align: center; }
+  .tiq p { margin: 0; font-size: .85rem; }
+  .estrellas { display: flex; justify-content: center; gap: 6px; margin: 8px 0 10px; }
+  .estrellas svg { width: 24px; height: 24px; fill: none; stroke: var(--acento); stroke-width: 1.6; stroke-linejoin: round; }
+  .cal { display: block; padding: 11px; border-radius: 999px; background: var(--marca); color: var(--sobre); font-weight: 700; font-size: .9rem; }
+  .mos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 16px; }
+  .tl { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 8px; border: 1px solid var(--regla); border-radius: 18px; background: #fff; font-size: .88rem; text-align: center; }
+  .ico { display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; background: var(--tinte); color: var(--icono); }
+  .ico svg, .ic svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* Pieza "Mis premios" en la tarjeta (debajo de la reseña) */
+  .mp { display: flex; align-items: center; gap: 12px; margin: 0 16px 10px; padding: 12px 14px; border: 1.5px solid var(--marca); border-radius: 18px; background: #fff; }
+  .mp .ico { flex: none; }
+  .mp-txt { flex: 1; min-width: 0; }
+  .mp-txt b { display: block; font-size: .95rem; }
+  .mp-txt small { display: block; color: var(--gris); font-size: .8rem; }
+  .mp-flecha { flex: none; color: var(--gris); font-size: 1.2rem; }
+  .puntitos { display: flex; gap: 4px; margin-top: 5px; }
+  .puntitos i { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--icono); }
+  .puntitos i.si { background: var(--marca); border-color: var(--marca); }
+  .barrita { height: 8px; margin-top: 6px; border-radius: 8px; background: var(--tinte); overflow: hidden; }
+  .barrita i { display: block; height: 100%; border-radius: 8px; background: var(--marca); }
+  .anillito { flex: none; width: 48px; height: 48px; }
+
+  /* Hoja que sube */
+  .velo { position: absolute; inset: 0; background: rgba(12, 10, 9, .55); }
+  .hoja { position: absolute; left: 0; right: 0; bottom: 0; max-height: 92%; overflow: hidden; padding: 22px 18px 20px; border-radius: 24px 24px 0 0; background: #fff; }
+  .hoja::before { content: ""; display: block; width: 40px; height: 5px; margin: -10px auto 12px; border-radius: 5px; background: var(--regla); }
+  .x { position: absolute; top: 12px; right: 12px; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: var(--fondo); font-size: 1.1rem; }
+  .h-tit { margin: 0; font-weight: 700; font-size: 1.15rem; }
+  .h-sub { margin: 0 0 12px; color: var(--gris); font-size: .85rem; }
+  .grande { margin: 0; font-family: "Unbounded", "Arial Black", sans-serif; font-weight: 800; font-size: 25px; line-height: 1.1; }
+  .grande em { font-style: normal; color: var(--acento); }
+  .meta { margin: 4px 0 14px; color: var(--gris); font-size: .9rem; }
+  .codigo { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; padding: 12px 14px; border-radius: 16px; background: var(--fondo); }
+  .codigo small { display: block; color: var(--gris); font-size: .78rem; }
+  .codigo b { white-space: nowrap; font-family: "Unbounded", sans-serif; font-weight: 800; font-size: 22px; letter-spacing: .12em; }
+  .fino { margin: 10px 0 0; color: var(--gris); font-size: .78rem; text-align: center; }
+
+  /* Opción 1: tarjeta de sellos */
+  .sellos { display: grid; grid-template-columns: repeat(var(--cols, 4), 1fr); gap: 10px; padding: 14px; border-radius: 18px; background: var(--tinte); }
+  .sello { position: relative; display: flex; align-items: center; justify-content: center; aspect-ratio: 1; border: 2px dashed var(--icono); border-radius: 50%; color: var(--icono); font-weight: 700; font-size: .85rem; opacity: 1; }
+  .sello.si { border: 0; background: var(--marca); color: var(--sobre); }
+  .sello.si:nth-child(odd) { transform: rotate(-8deg); }
+  .sello.si:nth-child(even) { transform: rotate(6deg); }
+  .sello svg { width: 52%; height: 52%; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .sello.final { border: 2px solid var(--acento); background: #fff; color: var(--acento); }
+
+  /* Opción 2: camino */
+  .camino { position: relative; margin: 8px 18px 6px 4px; padding: 26px 0 30px; }
+  .riel { height: 14px; border-radius: 14px; background: var(--tinte); }
+  .riel i { display: block; height: 100%; border-radius: 14px; background: var(--marca); }
+  .tu { position: absolute; top: 0; transform: translateX(-50%); padding: 2px 8px; border-radius: 999px; background: var(--tinta); color: #fff; font-size: .72rem; font-weight: 700; white-space: nowrap; }
+  .meta-ico { position: absolute; right: -18px; top: 13px; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: var(--acento); color: var(--sobre-acento); box-shadow: 0 0 0 4px #fff; }
+  .meta-ico svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .marcas { position: absolute; left: 0; right: 0; bottom: 4px; display: flex; justify-content: space-between; color: var(--gris); font-size: .72rem; }
+  .historial { margin: 6px 0 0; padding: 0; list-style: none; font-size: .85rem; }
+  .historial li { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--regla); }
+  .historial li span { color: var(--gris); }
+
+  /* Opción 3: pase */
+  .pase { position: relative; border-radius: 22px; background: var(--marca); color: var(--sobre); overflow: hidden; }
+  .pase-arriba { display: flex; align-items: center; gap: 10px; padding: 14px 16px 0; }
+  .pase-arriba .logo { width: 36px; height: 36px; margin: 0; font-size: 15px; }
+  .pase-arriba b { font-size: .9rem; }
+  .pase-centro { display: flex; align-items: center; gap: 14px; padding: 14px 16px 18px; }
+  .anillo { flex: none; width: 112px; height: 112px; }
+  .pase-centro p { margin: 0; font-size: .85rem; }
+  .pase-centro strong { display: block; font-family: "Unbounded", sans-serif; font-weight: 800; font-size: 20px; line-height: 1.1; margin: 2px 0 4px; }
+  .corte { position: relative; height: 0; border-top: 2px dashed rgba(255,255,255,.45); margin: 0 14px; }
+  .pase.oscuro-txt .corte { border-top-color: rgba(0,0,0,.3); }
+  .corte::before, .corte::after { content: ""; position: absolute; top: -12px; width: 22px; height: 22px; border-radius: 50%; background: #fff; }
+  .corte::before { left: -26px; } .corte::after { right: -26px; }
+  .pase-abajo { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 16px; }
+  .pase-abajo small { display: block; font-size: .75rem; opacity: 1; }
+  .pase-abajo b { font-family: "Unbounded", sans-serif; font-weight: 800; font-size: 22px; letter-spacing: .12em; }
+  .canje { margin-top: 12px; padding: 12px 14px; border: 1.5px dashed var(--acento); border-radius: 16px; font-size: .85rem; }
+  .canje b { color: var(--acento); }
+
+  .nota-fin { padding: 28px 0 48px; border-top: 1px solid #d6d3d1; color: var(--gris); }
+  .nota-fin h2 { color: var(--tinta); margin: 0 0 8px; font-size: 1.1rem; }
+  .nota-fin ul { margin: 0; padding-left: 20px; max-width: 75ch; }
+  @media (max-width: 420px) { .pantallas { gap: 22px; } .cel { height: 680px; } }
+</style>
+</head>
+<body>
+<header class="ancho intro">
+  <h1>Mis premios: tres opciones</h1>
+  <p>Es la tarjeta de "Cliente frecuente" de papel, pero en el celular: no se pierde, el negocio ve cuántos vuelven y sirve para visitas o para compras. Las tres opciones funcionan igual por dentro; solo cambia cómo se ve.</p>
+  <ol class="pasos">
+    <li>El cliente toca <b>Mis premios</b> en la tarjeta. No se registra: su celular guarda un código al azar.</li>
+    <li>En caja muestra su código. El empleado, en su página con clave, suma la visita o el valor de la compra.</li>
+    <li>Al llegar a la meta, el empleado marca el premio como entregado y empieza una tarjeta nueva.</li>
+  </ol>
+</header>
+
+<nav class="elige" aria-label="Elegir negocio de ejemplo">
+  <div class="ancho" id="negocios"><span>Ver con:</span></div>
+</nav>
+
+<main class="ancho">
+  <section class="opcion">
+    <h2>Opción 1 · Tarjeta de sellos</h2>
+    <p class="que">La misma tarjeta de papel, en el celular. Cada visita es un sello con el ícono del negocio; la última casilla es el regalo. Para compras, cada sello vale una cantidad fija (por ejemplo, $25.000).</p>
+    <ul class="pros"><li>Se entiende sin explicar</li><li>Muy visual en mostrador</li><li class="contra">Con metas de más de 10 se llena de casillas</li></ul>
+    <div class="pantallas" id="op1"></div>
+  </section>
+  <section class="opcion">
+    <h2>Opción 2 · Camino al premio</h2>
+    <p class="que">Una barra que avanza hasta el regalo, con lo que falta en grande y las últimas visitas o compras. La mejor para premios por compras (montos).</p>
+    <ul class="pros"><li>Ideal para montos en pesos</li><li>Muestra el historial</li><li class="contra">Menos "coleccionable" que los sellos</li></ul>
+    <div class="pantallas" id="op2"></div>
+  </section>
+  <section class="opcion">
+    <h2>Opción 3 · Pase del negocio</h2>
+    <p class="que">Un pase con el color del negocio, como los de las aerolíneas: un anillo con el avance, el premio y el código grande para la caja.</p>
+    <ul class="pros"><li>Se ve más exclusivo</li><li>El código se lee fácil en caja</li><li class="contra">Más color abajo: se aparta de "la marca solo arriba"</li></ul>
+    <div class="pantallas" id="op3"></div>
+  </section>
+  <section class="nota-fin">
+    <h2>En las tres</h2>
+    <ul>
+      <li>La pieza va <b>debajo de la reseña</b> y el premio nunca depende de calificar (regla de Google).</li>
+      <li>Si el código de premios no carga, la tarjeta sigue abriendo con la reseña y los botones.</li>
+      <li>Columnas nuevas en la hoja: <code>premio</code>, <code>premio_tipo</code> (visitas o compras), <code>premio_meta</code>, <code>premio_vigencia</code> y <code>clave_caja</code>.</li>
+      <li>Los datos de esta muestra son inventados.</li>
+    </ul>
+  </section>
+</main>
+
+<script>
+var IC = {
+  tijeras: '<circle cx="6.5" cy="17.5" r="2.8"/><circle cx="17.5" cy="17.5" r="2.8"/><path d="M8.6 15.6L19 4M15.4 15.6L5 4"/>',
+  cafe: '<path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5h-2"/><path d="M3 21.5h14"/><path d="M8 3.5c-.8 1 .8 2 0 3M12 3.5c-.8 1 .8 2 0 3"/>',
+  corazon: '<path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"/>',
+  mascotas: '<path d="M8 16.5c0-2.5 1.8-4.5 4-4.5s4 2 4 4.5c0 1.8-1.5 3-4 3s-4-1.2-4-3z"/><circle cx="6" cy="10.5" r="1.8"/><circle cx="9.5" cy="6.5" r="1.8"/><circle cx="14.5" cy="6.5" r="1.8"/><circle cx="18" cy="10.5" r="1.8"/>',
+  regalo: '<rect x="3.5" y="8" width="17" height="4" rx="1"/><path d="M5 12v8.5h14V12M12 8v12.5"/><path d="M12 8C10.5 4 6.5 4 6.5 6.3 6.5 8 9.5 8 12 8zM12 8c1.5-4 5.5-4 5.5-1.7C17.5 8 14.5 8 12 8z"/>',
+  premio: '<path d="M8 3.5h8v6a4 4 0 0 1-8 0z"/><path d="M8 5.5H4.5V7A3.5 3.5 0 0 0 8 10.5M16 5.5h3.5V7a3.5 3.5 0 0 1-3.5 3.5"/><path d="M12 13.5v3.5M8 20.5h8M9.5 20.5V18h5v2.5"/>',
+  reservas: '<rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M9 15.2l2 2 4-4"/>',
+  menu: '<path d="M6 3v5a2 2 0 0 0 4 0V3M8 10v11"/><path d="M17.5 21V3c-2.3 1.3-3.5 3.8-3.5 7.5V13h3.5"/>',
+  maps: '<path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+  wa: '<path d="M4 20l1.3-4A8 8 0 1 1 8.4 19z"/><path d="M9 9.2c.3 2.4 2.6 4.6 5 5l1-1.2-1.8-.9-.8.8c-.8-.4-1.6-1.2-2-2l.8-.8-.9-1.8z"/>'
+};
+var STAR = '<svg viewBox="0 0 24 24"><polygon points="12 2 15.1 8.3 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 8.9 8.3"/></svg>';
+function svg(k) { return '<svg viewBox="0 0 24 24" aria-hidden="true">' + IC[k] + '</svg>'; }
+function pesos(n) { return '$' + n.toLocaleString('es-CO'); }
+
+var NEGOCIOS = {
+  barberia: { boton: 'Barbería', nombre: 'Barbería Monteverde', ini: 'M', marca: '#1f5f4f', sobre: '#ffffff', acento: '#b45309', sobreAcento: '#ffffff', tinte: '#e3eeea', icono: '#1f5f4f',
+    sello: 'tijeras', tipo: 'visitas', unidad: 'cortes', meta: 8, lleva: 5, premio: 'Corte gratis', codigo: 'K7Q42', vence: '31 dic 2026',
+    botones: [['reservas', 'Agendar cita'], ['wa', 'WhatsApp']], historial: [['18 nov', 'Corte y barba'], ['2 nov', 'Corte'], ['19 oct', 'Corte']] },
+  cafe: { boton: 'Panadería', nombre: 'Panadería La Espiga', ini: 'E', marca: '#8a3f12', sobre: '#ffffff', acento: '#8a3f12', sobreAcento: '#ffffff', tinte: '#f5e9df', icono: '#8a3f12',
+    sello: 'cafe', tipo: 'compras', paso: 25000, meta: 200000, lleva: 140000, premio: 'Desayuno para dos', codigo: 'P3M81', vence: '31 mar 2027',
+    botones: [['menu', 'Ver carta'], ['wa', 'Pedir por WhatsApp']], historial: [['21 nov', 32000], ['14 nov', 45000], ['6 nov', 63000]] },
+  spa: { boton: 'Spa de uñas', nombre: 'Malva Nail Spa', ini: 'M', marca: '#7a2e8f', sobre: '#ffffff', acento: '#be185d', sobreAcento: '#ffffff', tinte: '#f1e6f4', icono: '#7a2e8f',
+    sello: 'corazon', tipo: 'visitas', unidad: 'visitas', meta: 6, lleva: 4, premio: 'Manicure gratis', codigo: 'H2T95', vence: '28 feb 2027',
+    botones: [['reservas', 'Agenda tu cita'], ['wa', 'WhatsApp']], historial: [['20 nov', 'Semipermanente'], ['5 nov', 'Pedicure'], ['22 oct', 'Manicure']] },
+  mascotas: { boton: 'Mascotas', nombre: 'Huellitas Spa Canino', ini: 'H', marca: '#f2b630', sobre: '#000000', acento: '#9a3412', sobreAcento: '#ffffff', tinte: '#fdf3d9', icono: '#8a5a00',
+    sello: 'mascotas', tipo: 'visitas', unidad: 'baños', meta: 10, lleva: 7, premio: 'Baño gratis', codigo: 'D8R30', vence: '31 dic 2026',
+    botones: [['reservas', 'Agendar baño'], ['maps', 'Cómo llegar']], historial: [['17 nov', 'Baño y corte'], ['3 nov', 'Baño'], ['20 oct', 'Baño']] }
+};
+
+function cuentas(n) {
+  if (n.tipo === 'visitas') return { total: n.meta, hechos: n.lleva, falta: (n.meta - n.lleva) + ' ' + n.unidad, ratio: n.lleva / n.meta };
+  return { total: n.meta / n.paso, hechos: Math.floor(n.lleva / n.paso), falta: pesos(n.meta - n.lleva), ratio: n.lleva / n.meta };
+}
+function vars(n) { return '--marca:' + n.marca + ';--sobre:' + n.sobre + ';--acento:' + n.acento + ';--sobre-acento:' + n.sobreAcento + ';--tinte:' + n.tinte + ';--icono:' + n.icono; }
+function anillo(n, tam, grosor, fondo, frente, texto, sub) {
+  var r = (tam - grosor) / 2, c = 2 * Math.PI * r, k = cuentas(n);
+  return '<svg class="' + (tam > 60 ? 'anillo' : 'anillito') + '" viewBox="0 0 ' + tam + ' ' + tam + '" aria-hidden="true">' +
+    '<circle cx="' + tam / 2 + '" cy="' + tam / 2 + '" r="' + r + '" fill="none" stroke="' + fondo + '" stroke-width="' + grosor + '"/>' +
+    '<circle cx="' + tam / 2 + '" cy="' + tam / 2 + '" r="' + r + '" fill="none" stroke="' + frente + '" stroke-width="' + grosor + '" stroke-linecap="round" stroke-dasharray="' + (c * k.ratio) + ' ' + c + '" transform="rotate(-90 ' + tam / 2 + ' ' + tam / 2 + ')"/>' +
+    (texto ? '<text x="50%" y="' + (sub ? '47%' : '55%') + '" text-anchor="middle" font-family="Unbounded, Arial Black, sans-serif" font-weight="800" font-size="' + (tam > 60 ? (String(texto).length > 2 ? 24 : 30) : (String(texto).length > 3 ? 10 : 12.5)) + '" fill="currentColor">' + texto + '</text>' : '') +
+    (sub ? '<text x="50%" y="66%" text-anchor="middle" font-family="Figtree, sans-serif" font-weight="700" font-size="12" fill="currentColor">' + sub + '</text>' : '') + '</svg>';
+}
+
+function tarjeta(n, mini) {
+  return '<div class="toldo"><div class="logo">' + n.ini + '</div><p class="nom">' + n.nombre + '</p><p class="tit">Nos encantó verte.</p></div>' +
+    '<div class="tiq"><p>¿Cómo te fue? Cuéntanos tu experiencia</p><div class="estrellas">' + STAR + STAR + STAR + STAR + STAR + '</div><span class="cal">Calificar en Google →</span></div>' +
+    mini + '<div class="mos">' + n.botones.map(function (b) { return '<div class="tl"><span class="ico">' + svg(b[0]) + '</span>' + b[1] + '</div>'; }).join('') + '</div>';
+}
+function mini(n, op) {
+  var k = cuentas(n), cuerpo, izq = '<span class="ico">' + svg('premio') + '</span>';
+  if (op === 1) {
+    var p = ''; for (var i = 0; i < k.total; i++) p += '<i' + (i < k.hechos ? ' class="si"' : '') + '></i>';
+    cuerpo = '<b>Mis premios</b><span class="puntitos">' + p + '</span>';
+  } else if (op === 2) {
+    cuerpo = '<b>Mis premios</b><small>Te faltan ' + k.falta + ' para: ' + n.premio + '</small><span class="barrita"><i style="width:' + Math.round(k.ratio * 100) + '%"></i></span>';
+  } else {
+    izq = '<span style="color:var(--marca)">' + anillo(n, 48, 5, n.tinte, n.marca, n.tipo === 'visitas' ? k.hechos + '/' + k.total : Math.round(k.ratio * 100) + '%') + '</span>';
+    cuerpo = '<b>Mis premios</b><small>' + n.premio + ' · te faltan ' + k.falta + '</small>';
+  }
+  return '<div class="mp">' + izq + '<span class="mp-txt">' + cuerpo + '</span><span class="mp-flecha">›</span></div>';
+}
+function codigo(n, texto) {
+  return '<div class="codigo"><div><small>Tu código</small><b>' + n.codigo.slice(0, 3) + ' ' + n.codigo.slice(3) + '</b></div><small style="max-width:15ch;text-align:right">' + texto + '</small></div>';
+}
+function hoja(n, op) {
+  var k = cuentas(n), h = '<span class="x" aria-hidden="true">✕</span><p class="h-tit">Mis premios</p><p class="h-sub">' + n.nombre + '</p>';
+  if (op === 1) {
+    var s = '';
+    for (var i = 0; i < k.total; i++) s += i < k.hechos ? '<span class="sello si">' + svg(n.sello) + '</span>' : '<span class="sello">' + (i + 1) + '</span>';
+    s += '<span class="sello final">' + svg('regalo') + '</span>';
+    var cols = (k.total + 1) % 4 === 0 ? 4 : (k.total + 1) % 3 === 0 ? 3 : (k.total + 1) <= 8 ? 4 : 4;
+    h += '<p class="grande">Llevas <em>' + k.hechos + ' de ' + k.total + '</em></p>' +
+      '<p class="meta">' + (n.tipo === 'visitas' ? 'Al completar los ' + k.total + ' ' + n.unidad + ': ' : 'Un sello por cada ' + pesos(n.paso) + ' en compras. Al completar: ') + '<b>' + n.premio + '</b></p>' +
+      '<div class="sellos" style="--cols:' + cols + '">' + s + '</div>' + codigo(n, 'Muéstralo en caja para sumar') + '<p class="fino">Vence el ' + n.vence + ' · Una visita por día</p>';
+  } else if (op === 2) {
+    var pct = Math.round(k.ratio * 100), marcas = '';
+    var paso = n.tipo === 'visitas' ? null : n.meta / 4;
+    for (var j = 0; j <= 4; j++) marcas += '<span>' + (n.tipo === 'visitas' ? Math.round(n.meta * j / 4) : (j === 0 ? '$0' : '$' + (paso * j / 1000) + ' mil')) + '</span>';
+    h += '<p class="grande">Te faltan <em>' + k.falta + '</em></p><p class="meta">para <b>' + n.premio + '</b> · llevas ' + (n.tipo === 'visitas' ? n.lleva + ' de ' + n.meta + ' ' + n.unidad : pesos(n.lleva) + ' de ' + pesos(n.meta)) + '</p>' +
+      '<div class="camino"><span class="tu" style="left:' + pct + '%">Tú</span><div class="riel"><i style="width:' + pct + '%"></i></div><span class="meta-ico">' + svg('regalo') + '</span><div class="marcas">' + marcas + '</div></div>' +
+      '<ul class="historial">' + n.historial.map(function (x) { return '<li>' + x[0] + '<span>' + (typeof x[1] === 'number' ? pesos(x[1]) : x[1]) + '</span></li>'; }).join('') + '</ul>' +
+      codigo(n, 'Muéstralo en caja para sumar');
+  } else {
+    var clara = n.sobre === '#ffffff';
+    h += '<div class="pase' + (clara ? '' : ' oscuro-txt') + '"><div class="pase-arriba"><span class="logo">' + n.ini + '</span><b>' + n.nombre + '</b></div>' +
+      '<div class="pase-centro"><span>' + anillo(n, 112, 10, clara ? 'rgba(255,255,255,.25)' : 'rgba(0,0,0,.15)', n.sobre, n.tipo === 'visitas' ? k.hechos : Math.round(k.ratio * 100) + '%', n.tipo === 'visitas' ? 'de ' + k.total : 'de la meta') + '</span>' +
+      '<p>Tu premio<strong>' + n.premio + '</strong>Te faltan ' + k.falta + '</p></div>' +
+      '<div class="corte"></div><div class="pase-abajo"><div><small>Código para caja</small><b>' + n.codigo.slice(0, 3) + ' ' + n.codigo.slice(3) + '</b></div><small style="text-align:right">Vence<br>' + n.vence + '</small></div></div>' +
+      '<div class="canje">Cuando completes la meta, en caja te entregan <b>' + n.premio.toLowerCase() + '</b> y empiezas un pase nuevo.</div>';
+  }
+  return h;
+}
+function pintar(id) {
+  var n = NEGOCIOS[id];
+  [1, 2, 3].forEach(function (op) {
+    var t = tarjeta(n, mini(n, op));
+    document.getElementById('op' + op).innerHTML =
+      '<figure class="pantalla"><figcaption>En la tarjeta</figcaption><div class="cel" style="' + vars(n) + '">' + t + '</div></figure>' +
+      '<figure class="pantalla"><figcaption>Al tocar "Mis premios"</figcaption><div class="cel" style="' + vars(n) + '">' + t + '<div class="velo"></div><div class="hoja">' + hoja(n, op) + '</div></div></figure>';
+  });
+  var bs = document.querySelectorAll('#negocios button');
+  for (var i = 0; i < bs.length; i++) bs[i].setAttribute('aria-pressed', bs[i].getAttribute('data-id') === id ? 'true' : 'false');
+}
+var cont = document.getElementById('negocios');
+Object.keys(NEGOCIOS).forEach(function (id) {
+  var b = document.createElement('button'); b.type = 'button'; b.textContent = NEGOCIOS[id].boton; b.setAttribute('data-id', id);
+  b.onclick = function () { pintar(id); }; cont.appendChild(b);
+});
+pintar('barberia');
+</script>
+</body>
+</html>

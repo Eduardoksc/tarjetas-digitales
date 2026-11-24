@@ -76,7 +76,7 @@ Pestaña **Negocios**, fila 1 con estos encabezados (el orden no importa; solo a
 | `instagram`, `facebook`, `tiktok`, `youtube`, `x`, `telegram` | El usuario (`@minegocio`) o el enlace completo de cada red. Salen como círculos con el ícono al final de la página | No |
 | `alias` | Nombre corto extra para el enlace, ej. `estilonorte` | No |
 
-**Íconos de los botones:** el robot elige el ícono solo, según el texto del botón y el enlace. "Pedidos" o "Domicilios" muestran una bolsa de entrega; "Sedes" o "Tiendas", una tienda; "Menú" o "Carta", cubiertos; "Citas", "Agendar" o "Reservas", un calendario (sirve para barberías, consultorios, spas…). Un enlace de **Rappi** muestra la bolsa y el texto "Pide en Rappi"; uno de Doctoralia, Calendly o Booksy, el calendario. Si quieres otro, elígelo de la lista en `boton4_icono` o escribe una palabra en español: el robot entiende mayúsculas, plurales y muchas palabras ("Iglesia", "Misas", "Grupos", "Requisitos", "Matrimonios", "Consultorio", "Barbería", "Conjunto", "Ayuda"…). Íconos disponibles: `menu`, `catalogo`, `domicilio`, `tienda`, `reservas`, `llamar`, `correo`, `horario`, `promos`, `pago`, `maps`, `waze`, `web`, `enlace`, `formulario`, `iglesia`, `personas`, `boda`, `salud`, `casa`, `documento`, `tijeras`, `info`. Si escribes una palabra que no conoce, el robot avisa y elige uno solo.
+**Íconos de los botones:** el robot elige el ícono solo, según el texto del botón y el enlace. "Pedidos" o "Domicilios" muestran una bolsa de entrega; "Sedes" o "Tiendas", una tienda; "Menú" o "Carta", cubiertos; "Citas", "Agendar" o "Reservas", un calendario (sirve para barberías, consultorios, spas…). Un enlace de **Rappi** muestra la bolsa y el texto "Pide en Rappi"; uno de Doctoralia, Calendly o Booksy, el calendario. Si quieres otro, elígelo de la lista en `boton4_icono` o escribe una palabra en español: el robot entiende mayúsculas, plurales y muchas palabras ("Iglesia", "Misas", "Grupos", "Requisitos", "Matrimonios", "Consultorio", "Barbería", "Conjunto", "Ayuda"…). Íconos disponibles: `menu`, `catalogo`, `domicilio`, `tienda`, `reservas`, `llamar`, `correo`, `horario`, `promos`, `pago`, `maps`, `waze`, `web`, `enlace`, `formulario`, `iglesia`, `personas`, `boda`, `salud`, `casa`, `documento`, `tijeras`, `info`, `regalo`, `cumpleanos`, `premio`, `vip`, `sellos`, `descuento`, `cafe`, `corazon`, `compartir`, `mascotas`. Los de fidelización también salen solos por el texto: "Regala una cita" muestra un regalo, "Tu cumpleaños" un pastel, "Mis premios" un trofeo, "Club" o "VIP" una corona, "Cliente frecuente" una tarjeta de sellos, "Descuento" un %, "Recomiéndanos" el símbolo de compartir y "Donaciones" un corazón. Si escribes una palabra que no conoce, el robot avisa y elige uno solo.
 
 **Color secundario:** no hay que escribirlo. El robot lo saca del logo (por ejemplo, el verde de BA CU) y lo usa en las estrellas y los íconos.
 
@@ -99,7 +99,7 @@ Mira `ejemplo-negocios.csv`: tiene filas de ejemplo con todo esto.
 | `estado` | `activo` (también `si` o `activa`). Cualquier otra cosa, por ejemplo `pausado`, oculta la página | La página se oculta |
 | `logo_fondo` | `blanco` (placa blanca), `oscuro` (placa oscura, para logos blancos) o `sin` (el logo va directo sobre el color) | Se elige solo (ver abajo) |
 | `orden_botones` | Nombres separados por coma: `catalogo`, `whatsapp`, `boton4` a `boton9`. La reseña siempre va arriba, no hace falta ponerla | `catalogo, whatsapp, boton4` y así hasta `boton9` |
-| `boton4_icono` a `boton9_icono` | Los de la lista de la hoja (`maps`, `menu`, `reservas`, `horario`, `iglesia`, `personas`, `boda`, `salud`, `casa`, `documento`, `tijeras`, `info`…) o una palabra en español que el robot entienda | Se elige solo según el enlace |
+| `boton4_icono` a `boton9_icono` | Los de la lista de la hoja (`maps`, `menu`, `reservas`, `horario`, `iglesia`, `personas`, `boda`, `salud`, `casa`, `documento`, `tijeras`, `info`, `regalo`, `cumpleanos`, `premio`, `vip`, `sellos`, `descuento`, `cafe`, `corazon`, `compartir`, `mascotas`…) o una palabra en español que el robot entienda | Se elige solo según el enlace |
 
 Consejo: en `estado` y `logo_fondo` pon una lista desplegable en **Datos → Validación de datos**, así no te equivocas al escribir.
 
@@ -359,6 +359,20 @@ git push -u origin main
 4. Envíaselo por WhatsApp y dile que lo guarde en favoritos. Muestra las visitas del mes, la comparación con el mes anterior, qué botones tocaron más, si llegaron por QR o NFC y su mejor día y hora. Abajo puede ver los meses anteriores.
 
 Quien tenga el enlace ve los números, así que solo dáselo al dueño. Si se filtra, cambia la clave en la hoja y publica: el enlace viejo deja de funcionar. Las llamadas, los correos, los formularios y el Wi-Fi no se cuentan.
+
+**Mis premios: tarjeta de sellos (en construcción).** Es la tarjeta de "cliente frecuente" de papel, pero en el celular. Todavía **no la actives en un cliente real**: por ahora solo se ve la tarjeta vacía; el código del cliente (B25b) y la página de caja para sumar sellos (B25c) vienen después. Columnas:
+
+| Columna | Qué poner | Ejemplo |
+|---|---|---|
+| `premio` | Opcional. Lo que el negocio entrega, para que el empleado lo vea en la caja. **El cliente nunca lo ve**: la tarjeta solo dice "reclama tu obsequio" | `Corte gratis` |
+| `premio_tipo` | `visitas` (un sello por visita) o `compras` (un sello por cada cierto valor). Vacío = visitas | `visitas` |
+| `premio_meta` | Cuántos sellos para ganar, de 3 a 12 | `8` |
+| `premio_valor_sello` | Solo con `compras`: cuánto vale cada sello, en pesos | `25000` |
+| `premio_vigencia` | Hasta cuándo vale (opcional) | `31 de diciembre de 2026` |
+| `premio_icono` | El dibujo de cada sello (opcional): `tijeras`, `cafe`, `corazon`, `mascotas`, `salud`… Vacío = un visto bueno | `tijeras` |
+| `clave_caja` | La clave con la que los empleados suman sellos. **12 letras o números o más, sin espacios, distinta de `clave_panel`** | `peine-sol-azul-7302` |
+
+Si falta `premio_meta` o `clave_caja`, o el número no está entre 3 y 12, el robot avisa con ⚠ y la tarjeta sale sin "Mis premios". El botón va debajo de la reseña. El premio nunca depende de dejar una reseña (regla de Google).
 
 No se guarda ningún dato de la persona: solo se suma 1 por hora, tarjeta y botón. Si no haces estos pasos, las tarjetas funcionan igual y no se cuenta nada. Las visitas que entran por la dirección vieja de GitHub (`github.io`) no se cuentan.
 

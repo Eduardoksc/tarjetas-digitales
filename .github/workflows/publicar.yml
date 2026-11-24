@@ -80,10 +80,17 @@ jobs:
 
       - uses: actions/configure-pages@v6
         if: steps.revisar.outputs.cambio == 'true'
+      # GitHub Pages no puede bloquear archivos: la copia de github.io va sin las huellas de la clave de caja
+      - name: Copia para GitHub Pages sin claves de caja
+        if: steps.revisar.outputs.cambio == 'true'
+        run: |
+          rm -rf dist-github
+          cp -r dist dist-github
+          find dist-github -name caja.json -delete
       - uses: actions/upload-pages-artifact@v5
         if: steps.revisar.outputs.cambio == 'true'
         with:
-          path: dist
+          path: dist-github
       - name: Guardar las páginas para Cloudflare
         if: steps.revisar.outputs.cambio == 'true'
         uses: actions/upload-artifact@v6
