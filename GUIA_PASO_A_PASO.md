@@ -57,6 +57,7 @@ Pestaña **Negocios**, fila 1 con estos encabezados (el orden no importa; solo a
 | `color` | Color del negocio, ej. `#B83A5B` | No |
 | `logo` | Nombre del archivo en la carpeta `logos`, ej. `logo004.png` | No |
 | `logo_fondo` | `blanco`, `oscuro` o `sin` | No |
+| `logo_forma` | `circulo` o `cuadrado` | No |
 | `titular` | Frase grande de arriba. Vacío = "Nos encantó verte." (máx. unas 30 letras) | No |
 | `google_resenas` | Enlace para dejar reseña | Recomendada |
 | `texto_resenas` | Texto junto al logo de Google. Vacío = "¿Cómo te fue? Cuéntanos tu experiencia". El botón "Calificar en Google" va siempre debajo, así que no hace falta repetir "Google" aquí | No |
@@ -98,6 +99,7 @@ Mira `ejemplo-negocios.csv`: tiene filas de ejemplo con todo esto.
 |---|---|---|
 | `estado` | `activo` (también `si` o `activa`). Cualquier otra cosa, por ejemplo `pausado`, oculta la página | La página se oculta |
 | `logo_fondo` | `blanco` (placa blanca), `oscuro` (placa oscura, para logos blancos) o `sin` (el logo va directo sobre el color) | Se elige solo (ver abajo) |
+| `logo_forma` | `circulo` (por defecto: el logo va en un sello redondo grande) o `cuadrado` (insignia con esquinas suaves). Usa `cuadrado` si el logo es un escudo o un cuadrado y en el círculo se ve pequeño | Círculo |
 | `orden_botones` | Nombres separados por coma: `catalogo`, `whatsapp`, `boton4` a `boton9`. La reseña siempre va arriba, no hace falta ponerla | `catalogo, whatsapp, boton4` y así hasta `boton9` |
 | `boton4_icono` a `boton9_icono` | Los de la lista de la hoja (`maps`, `menu`, `reservas`, `horario`, `iglesia`, `personas`, `boda`, `salud`, `casa`, `documento`, `tijeras`, `info`, `regalo`, `cumpleanos`, `premio`, `vip`, `sellos`, `descuento`, `cafe`, `corazon`, `compartir`, `mascotas`…) o una palabra en español que el robot entienda | Se elige solo según el enlace |
 

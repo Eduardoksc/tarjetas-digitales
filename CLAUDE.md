@@ -104,6 +104,7 @@ Reglas de seguridad que se deben mantener:
 | `color` | Hex de 6 dígitos, con o sin `#` | Usa `#1f6f5c` (con aviso si era inválido) |
 | `logo` | Archivo en `logos/` (png, jpg, jpeg, webp o svg) o un enlace `https://`, que se usa sin procesar. `buscarLogo()` ignora mayúsculas y acepta el nombre sin extensión (en Windows funcionaba y en GitHub, que usa Linux, no) | Muestra la inicial del nombre |
 | `logo_fondo` | `blanco`, `oscuro` o `sin` | Automático (ver reglas de diseño) |
+| `logo_forma` | `circulo` (sello redondo, por defecto) o `cuadrado` (insignia de esquinas suaves, clase `cuadrada`; también acepta `insignia`). Sirve para logos casi cuadrados, como escudos, que en el círculo quedan pequeños | Círculo. Otro valor: avisa y usa círculo |
 | `titular` | Frase grande. Avisa si pasa de 32 caracteres | "Nos encantó verte." |
 | `google_resenas` | Enlace para dejar reseña | Sin bloque de reseña |
 | `texto_resenas` | Máximo 45 caracteres. Debajo de las estrellas siempre va el botón "Calificar en Google" | "¿Cómo te fue? Cuéntanos tu experiencia" |
@@ -144,7 +145,7 @@ La columna `estilo` elige la plantilla (`PLANTILLAS` en `generar.mjs`). Las dos 
 - **Color secundario automático** (`--acento`): `colorDelLogo()` saca el color con carácter más repetido del logo (sin su fondo, blancos ni grises). Si no hay o se parece al principal, se usa el principal. `paletaMarca()` lo oscurece hasta 3:1 sobre el blanco. Va en el botón del tiquete, las estrellas y la inicial. `--sobre-acento` es el texto del botón (4.58:1 o más).
 - **Acciones en mosaico, para no parecer Linktree:** la primera (`.tl.pri`) va a todo el ancho, llena del color de la marca; las demás, en dos columnas, blancas, con el ícono en un círculo `--tinte` arriba y el texto abajo. Una acción que queda sola en su fila (`.tl:nth-child(even):last-child`) ocupa el ancho, con ícono a la izquierda y flecha. `--icono` queda a 3:1 sobre el tinte. `--tinta` y `--gris` (4.6:1 sobre blanco) son los textos. Nunca `opacity` en textos: baja el contraste.
 - **Estructura**, de arriba abajo:
-  1. Toldo (`.toldo`): portada (si hay), logo en medallón (o cápsula si es ancho, clase `apilada`), nombre (`h1`), slogan (`p`) y titular `h2` en Unbounded 800, `clamp(32px, 9.6vw, 44px)` con foto y `clamp(36px, 11vw, 50px)` sin foto. Con `nombre_en_logo` = `si`, el nombre se oculta en pantalla (`.nombre-en-logo .nom-txt`).
+  1. Toldo (`.toldo`): portada (si hay), logo en un sello grande de 168 px con doble aro, blanco y de la marca, montado entre la foto y el toldo (o insignia cuadrada de 156 px con `logo_forma`, o cápsula si es ancho, clase `apilada`), nombre (`h1`), slogan (`p`) y titular `h2` en Unbounded 800, `clamp(32px, 9.6vw, 44px)` con foto y `clamp(36px, 11vw, 50px)` sin foto. Con `nombre_en_logo` = `si`, el nombre se oculta en pantalla (`.nombre-en-logo .nom-txt`).
   2. Reseña: tiquete blanco montado entre el toldo y el fondo claro, con sombra de dos capas teñida con la marca (`--sombra-cerca`, `--sombra-lejos`). Lleva la "G" de Google sin modificar, **5 estrellas de contorno vacías como adorno**, el botón en píldora **"Calificar en Google →"** y la nota bajo una línea perforada. Toda la pieza es un solo enlace. Una ola breve ilumina las estrellas y vuelven a quedar vacías: **nunca se muestran llenas**, para no sugerir una calificación.
   3. Acciones en mosaico. La reseña sigue mandando por tamaño, sombra y posición.
   4. Wi-Fi (si hay): una pieza blanca a lo ancho que se despliega.
@@ -153,12 +154,13 @@ La columna `estilo` elige la plantilla (`PLANTILLAS` en `generar.mjs`). Las dos 
 
 ### "Premium" (`plantilla-premium.html`, `estilo` = `premium`)
 
-Negro profundo, la reseña como pieza de oro, botones cuadrados satinados con filo dorado, redes en círculos satinados y logo en medallón (o cápsula si es ancho). **No usa el color del negocio**. Tipografía Inter 400 y 600. Sus reglas detalladas están en la skill `estetica-premium`.
+Negro profundo, la reseña como pieza de oro, botones cuadrados satinados con filo dorado, redes en círculos satinados y logo en un sello de 156 px con aros dorados (insignia de 148 px con `logo_forma` = `cuadrado`, o cápsula si es ancho). **No usa el color del negocio**. Tipografía Inter 400 y 600. Sus reglas detalladas están en la skill `estetica-premium`.
 
 ### Comunes a ambos temas
 
 - **Movimiento:** en Mostrador la página aparece ya lista. Solo el tiquete se posa y hay un único momento protagonista: la ola de las estrellas termina en una luz que recorre una vez el botón "Calificar en Google", todo antes de 0.85 s (ver `/impeccable animate`). En Premium, la entrada es escalonada y su destello es aparte. La respuesta al tocar es inmediata: la pieza se hunde (`scale(.975)`), el ícono del mosaico se llena y la flecha avanza; el botón de reseña se oscurece y su flecha avanza. `:hover` solo dentro de `(hover: hover) and (pointer: fine)`, con una respuesta parecida. Las estrellas no se llenan nunca, ni con hover. Todo tiene su versión en `prefers-reduced-motion`. Ver la skill `micro-interacciones`.
 - **Íconos:** los de marca van rellenos (`iconos.mjs`). Los genéricos (`ICONOS` en `generar.mjs`) son de trazo en un `viewBox` de 24.
+- **Tamaño del logo en el sello:** `escalaLogo()` mide hasta dónde llega el dibujo desde el centro (sin el fondo liso ni lo transparente) y escribe `--k` en el `.logo`: la fracción del sello que puede ocupar sin que el círculo le corte nada, de 0.62 a 0.96. Un logo redondo (como Bear Beard) llena el sello; uno cuadrado queda en unos 0.7. Sobre placa blanca, el blanco del logo cuenta como fondo (`escalaSobreBlanco`). En la placa, la imagen se agranda aunque el archivo sea pequeño (`object-fit: contain`); el robot ya avisa si mide menos de `LOGO_MIN_PX`. Sin `sharp`, `--k` es 0.72.
 - **Placa del logo** (si `logo_fondo` está vacío):
   - Sin logo: inicial.
   - Logo opaco con borde liso: placa de ese mismo color (`color`).

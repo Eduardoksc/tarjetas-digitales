@@ -87,20 +87,27 @@
   .portada { display: block; width: calc(100% + 44px); max-width: none; height: auto; margin: 0 -22px; aspect-ratio: 9 / 5; object-fit: cover; }
   .cab { display: flex; flex-direction: column; align-items: center; margin-bottom: 16px; }
   /* El toldo sube sobre la foto con esquinas redondeadas y el logo se monta en el borde */
-  .con-portada .cab { position: relative; margin: -28px -22px 14px; padding: 0 22px; border-radius: 28px 28px 0 0; background: var(--marca); }
-  .con-portada .logo { margin-top: -52px; }
+  .con-portada .cab { position: relative; margin: -20px -22px 14px; padding: 0 22px; border-radius: 28px 28px 0 0; background: var(--marca); }
+  .con-portada .logo { margin-top: -104px; }
+  .con-portada .logo.cuadrada { margin-top: -92px; }
   .con-portada .apilada .logo { margin-top: -34px; }
   .con-portada .logo.sin { margin-top: 18px; }
 
-  /* Logo: medallón si es compacto, cápsula si es ancho (para no recortarlo) */
+  /* Logo: sello grande con doble aro (blanco y color de la marca); cápsula si es ancho, para no recortarlo.
+     --k (del robot) es cuánto del círculo puede ocupar el logo sin que se le corte nada: un logo redondo lo llena. */
   .logo {
     display: flex; align-items: center; justify-content: center; flex: none;
-    width: 104px; height: 104px; margin-bottom: 12px; border-radius: 50%; overflow: hidden;
-    box-shadow: 0 0 0 4px var(--marca), 0 14px 28px -14px rgba(0, 0, 0, .55);
+    width: 168px; height: 168px; margin-bottom: 14px; border-radius: 50%; overflow: hidden;
+    box-shadow: 0 0 0 6px #fff, 0 0 0 9px var(--marca), 0 22px 40px -16px rgba(0, 0, 0, .7);
   }
   .logo img { display: block; width: auto !important; height: auto; max-width: 72%; max-height: 72%; }
+  /* En la placa, el logo ocupa su espacio aunque el archivo sea pequeño (object-fit: contain no lo deforma) */
+  .cab:not(.apilada) .logo.placa img { width: calc(var(--k, .72) * 100%) !important; height: calc(var(--k, .72) * 100%); max-width: none; max-height: none; object-fit: contain; }
+  /* Insignia cuadrada (logo_forma = cuadrado): le deja más espacio a cualquier logo */
+  .logo.cuadrada { width: 156px; height: 156px; border-radius: 34px; box-shadow: 0 0 0 5px var(--marca), 0 20px 36px -16px rgba(0, 0, 0, .65); }
+  .cab:not(.apilada) .logo.placa.cuadrada img { width: 88% !important; height: 88%; }
   .logo.tal img { width: 100% !important; height: 100%; max-width: none; max-height: none; object-fit: cover; }
-  .apilada .logo { width: auto; height: auto; max-width: 100%; padding: 12px 24px; border-radius: 999px; }
+  .apilada .logo { width: auto; height: auto; max-width: 100%; padding: 12px 24px; border-radius: 999px; box-shadow: 0 0 0 4px var(--marca), 0 14px 28px -14px rgba(0, 0, 0, .55); }
   .apilada .logo img { max-width: 216px; max-height: 58px; }
   .apilada .logo.tal { padding: 0; border-radius: 18px; }
   .apilada .logo.tal img { width: auto !important; height: auto; max-width: 100%; max-height: 84px; }
@@ -108,7 +115,7 @@
   .logo.fondo-oscuro { background: #17150f; }
   .logo.sin { width: auto; height: auto; border-radius: 0; overflow: visible; box-shadow: none; }
   .logo.sin img { max-width: 100%; max-height: 96px; }
-  .logo.inicial { font-family: "Unbounded", "Unbounded Respaldo", system-ui, sans-serif; font-size: 40px; font-weight: 800; background: #fff; color: var(--acento); }
+  .logo.inicial { font-family: "Unbounded", "Unbounded Respaldo", system-ui, sans-serif; font-size: 64px; font-weight: 800; background: #fff; color: var(--acento); }
   .nom { min-width: 0; margin: 0; font-size: 1.25rem; font-weight: 700; line-height: 1.2; letter-spacing: -.01em; overflow-wrap: anywhere; }
   .slogan { margin: 4px 0 0; font-size: .92rem; line-height: 1.35; }
   /* Si el logo ya dice el nombre, se oculta en pantalla pero queda para lectores de pantalla */

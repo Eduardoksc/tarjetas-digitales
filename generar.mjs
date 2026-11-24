@@ -704,6 +704,35 @@ async function prepararPortada(id, valor, etiqueta) {
 }
 
 // Devuelve { src, w, h, claro } o null (sin logo) o 'error'
+// Cuánto puede crecer un logo dentro del medallón redondo sin que el círculo le corte nada.
+// Mide qué tan lejos del centro llega el dibujo (sin contar el fondo) y devuelve la fracción del medallón
+// que puede ocupar el lado mayor de la imagen: un logo redondo llega a 0.96, uno cuadrado a unos 0.68.
+const ESCALA_LOGO_DEFECTO = 0.72;
+// fondo: color que no cuenta como dibujo (el fondo liso del logo o, sobre placa blanca, el blanco)
+async function escalaLogo(buffer, fondo) {
+  try {
+    const { data, info } = await sharp(buffer, { density: 144 }).resize({ width: 160, height: 160, fit: 'inside' }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    const { width: w, height: h } = info;
+    const f = fondo ? [1, 3, 5].map((i) => parseInt(fondo.slice(i, i + 2), 16)) : null;
+    const radio = Math.max(w, h) / 2;
+    const distancias = [];
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const p = (y * w + x) * 4;
+        if (data[p + 3] < 48) continue; // transparente
+        if (f && Math.abs(data[p] - f[0]) + Math.abs(data[p + 1] - f[1]) + Math.abs(data[p + 2] - f[2]) < 60) continue; // fondo liso
+        distancias.push(Math.hypot(x + 0.5 - w / 2, y + 0.5 - h / 2) / radio);
+      }
+    }
+    if (distancias.length < 20) return ESCALA_LOGO_DEFECTO;
+    distancias.sort((a, b) => a - b);
+    const alcance = distancias[Math.floor(distancias.length * 0.998)]; // ignora puntos sueltos de ruido
+    return Math.round(Math.min(0.96, Math.max(0.62, 0.96 / alcance)) * 100) / 100;
+  } catch {
+    return ESCALA_LOGO_DEFECTO;
+  }
+}
+
 async function prepararLogo(id, valor, etiqueta) {
   const v = (valor ?? '').trim();
   if (!v) return null;
@@ -736,7 +765,9 @@ async function prepararLogo(id, valor, etiqueta) {
     await copyFile(ruta, `${SALIDA}/logos/${nombreSvg}`);
     const caja = ajustarACaja(dim?.w || 200, dim?.h || 100, true);
     const secundario = sharp ? await colorDelLogo(Buffer.from(txt), null).catch(() => null) : null;
-    return { src: `../logos/${nombreSvg}`, w: caja.w, h: caja.h, claro: false, opaco: false, fondoEsquina: null, secundario };
+    const escala = sharp ? await escalaLogo(Buffer.from(txt), null) : ESCALA_LOGO_DEFECTO;
+    const escalaSobreBlanco = sharp ? await escalaLogo(Buffer.from(txt), '#ffffff') : escala;
+    return { src: `../logos/${nombreSvg}`, w: caja.w, h: caja.h, claro: false, opaco: false, fondoEsquina: null, secundario, escala, escalaSobreBlanco };
   }
 
   if (!['.png', '.jpg', '.jpeg', '.webp'].includes(ext)) {
@@ -796,7 +827,11 @@ async function prepararLogo(id, valor, etiqueta) {
 
     const caja = ajustarACaja(w, h, false);
     const secundario = await colorDelLogo(final.data, fondoEsquina);
-    return { src: `../logos/${nombreFinal}`, w: caja.w, h: caja.h, claro: await esLogoClaro(final.data), mayor, opaco: !conTransparencia, fondoEsquina, secundario };
+    // Con transparencia, cuenta lo que no es transparente; con fondo liso, lo que no es de ese color
+    const escala = conTransparencia || fondoEsquina ? await escalaLogo(final.data, conTransparencia ? null : fondoEsquina) : ESCALA_LOGO_DEFECTO;
+    // Un PNG transparente puede traer un disco blanco alrededor: sobre la placa blanca no se ve, así que no cuenta
+    const escalaSobreBlanco = conTransparencia ? await escalaLogo(final.data, '#ffffff') : escala;
+    return { src: `../logos/${nombreFinal}`, w: caja.w, h: caja.h, claro: await esLogoClaro(final.data), mayor, opaco: !conTransparencia, fondoEsquina, secundario, escala, escalaSobreBlanco };
   } catch (e) {
     avisar(`${etiqueta}: no se pudo procesar el logo "${v}" (${e.message}). Se usará la inicial del negocio.`);
     return 'error';
@@ -1075,6 +1110,15 @@ async function prepararNegocio(fila, num) {
     }
   }
 
+  // Forma del marco del logo: círculo (sello, por defecto) o cuadrado con esquinas suaves (insignia)
+  let formaLogo = normalizar(g('logo_forma'));
+  if (['cuadrado', 'cuadrada', 'insignia'].includes(formaLogo)) formaLogo = 'cuadrado';
+  else if (!formaLogo || ['circulo', 'redondo', 'sello'].includes(formaLogo)) formaLogo = 'circulo';
+  else {
+    avisar(`${etiqueta}: logo_forma "${g('logo_forma')}" no existe. Escribe circulo o cuadrado. Se usa circulo.`);
+    formaLogo = 'circulo';
+  }
+
   // Botones disponibles (solo los que tienen datos válidos)
   const disponibles = {};
   const texto = (campo, defecto, maximo = MAX_TEXTO_BOTON) => {
@@ -1260,6 +1304,7 @@ async function prepararNegocio(fila, num) {
     logo,
     fondoLogo,
     colorPlaca,
+    formaLogo,
     resena: botones.find((b) => b.icono === 'resenas') ?? null,
     botones: botones.filter((b) => b.icono !== 'resenas'),
     redes,
@@ -1700,11 +1745,14 @@ function htmlRedes(redes, id) {
 
 function htmlLogo(n) {
   if (!n.logo) {
-    return `<div class="logo inicial" aria-hidden="true">${esc([...n.nombre][0].toUpperCase())}</div>`;
+    return `<div class="logo inicial${n.formaLogo === 'cuadrado' ? ' cuadrada' : ''}" aria-hidden="true">${esc([...n.nombre][0].toUpperCase())}</div>`;
   }
   const medidas = n.logo.w ? ` width="${n.logo.w}" height="${n.logo.h}" style="width:${n.logo.w}px"` : '';
-  const clases = { blanco: 'placa fondo-blanco', oscuro: 'placa fondo-oscuro', color: 'placa', sin: 'sin', tal: 'tal' }[n.fondoLogo];
-  const estilo = n.fondoLogo === 'color' ? ` style="background:${n.colorPlaca}"` : '';
+  const clases = { blanco: 'placa fondo-blanco', oscuro: 'placa fondo-oscuro', color: 'placa', sin: 'sin', tal: 'tal' }[n.fondoLogo] + (n.formaLogo === 'cuadrado' ? ' cuadrada' : '');
+  // --k: cuánto del medallón puede ocupar el logo sin que el círculo le corte nada (escalaLogo)
+  const k = n.fondoLogo === 'blanco' ? n.logo.escalaSobreBlanco ?? n.logo.escala : n.logo.escala;
+  const estilos = [n.fondoLogo === 'color' && `background:${n.colorPlaca}`, k && `--k:${k}`].filter(Boolean);
+  const estilo = estilos.length ? ` style="${estilos.join(';')}"` : '';
   return (
     `<div class="logo ${clases}"${estilo}>` +
     `<img src="${esc(n.logo.src)}" alt="Logo de ${esc(n.nombre)}"${medidas} decoding="async" fetchpriority="high">` +

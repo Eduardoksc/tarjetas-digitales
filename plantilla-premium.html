@@ -67,21 +67,24 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 104px;
-    height: 104px;
-    margin-bottom: 20px;
+    width: 156px;
+    height: 156px;
+    margin-bottom: 22px;
     border-radius: 50%;
     overflow: hidden;
     background: #151517;
-    box-shadow: 0 0 0 1px var(--linea), 0 0 0 6px var(--fondo), 0 0 0 7px rgba(212, 176, 106, .16);
+    box-shadow: 0 0 0 1px var(--linea), 0 0 0 7px var(--fondo), 0 0 0 8.5px rgba(212, 176, 106, .45), 0 24px 44px -18px #000;
   }
   .logo img { display: block; width: auto !important; height: auto; max-width: 70%; max-height: 70%; }
-  .cab.apilada .logo { width: auto; height: auto; max-width: 100%; padding: 14px 28px; border-radius: 999px; }
+  .cab:not(.apilada) .logo.placa img { width: calc(var(--k, .7) * 100%) !important; height: calc(var(--k, .7) * 100%); max-width: none; max-height: none; object-fit: contain; }
+  .logo.cuadrada { width: 148px; height: 148px; border-radius: 30px; }
+  .cab:not(.apilada) .logo.placa.cuadrada img { width: 88% !important; height: 88%; }
+  .cab.apilada .logo { width: auto; height: auto; max-width: 100%; padding: 14px 28px; border-radius: 999px; box-shadow: 0 0 0 1px var(--linea), 0 0 0 6px var(--fondo), 0 0 0 7px rgba(212, 176, 106, .16); }
   .cab.apilada .logo img { max-width: 190px; max-height: 54px; }
   .logo.fondo-blanco { background: #fff; }
   .logo.fondo-oscuro, .logo.sin { background: #151517; }
   .logo.tal img { max-width: 100%; max-height: 100%; }
-  .logo.inicial { font-size: 40px; font-weight: 600; color: var(--oro); }
+  .logo.inicial { font-size: 60px; font-weight: 600; color: var(--oro); }
   .nom { margin: 0; font-size: 1.45rem; font-weight: 600; line-height: 1.2; letter-spacing: -.015em; overflow-wrap: anywhere; }
   .slogan { display: block; margin: 6px 0 0; font-size: .92rem; font-weight: 400; line-height: 1.4; letter-spacing: 0; color: var(--suave); }
   .nombre-en-logo .nom-txt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
@@ -215,7 +218,7 @@
 
   /* ---------- Portada opcional: foto con filo dorado; el medallón del logo se monta encima ---------- */
   .portada { display: block; width: 100%; height: auto; aspect-ratio: 9 / 5; object-fit: cover; margin-bottom: 0; border-radius: 20px; box-shadow: 0 0 0 1px var(--linea); background: #151517; }
-  .con-portada .cab { margin-top: -52px; }
+  .con-portada .cab { margin-top: -84px; }
 
   /* ---------- Wi-Fi: se despliega al tocar (sin JavaScript) ---------- */
   .wifi { margin-top: 10px; border: 1px solid var(--linea); border-radius: 16px; background: var(--sup) linear-gradient(180deg, var(--sup2), var(--sup)); text-align: left; animation: aparece .5s .44s var(--entra) backwards; }
