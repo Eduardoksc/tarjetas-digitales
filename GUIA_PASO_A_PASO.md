@@ -392,13 +392,23 @@ No se guarda ningún dato de la persona: solo se suma 1 por hora, tarjeta y bot�
    - Ojo: con *Fail open* y el cupo agotado, la caja, el panel y los sellos dejan de funcionar hasta que se renueve, y los archivos `panel.json` y `caja.json` quedan visibles ese día (normalmente los esconde una Function). Por eso las claves de panel y de caja deben ser largas y al azar (tarea S4).
 2. **Una regla de límite de pedidos.** En el dominio **fides-link.com**, ve a **Security → WAF → Rate limiting rules → Create rule** (el plan gratis permite una regla, contada cada 10 segundos):
    - Nombre: `Tarjetas: frenar abusos`.
-   - *If incoming requests match*: **Hostname** *equals* `t.fides-link.com`.
-   - *With the same characteristics*: **IP** (viene puesto).
+   - *If incoming requests match*: en el plan gratis solo se puede filtrar por **URI Path** (la ruta, sin el dominio). Arma cinco filas unidas con **Or**, todas con *Field* = **URI Path** y *Operator* = **wildcard**:
+
+     | Value | Qué cubre |
+     |---|---|
+     | `*/` | Abrir una tarjeta o una página (`/012/`, `/privacidad/`) |
+     | `/ir/*` | Los toques a los botones |
+     | `/premios/*` | Los sellos que consulta la tarjeta |
+     | `/caja/*` | La página de caja |
+     | `/panel/*` | El panel del dueño |
+
+     Si en *Operator* no aparece **wildcard**, usa **starts with** con `/ir/`, `/premios/`, `/caja/` y `/panel/`, y **ends with** con `/` para la primera fila.
+   - *With the same characteristics*: **IP** (viene puesto; en el plan gratis no se cambia).
    - *When rate exceeds*: **30** pedidos cada **10 segundos**.
-   - *Then take action*: **Block**, durante **10 segundos**.
+   - *Then take action*: **Block**, durante **10 segundos** (en el plan gratis es fijo).
    - Guarda con **Deploy**.
 
-   Una persona que abre una tarjeta hace 2 o 3 pedidos; 30 en 10 segundos solo los hace un programa. Si un negocio con muchos clientes en el mismo Wi-Fi se queja de bloqueos, sube el número a 60.
+   La regla vale para todo el dominio, también para fides-link.com, porque el plan gratis no deja elegir el subdominio. No afecta las fotos, las fuentes ni los estilos, porque esas rutas no terminan en `/`. Una persona que abre una tarjeta hace 2 o 3 de estos pedidos; 30 en 10 segundos solo los hace un programa. Si un negocio con muchos clientes en el mismo Wi-Fi se queja de bloqueos, sube el número a 60.
 3. **Revisa el consumo** de vez en cuando en **Workers & Pages → fides-tarjetas → Metrics**. Si pasa de 50.000 pedidos en un día normal, avísame para revisar.
 
 ## PASO 5: Activa la publicación
