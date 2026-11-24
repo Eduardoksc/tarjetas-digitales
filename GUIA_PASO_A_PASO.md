@@ -360,7 +360,7 @@ git push -u origin main
 
 Quien tenga el enlace ve los números, así que solo dáselo al dueño. Si se filtra, cambia la clave en la hoja y publica: el enlace viejo deja de funcionar. Las llamadas, los correos, los formularios y el Wi-Fi no se cuentan.
 
-**Mis premios: tarjeta de sellos (en construcción).** Es la tarjeta de "cliente frecuente" de papel, pero en el celular. Todavía **no la actives en un cliente real**: por ahora solo se ve la tarjeta vacía; el código del cliente (B25b) y la página de caja para sumar sellos (B25c) vienen después. Columnas:
+**Mis premios: tarjeta de sellos (en construcción).** Es la tarjeta de "cliente frecuente" de papel, pero en el celular. Todavía **no la actives en un cliente real**: el cliente ya ve su código y sus sellos, pero falta la página de caja para sumarlos (B25c). El código queda guardado en el celular del cliente; si borra los datos del navegador o cambia de celular, empieza de cero. Columnas:
 
 | Columna | Qué poner | Ejemplo |
 |---|---|---|

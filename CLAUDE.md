@@ -90,7 +90,7 @@ Reglas de seguridad que se deben mantener:
 - Los colores pasan por `colorHex()`, que acepta solo 6 dígitos hex.
 - `id` y `alias` pasan por `slugValido()`, y el nombre de logo por `/^[\w. -]+$/`. `logos`, `fonts`, `ir`, `panel` y `caja` están reservados como `id`.
 - El panel (`/panel/<id>?k=`) solo se abre con la clave correcta: `panel.json` guarda la huella PBKDF2 (10.000 vueltas, sal `fides-panel:<id>`), nunca la clave, y el middleware lo bloquea al público en Cloudflare (en la copia de `github.io` sí es visible, por eso la clave debe tener 12 caracteres o más). La clave nunca se escribe en la consola, porque los registros de Actions son públicos.
-- `caja.json` (Mis premios) guarda la huella de `clave_caja` igual (sal `fides-caja:<id>`). El middleware lo bloquea en Cloudflare y el workflow lo borra de la copia de GitHub Pages (`dist-github`), porque esa clave sirve para sumar sellos.
+- `caja.json` (Mis premios) guarda la huella de `clave_caja` igual (sal `fides-caja:<id>`). El middleware lo bloquea en Cloudflare y el workflow lo borra de la copia de GitHub Pages (`dist-github`), porque esa clave sirve para sumar sellos. `/caja` y `/premios` también están reservados como `id`.
 - `/ir/<id>/<clave>` solo redirige a un `https://` que esté en `dist/<id>/enlaces.json` (escrito por el robot); cualquier otra cosa vuelve a `/<id>/`. No es una redirección abierta. El contador no guarda IP ni datos de la persona. Así no se puede escribir fuera de `dist/` ni leer fuera de `logos/`.
 
 ## Columnas de la hoja (pestaña Negocios)
@@ -169,7 +169,7 @@ Negro profundo, la reseña como pieza de oro, botones cuadrados satinados con fi
 - **Límites de texto:** unos 16 caracteres por botón (en Premium son cuadrados), unos 32 en el titular y 45 en `texto_resenas`. Si los superas, el script avisa pero no corta.
 - **Restricciones técnicas:**
   - Mobile-first, `max-width` de 440 px (480 px en Premium), respeta `safe-area-inset`.
-  - **Cero JavaScript en el cliente**, con una sola excepción: el formulario a WhatsApp (ver abajo). Su script va solo en las tarjetas que tienen formulario, y sin él la hoja sigue funcionando. La medición de visitas y toques se hace en el servidor (ver "Contador de visitas y toques"), no en la página.
+  - **Cero JavaScript en el cliente**, con dos excepciones: el formulario a WhatsApp (ver abajo) y "Mis premios" (`SCRIPT_PREMIOS`, ver "Mis premios"). Cada script va solo en las tarjetas que lo usan, y sin él la hoja sigue funcionando. La medición de visitas y toques se hace en el servidor (ver "Contador de visitas y toques"), no en la página.
   - Fuentes servidas desde el propio sitio (`dist/fonts/`, copiadas desde `@fontsource`), sin pedidos a Google Fonts. Peso sin logo en Mostrador: unos 70 KB, más la portada si hay (máximo 70 KB).
   - `color-scheme: light only` en Mostrador, para que Android no oscurezca la página. `dark` en Premium.
   - Respeta `prefers-reduced-motion`.
@@ -200,6 +200,13 @@ Promesa de fides-link.com: "cuántos te visitaron, qué tocaron y cuándo". Se m
 - Probar en local: `npx wrangler@4.151.3 pages dev dist --d1 CONTADOR=prueba --persist-to <carpeta>` con un `dist/` construido con `CONTADOR_URL`.
 - **Panel del cliente** (`functions/panel/[id].js` + `servidor/panel.js`, diseño "Resumen" con estética "Noche": colores del logo de FidesLink, no del negocio; selector de meses hundido y dona para QR, NFC y Otro, que salen siempre aunque estén en 0): `/panel/<id>?k=<clave_panel>&mes=AAAA-MM` (hasta 24 meses atrás). Se arma en el servidor, sin JavaScript, con `Cache-Control: no-store`, `noindex` y `no-referrer`. Muestra visitas del mes (cifra en Unbounded), la comparación con el mes anterior (en el mes en curso, contra los mismos días), "Lo que más tocaron" (barras, hasta 8), "Cómo llegaron" (solo si hay QR o NFC) y "Tu mejor momento" (día y franja de 2 horas, desde 20 visitas). Suma las visitas del alias. Clave mala o sin panel: 404 "Enlace no válido". Abrir el panel no cuenta como visita.
 - Solo se cuentan toques a "Calificar en Google", no reseñas. El resumen mensual por WhatsApp todavía no existe.
+
+## Mis premios: tarjeta de sellos (B25)
+
+- **Tarjeta (`SCRIPT_PREMIOS`, ES5, solo con columnas de premios):** la primera vez que se abre "Mis premios", el celular crea un código de 6 letras al azar (`ALFABETO_CODIGO`, sin 0, O, 1, I ni L; solo con `crypto.getRandomValues`, descartando bytes para no tener sesgo; sin él no hay código y queda el aviso `.pr-sin-js`, que se oculta con la clase `pr-ok` en `<html>`) y lo guarda en `localStorage` (`fides-premios:<id>`). Con él pide `/premios/<id>/<código>` (XMLHttpRequest, 6 s) y pinta sellos (`.pr-sello.si`), puntos (`.mp-pts i.si`), el avance y `.pr-lleno` al completar. Si falla, la hoja abre igual con el código y sin sellos. Sin JavaScript se ve `.pr-sin-js`. Un código de 6 letras (31^6 ≈ 887 millones por negocio) solo deja leer cuántos sellos lleva, sin datos personales; si B25c necesita más, se agrega un secreto largo en el celular.
+- **Servidor:** `functions/premios/[id]/[codigo].js` solo lee (no escribe ni crea la tabla): valida id y código (`codigoValido()`), exige `caja.json` (`reglasPremios()`) y responde `{sellos, meta, entregados}` con `no-store`. `servidor/premios.js` tiene la tabla `premios (id, codigo, sellos, completadas, entregados, ultimo_sello, creado)` en la base `CONTADOR`; la crea la caja (B25c).
+- Se usa siempre el `id` real (`data-id`), así la página del alias comparte los sellos. En la copia de `github.io` no hay Functions: se ve el código, sin sellos.
+- Probar en local: `wrangler pages dev` como en el contador, y escribir una fila en la tabla `premios` del `.sqlite` de `--persist-to` con el código que guardó el navegador.
 
 ## Particularidades conocidas
 

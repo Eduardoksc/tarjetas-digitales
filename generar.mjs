@@ -1021,7 +1021,7 @@ async function prepararNegocio(fila, num) {
     avisar(`${etiqueta}: el "id" debe usar solo letras minúsculas, números o guiones (ej: 001). Se omite.`);
     return null;
   }
-  if (['logos', 'fonts', 'ir', 'panel', 'caja'].includes(id)) {
+  if (['logos', 'fonts', 'ir', 'panel', 'caja', 'premios'].includes(id)) {
     avisar(`${etiqueta}: "${id}" es un nombre reservado. Se omite.`);
     return null;
   }
@@ -1375,7 +1375,7 @@ function htmlPremiosHoja(n) {
       : `Un sello por visita. Al juntar ${p.meta}, <b>reclama tu obsequio</b> en caja.`;
   const fino = [p.vigencia && `Vence: ${esc(p.vigencia)}`, 'Un sello por día'].filter(Boolean).join(' · ');
   return (
-    `<div class="hoja hoja-premios" id="premios" role="dialog" aria-modal="true" aria-labelledby="premios-t">` +
+    `<div class="hoja hoja-premios" id="premios" role="dialog" aria-modal="true" aria-labelledby="premios-t" data-id="${n.id}" data-meta="${p.meta}">` +
     `<a class="hoja-velo" href="#" tabindex="-1" aria-hidden="true"></a>` +
     `<div class="hoja-caja" tabindex="-1">` +
     `<a class="hoja-x" href="#" aria-label="Cerrar">${X_CERRAR}</a>` +
@@ -1384,9 +1384,10 @@ function htmlPremiosHoja(n) {
     `<p class="pr-grande" data-avance aria-live="polite">Junta <em>${p.meta} sellos</em></p>` +
     `<p class="pr-como">${como}</p>` +
     `<ol class="pr-sellos pr-c${columnas}" data-meta="${p.meta}">${sellos}</ol>` +
-    // El código lo crea y lo muestra el script de premios (B25b); mientras tanto queda oculto
+    // El código lo crea y lo muestra SCRIPT_PREMIOS; sin JavaScript no hay código y se explica por qué
     `<div class="pr-codigo" hidden><span class="pr-et">Tu código</span><b data-codigo></b><span class="pr-ayuda">Muéstralo en caja para sumar tu sello</span></div>` +
-    `<p class="pr-fino">${fino}. No necesitas registrarte.</p>` +
+    `<p class="pr-sin-js">Para ver tu código, abre esta tarjeta en el navegador del celular (Chrome o Safari).</p>` +
+    `<p class="pr-fino">${fino}. Tus sellos quedan en este celular, sin registrarte.</p>` +
     `</div></div>`
   );
 }
@@ -1616,12 +1617,77 @@ const SCRIPT_FORMULARIO = `<script>
 })();
 </script>`;
 
-// Hojas que suben desde abajo: los formularios a WhatsApp y "Mis premios". El script abre y cierra todas.
+// Mis premios (B25b): el celular crea un código al azar la primera vez que se abre "Mis premios" y lo guarda
+// (localStorage, sin datos de la persona). Con él pide sus sellos a /premios/<id>/<código> y los pinta.
+// ES5 y XMLHttpRequest para celulares viejos. Si algo falla, la tarjeta y la hoja siguen igual, sin sellos.
+const ALFABETO_CODIGO = '23456789ABCDEFGHJKMNPQRSTUVWXYZ'; // igual que en servidor/premios.js
+const SCRIPT_PREMIOS = `<script>
+(function () {
+  var d = document, h = d.getElementById('premios');
+  if (!h || !d.querySelector || !h.classList || !window.XMLHttpRequest) return;
+  var cr0 = window.crypto || window.msCrypto;
+  if (cr0 && cr0.getRandomValues) d.documentElement.classList.add('pr-ok');
+  var ALF = '${ALFABETO_CODIGO}', LARGO = 6;
+  var id = h.getAttribute('data-id'), meta = +h.getAttribute('data-meta'), llave = 'fides-premios:' + id;
+  var avance = h.querySelector('[data-avance]'), inicioAvance = avance.innerHTML;
+  var det = d.querySelector('.mp .det'), inicioDet = det ? det.innerHTML : '';
+  function leer() {
+    try { var c = window.localStorage.getItem(llave); return c && /^[${ALFABETO_CODIGO}]{6}$/.test(c) ? c : ''; } catch (e) { return ''; }
+  }
+  // Azar del sistema, sin sesgo: se descartan los bytes de 248 en adelante (248 = 8 × 31). Sin crypto no hay código.
+  function crear() {
+    var cr = window.crypto || window.msCrypto, c = '', n, i, tope = 256 - 256 % ALF.length;
+    if (!cr || !cr.getRandomValues || !window.Uint8Array) return '';
+    while (c.length < LARGO) {
+      n = cr.getRandomValues(new Uint8Array(16));
+      for (i = 0; i < n.length && c.length < LARGO; i++) if (n[i] < tope) c += ALF.charAt(n[i] % ALF.length);
+    }
+    try { window.localStorage.setItem(llave, c); } catch (e) {}
+    return c;
+  }
+  var codigo = leer();
+  function marcar(lista, s) {
+    for (var i = 0; i < lista.length; i++) lista[i].classList[i < s ? 'add' : 'remove']('si');
+  }
+  function pintar(s) {
+    marcar(h.querySelectorAll('.pr-sello:not(.pr-final)'), s);
+    marcar(d.querySelectorAll('.mp-pts i'), s);
+    var lleno = s >= meta;
+    h.classList[lleno ? 'add' : 'remove']('pr-lleno');
+    avance.innerHTML = lleno ? '¡Completaste tu tarjeta!' : s ? 'Llevas <em>' + s + ' de ' + meta + '</em>' : inicioAvance;
+    if (det) det.innerHTML = lleno ? 'Reclama tu obsequio en caja' : s ? 'Llevas ' + s + ' de ' + meta + ' sellos' : inicioDet;
+  }
+  function consultar() {
+    if (!codigo) return;
+    var x = new XMLHttpRequest();
+    x.open('GET', '/premios/' + id + '/' + codigo, true);
+    x.timeout = 6000;
+    x.onload = function () {
+      if (x.status !== 200) return;
+      try { var r = JSON.parse(x.responseText); if (typeof r.sellos === 'number') pintar(r.sellos); } catch (e) {}
+    };
+    x.send();
+  }
+  function mostrar() {
+    if (!codigo) codigo = crear();
+    if (!codigo) return; // celular sin azar seguro: se queda el aviso de .pr-sin-js
+    var caja = h.querySelector('.pr-codigo');
+    caja.querySelector('[data-codigo]').innerHTML = codigo.slice(0, 3) + ' ' + codigo.slice(3);
+    caja.hidden = false;
+  }
+  var botones = d.querySelectorAll('a[href="#premios"]');
+  for (var i = 0; i < botones.length; i++) botones[i].addEventListener('click', function () { mostrar(); consultar(); });
+  if (location.hash === '#premios') mostrar();
+  consultar();
+})();
+</script>`;
+
+// Hojas que suben desde abajo: los formularios a WhatsApp y "Mis premios". SCRIPT_FORMULARIO abre y cierra todas.
 function htmlFormularios(n) {
   const hojas = n.botones.filter((b) => b.formulario).map(htmlFormulario);
   if (n.premios) hojas.push(htmlPremiosHoja(n));
   if (!hojas.length) return '';
-  return hojas.join('\n') + '\n' + SCRIPT_FORMULARIO;
+  return hojas.join('\n') + '\n' + SCRIPT_FORMULARIO + (n.premios ? '\n' + SCRIPT_PREMIOS : '');
 }
 
 function htmlRedes(redes, id) {
@@ -1838,6 +1904,6 @@ if (CONTADOR_URL && !contadorListo()) console.log(`⚠ CONTADOR_URL "${CONTADOR_
 await writeFile(`${SALIDA}/_routes.json`, JSON.stringify({ version: 1, include: ['/*'], exclude: ['/fonts/*', '/logos/*', '/*/enlaces.json', '/robots.txt', '/404.html'] }));
 if (contadorListo()) console.log(`  · Contador activo: los botones pasan por ${CONTADOR_URL}/ir/…`);
 if (paneles) console.log(`  · Panel de resultados para ${paneles} negocio(s): /panel/<id>?k=<clave_panel>`);
-if (cajas) console.log(`  · Mis premios en ${cajas} negocio(s). La página de caja todavía no existe (B25c).`);
+if (cajas) console.log(`  · Mis premios en ${cajas} negocio(s). Los sellos se consultan en /premios/<id>/<código>; la página de caja todavía no existe (B25c).`);
 
 console.log(`\nListo: ${negocios.length} páginas creadas, ${pausados} pausadas, ${advertencias.length} advertencias.`);
