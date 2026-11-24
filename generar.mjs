@@ -1904,6 +1904,6 @@ if (CONTADOR_URL && !contadorListo()) console.log(`⚠ CONTADOR_URL "${CONTADOR_
 await writeFile(`${SALIDA}/_routes.json`, JSON.stringify({ version: 1, include: ['/*'], exclude: ['/fonts/*', '/logos/*', '/*/enlaces.json', '/robots.txt', '/404.html'] }));
 if (contadorListo()) console.log(`  · Contador activo: los botones pasan por ${CONTADOR_URL}/ir/…`);
 if (paneles) console.log(`  · Panel de resultados para ${paneles} negocio(s): /panel/<id>?k=<clave_panel>`);
-if (cajas) console.log(`  · Mis premios en ${cajas} negocio(s). Los sellos se consultan en /premios/<id>/<código>; la página de caja todavía no existe (B25c).`);
+if (cajas) console.log(`  · Mis premios en ${cajas} negocio(s). Caja de los empleados: /caja/<id>?k=<clave_caja>`);
 
 console.log(`\nListo: ${negocios.length} páginas creadas, ${pausados} pausadas, ${advertencias.length} advertencias.`);

@@ -1,6 +1,6 @@
 // Mis premios (B25): tarjeta de sellos por visitas o compras, en la base D1 del contador (variable CONTADOR).
 // No guarda datos de la persona: solo el código al azar que creó su celular y cuántos sellos lleva.
-// El cliente solo lee su avance (/premios/<id>/<código>). Sumar sellos y entregar el obsequio es de la caja (B25c), con clave.
+// El cliente solo lee su avance (/premios/<id>/<código>). Sumar sellos y entregar el obsequio es de la caja (servidor/caja.js), con clave.
 
 // Sin 0, O, 1, I ni L, para que el empleado no se equivoque al escribirlo. Igual que ALFABETO_CODIGO en generar.mjs.
 export const ALFABETO_CODIGO = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
@@ -20,6 +20,7 @@ export const TABLA_PREMIOS =
   'completadas INTEGER NOT NULL DEFAULT 0, ' + // tarjetas llenas, entregadas o no
   'entregados INTEGER NOT NULL DEFAULT 0, ' + // obsequios entregados en caja
   'ultimo_sello TEXT, ' + // día del último sello (AAAA-MM-DD, hora de Colombia): uno por día
+  'ultimo_n INTEGER NOT NULL DEFAULT 0, ' + // sellos que sumó ese día, para poder deshacerlo
   'creado TEXT NOT NULL, ' +
   'PRIMARY KEY (id, codigo))';
 

@@ -360,7 +360,7 @@ git push -u origin main
 
 Quien tenga el enlace ve los números, así que solo dáselo al dueño. Si se filtra, cambia la clave en la hoja y publica: el enlace viejo deja de funcionar. Las llamadas, los correos, los formularios y el Wi-Fi no se cuentan.
 
-**Mis premios: tarjeta de sellos (en construcción).** Es la tarjeta de "cliente frecuente" de papel, pero en el celular. Todavía **no la actives en un cliente real**: el cliente ya ve su código y sus sellos, pero falta la página de caja para sumarlos (B25c). El código queda guardado en el celular del cliente; si borra los datos del navegador o cambia de celular, empieza de cero. Columnas:
+**Mis premios: tarjeta de sellos (en construcción).** Es la tarjeta de "cliente frecuente" de papel, pero en el celular. Antes de activarla en un cliente real, revisa en Cloudflare el límite de pedidos (tarea S3) y que la política de privacidad hable de los sellos (B34). El código queda guardado en el celular del cliente; si borra los datos del navegador o cambia de celular, empieza de cero. Columnas:
 
 | Columna | Qué poner | Ejemplo |
 |---|---|---|
@@ -372,7 +372,15 @@ Quien tenga el enlace ve los números, así que solo dáselo al dueño. Si se fi
 | `premio_icono` | El dibujo de cada sello (opcional): `tijeras`, `cafe`, `corazon`, `mascotas`, `salud`… Vacío = un visto bueno | `tijeras` |
 | `clave_caja` | La clave con la que los empleados suman sellos. **12 letras o números o más, sin espacios, distinta de `clave_panel`** | `peine-sol-azul-7302` |
 
-Si falta `premio_meta` o `clave_caja`, o el número no está entre 3 y 12, el robot avisa con ⚠ y la tarjeta sale sin "Mis premios". El botón va debajo de la reseña. El premio nunca depende de dejar una reseña (regla de Google).
+Si falta `premio_meta` o `clave_caja`, o el número no está entre 3 y 12, el robot avisa con ⚠ y la tarjeta sale sin "Mis premios".
+
+**Página de caja para los empleados.** Envíale al negocio este enlace (cambia `001` por su id y la clave por su `clave_caja`) y que lo guarden en favoritos en el celular o computador de la caja: `https://t.fides-link.com/caja/001?k=peine-sol-azul-7302`. Ahí:
+1. El cliente abre su tarjeta, toca **Mis premios** y muestra su código (por ejemplo `K7Q 42X`).
+2. El empleado lo escribe y toca **Sumar sello**. En compras, escribe también el valor de la compra y se suman los sellos que alcancen.
+3. Cuando la tarjeta se llena, aparece **Entregar obsequio**. Al tocarlo, el cliente empieza una tarjeta nueva.
+4. Si se equivocó de código, **Deshacer el sello de hoy** lo quita.
+
+Es un sello por código al día. Diez claves equivocadas seguidas bloquean ese celular una hora. Si la clave se filtra, cámbiala en la hoja y publica: el enlace viejo deja de funcionar y los sellos no se pierden. El botón va debajo de la reseña. El premio nunca depende de dejar una reseña (regla de Google).
 
 No se guarda ningún dato de la persona: solo se suma 1 por hora, tarjeta y botón. Si no haces estos pasos, las tarjetas funcionan igual y no se cuenta nada. Las visitas que entran por la dirección vieja de GitHub (`github.io`) no se cuentan.
 
