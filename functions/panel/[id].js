@@ -1,7 +1,7 @@
 // /panel/<id>?k=<clave_panel>[&mes=AAAA-MM]: panel de resultados del negocio.
 // Sin la clave correcta no muestra nada. No lleva JavaScript y no se guarda en caché.
 import { slugValido } from '../../servidor/contador.js';
-import { cabeceras, cifras, claveValida, hoyColombia, paginaAviso, paginaPanel } from '../../servidor/panel.js';
+import { cabeceras, cifras, cifrasPremios, claveValida, hoyColombia, paginaAviso, paginaPanel } from '../../servidor/panel.js';
 
 const NO_VALIDO = ['Enlace no válido', 'Revisa que copiaste el enlace completo que te enviamos.', 404];
 
@@ -41,5 +41,7 @@ export async function onRequestGet(context) {
     if (!/no such table/i.test(e.message)) return paginaAviso('No pudimos cargar tus datos', 'Intenta de nuevo en unos minutos.', 503);
     c = await cifras({ prepare: () => ({ bind: () => ({ all: async () => ({ results: [] }) }) }) }, ids, elegido, hoy);
   }
-  return new Response(paginaPanel({ id, clave, datos, c, elegido, hoy }), { headers: cabeceras() });
+  // Mis premios: con el id real (los sellos no se guardan por alias)
+  const premios = Number.isInteger(datos.premios?.meta) ? await cifrasPremios(env.CONTADOR, id, datos.premios.meta, elegido, hoy) : null;
+  return new Response(paginaPanel({ id, clave, datos, c, elegido, hoy, premios }), { headers: cabeceras() });
 }

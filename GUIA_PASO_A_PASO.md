@@ -380,7 +380,7 @@ Si falta `premio_meta` o `clave_caja`, o el número no está entre 3 y 12, el ro
 3. Cuando la tarjeta se llena, aparece **Entregar obsequio**. Al tocarlo, el cliente empieza una tarjeta nueva.
 4. Si se equivocó de código, **Deshacer el sello de hoy** lo quita.
 
-Es un sello por código al día. Diez claves equivocadas seguidas bloquean ese celular una hora. Si la clave se filtra, cámbiala en la hoja y publica: el enlace viejo deja de funcionar y los sellos no se pierden. El botón va debajo de la reseña. El premio nunca depende de dejar una reseña (regla de Google).
+Es un sello por código al día. Diez claves equivocadas seguidas bloquean ese celular una hora. Si el negocio tiene `clave_panel`, su panel muestra un bloque **Mis premios** con los sellos del mes, los clientes nuevos, las tarjetas llenas y los obsequios entregados. Si la clave se filtra, cámbiala en la hoja y publica: el enlace viejo deja de funcionar y los sellos no se pierden. El botón va debajo de la reseña. El premio nunca depende de dejar una reseña (regla de Google).
 
 No se guarda ningún dato de la persona: solo se suma 1 por hora, tarjeta y botón. Si no haces estos pasos, las tarjetas funcionan igual y no se cuenta nada. Las visitas que entran por la dirección vieja de GitHub (`github.io`) no se cuentan.
 

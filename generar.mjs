@@ -1877,7 +1877,7 @@ for (const n of negocios) {
     const huellaClave = pbkdf2Sync(n.clavePanel, sal, ITERACIONES_PANEL, 32, 'sha256').toString('hex');
     await writeFile(
       `${SALIDA}/${n.id}/panel.json`,
-      JSON.stringify({ nombre: n.nombre, alias: n.alias, marca: n.color, tinta: n.tinta, gris: n.gris, tinte: n.tinte, sal, iteraciones: ITERACIONES_PANEL, huella: huellaClave, botones: nombres })
+      JSON.stringify({ nombre: n.nombre, alias: n.alias, marca: n.color, tinta: n.tinta, gris: n.gris, tinte: n.tinte, sal, iteraciones: ITERACIONES_PANEL, huella: huellaClave, botones: nombres, premios: n.premios ? { meta: n.premios.meta, tipo: n.premios.tipo } : null })
     );
     paneles++;
   }

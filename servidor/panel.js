@@ -141,6 +141,45 @@ function bloqueOrigen(c) {
   return `<section class="card"><h2>Cómo llegaron</h2><div class="orig"><div class="dona" role="img" aria-label="${esc(resumen)}" style="background:conic-gradient(${cortes.join(',')})"></div><div class="ley">${ley}</div></div></section>`;
 }
 
+// ---------- Mis premios (B25d) ----------
+// Resumen del mes (tabla premios_eventos, sin códigos) y estado de hoy (tabla premios). Sin tablas: todo en 0.
+export async function cifrasPremios(db, id, meta, elegido, hoy) {
+  const p = { sellos: 0, nuevas: 0, completas: 0, entregas: 0, enCurso: 0, porEntregar: 0, esActual: elegido.anio === hoy.anio && elegido.mes === hoy.mes };
+  if (!db) return p;
+  try {
+    const { results } = await db
+      .prepare('SELECT tipo, SUM(n) AS n FROM premios_eventos WHERE id = ?1 AND dia LIKE ?2 GROUP BY tipo')
+      .bind(id, claveMes(elegido) + '-%')
+      .all();
+    const campo = { sello: 'sellos', tarjeta_nueva: 'nuevas', completa: 'completas', entrega: 'entregas' };
+    for (const r of results ?? []) if (campo[r.tipo]) p[campo[r.tipo]] = Math.max(0, Number(r.n) || 0);
+    if (p.esActual) {
+      const fila = await db
+        .prepare('SELECT SUM(CASE WHEN sellos > 0 AND sellos < ?2 THEN 1 ELSE 0 END) AS curso, SUM(CASE WHEN sellos >= ?2 THEN 1 ELSE 0 END) AS llenas FROM premios WHERE id = ?1')
+        .bind(id, meta)
+        .first();
+      p.enCurso = Number(fila?.curso) || 0;
+      p.porEntregar = Number(fila?.llenas) || 0;
+    }
+  } catch (e) {
+    if (!/no such table/i.test(e.message)) console.log('panel premios: ' + e.message);
+  }
+  return p;
+}
+
+function bloquePremios(p) {
+  if (!p) return '';
+  const hay = p.sellos || p.nuevas || p.completas || p.entregas || p.enCurso || p.porEntregar;
+  const cifra = (n, titulo, texto) => `<div><b class="num">${miles(n)}</b><span>${titulo}</span><p class="suave">${texto}</p></div>`;
+  const cuerpo = hay
+    ? `<div class="pr-cifras">${cifra(p.sellos, 'Sellos', 'dados en caja')}${cifra(p.nuevas, 'Clientes nuevos', 'empezaron su tarjeta')}${cifra(p.completas, 'Tarjetas llenas', 'completaron los sellos')}${cifra(p.entregas, 'Obsequios', 'entregados en caja')}</div>` +
+      (p.esActual && (p.enCurso || p.porEntregar)
+        ? `<p class="pr-hoy">Hoy: <b>${miles(p.enCurso)}</b> ${p.enCurso === 1 ? 'cliente lleva' : 'clientes llevan'} su tarjeta en curso${p.porEntregar ? ` y <b>${miles(p.porEntregar)}</b> ${p.porEntregar === 1 ? 'espera' : 'esperan'} su obsequio` : ''}.</p>`
+        : '')
+    : `<p class="suave">Todavía no se han dado sellos ${p.esActual ? 'este mes' : 'en ese mes'}. Recuérdale a tu equipo pedir el código en caja.</p>`;
+  return `<section class="card oro"><h2>Mis premios</h2>${cuerpo}</section>`;
+}
+
 function bloqueMomento(c) {
   let texto;
   if (c.visitas < MIN_VISITAS_MOMENTO) {
@@ -167,7 +206,7 @@ function navegacion(id, clave, elegido, hoy) {
   }</nav>`;
 }
 
-export function paginaPanel({ id, clave, datos, c, elegido, hoy }) {
+export function paginaPanel({ id, clave, datos, c, elegido, hoy, premios = null }) {
   const nombre = datos.nombre || id;
   const nomMes = MESES[elegido.mes - 1];
   const subHero = c.visitas
@@ -240,6 +279,12 @@ h1,h2,p{margin:0}
 .ley span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:8px;vertical-align:-1px;background:var(--c)}
 .o-qr{--c:#3A7FE6}.o-nfc{--c:#B88A3F}.o-otro{--c:#0F9DB7}
 .card.oro{box-shadow:inset 0 1px 0 rgba(255,255,255,.07),inset 3px 0 0 var(--oro),0 14px 30px -16px rgba(0,0,0,.75)}
+.pr-cifras{display:grid;grid-template-columns:1fr 1fr;gap:16px 12px}
+.pr-cifras b{display:block;font:800 24px/1.15 Unbounded,system-ui,sans-serif}
+.pr-cifras span{display:block;margin-top:4px;font-size:14px;font-weight:700}
+.pr-cifras p{font-size:12.5px}
+.pr-hoy{margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);font-size:14px}
+.pr-hoy b{color:var(--oro)}
 .momento{font-size:20px;font-weight:700;letter-spacing:-.01em}
 .consejo{margin-top:4px;font-size:14px}
 .pie{margin-top:28px;font-size:12.5px;color:var(--suave);text-align:center}
@@ -255,8 +300,9 @@ h1,h2,p{margin:0}
 ${navegacion(id, clave, elegido, hoy)}
 <section class="card"><h2>Visitas en ${nomMes}${elegido.anio !== hoy.anio ? ` de ${elegido.anio}` : ''}</h2><p class="hero num">${miles(c.visitas)}</p>${subHero}${bloqueComparacion(c)}</section>
 ${mini}
+${bloquePremios(premios)}
 ${cuerpo}
-<footer class="pie"><p>Contamos cuántas veces abrieron tu página y tocaron cada botón con enlace. Las llamadas, los correos, los formularios y el Wi-Fi no se cuentan. No guardamos datos de quienes la visitan.</p>${actualizado ? `<p>${actualizado}</p>` : ''}<p class="fl"><b>Fides</b><span>Link</span></p></footer>
+<footer class="pie"><p>Contamos cuántas veces abrieron tu página y tocaron cada botón con enlace. Las llamadas, los correos, los formularios y el Wi-Fi no se cuentan. No guardamos datos de quienes la visitan${datos.premios ? ': los sellos van con un código al azar, sin nombres' : ''}.</p>${actualizado ? `<p>${actualizado}</p>` : ''}<p class="fl"><b>Fides</b><span>Link</span></p></footer>
 </main>
 </body>
 </html>`;
