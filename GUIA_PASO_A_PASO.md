@@ -405,7 +405,7 @@ En el panel aparece el bloque **Cumpleaños** (cuántos cumplen en el mes y cuá
 2. **Marcar regalo entregado:** cuando lo cobra en caja. Vale por ese año; al siguiente vuelve a quedar pendiente.
 3. **Borrar sus datos:** solo si la persona lo pide. No se puede deshacer.
 
-Si alguien se inscribe dos veces con el mismo celular, se actualiza su nombre y su mes; no queda repetido. El número no se puede usar para otras promociones: la autorización es solo para el saludo y el regalo.
+Un celular se inscribe una sola vez. Si alguien quiere cambiar su nombre o su mes, bórralo en la lista (**Borrar sus datos**) y pídele que se inscriba de nuevo: así nadie puede cambiar los datos de otra persona escribiendo su número. El número no se puede usar para otras promociones: la autorización es solo para el saludo y el regalo.
 
 No se guarda ningún dato de la persona: solo se suma 1 por hora, tarjeta y botón. Si no haces estos pasos, las tarjetas funcionan igual y no se cuenta nada. Las visitas que entran por la dirección vieja de GitHub (`github.io`) no se cuentan.
 

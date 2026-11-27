@@ -63,17 +63,16 @@ export async function inscribir(db, request, id, datos, form) {
   if ((fila?.n ?? 0) >= MAX_ENVIOS) return { error: 'Hubo demasiadas inscripciones desde esta conexión. Intenta en una hora.', estado: 429 };
 
   const momento = new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 16).replace('T', ' ');
-  await db.batch([
-    // Si ya estaba inscrito, se actualizan nombre, mes y autorización; el regalo canjeado de este año se conserva
+  const [guardado] = await db.batch([
+    // Un celular ya inscrito no se cambia desde la tarjeta: cualquiera podría escribir el número de otra persona
+    // y cambiarle el nombre o el mes. Para corregir, el negocio lo borra en el panel y la persona se inscribe otra vez.
     db
-      .prepare(
-        'INSERT INTO cumple (id, telefono, nombre, mes, autorizado, texto) VALUES (?1, ?2, ?3, ?4, ?5, ?6) ' +
-          'ON CONFLICT (id, telefono) DO UPDATE SET nombre = ?3, mes = ?4, autorizado = ?5, texto = ?6'
-      )
+      .prepare('INSERT INTO cumple (id, telefono, nombre, mes, autorizado, texto) VALUES (?1, ?2, ?3, ?4, ?5, ?6) ON CONFLICT (id, telefono) DO NOTHING')
       .bind(id, telefono, nombre, mes, momento, textoAutorizacion(datos.nombre || id)),
     db.prepare('INSERT INTO cumple_envios (hora, id, quien, n) VALUES (?1, ?2, ?3, 1) ON CONFLICT (hora, id, quien) DO UPDATE SET n = n + 1').bind(hora, id, yo),
     db.prepare('DELETE FROM cumple_envios WHERE hora < ?1').bind(dia), // se borran los de días anteriores
   ]);
+  if (!guardado?.meta?.changes) return { error: 'Ese celular ya está inscrito. Si quieres cambiar tu nombre o tu mes, pídelo en el negocio.', estado: 409 };
   return { ok: true, nombre, mes };
 }
 
