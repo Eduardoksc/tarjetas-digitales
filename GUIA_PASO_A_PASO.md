@@ -343,7 +343,7 @@ git push -u origin main
 
 ## PASO 4: Variables de GitHub
 
-**Settings → Secrets and variables → Actions → pestaña Variables**: `SHEET_ID` y `SHEET_GID` (lectura directa) y/o `SHEET_CSV_URL` (respaldo). Opcional: `PIE_TEXTO` y `PIE_URL` para un pie en cada página, y `SITIO_URL` solo cuando pases a un dominio propio (por ejemplo `https://t.tumarca.co`).
+**Settings → Secrets and variables → Actions → pestaña Variables**: `SHEET_ID` y `SHEET_GID` (lectura directa) y/o `SHEET_CSV_URL` (respaldo). Opcional: `PIE_TEXTO` y `PIE_URL` para un pie en cada página (debajo siempre van, en letra pequeña, los enlaces a **Privacidad** y **Términos** de fides-link.com), y `SITIO_URL` solo cuando pases a un dominio propio (por ejemplo `https://t.tumarca.co`).
 
 **Medir visitas y toques (opcional).** Para saber cuántas personas abren cada tarjeta, qué botones tocan, a qué hora y si llegaron por el QR o por el NFC:
 1. En Cloudflare, ve a **Storage & databases → D1 → Create database** y llámala `fides-contador`.
@@ -385,9 +385,27 @@ Si falta `premio_meta` o `clave_caja`, o el número no está entre 3 y 12, el ro
 6. **Si el cliente perdió su código** (borró el navegador o cambió de celular): escribe su celular en lugar del código y toca **Consultar**. Aparece su tarjeta; toca **Enviarle su tarjeta por WhatsApp** y él abre el enlace en su celular para recuperarla con todos sus sellos.
 7. Si el cliente pide que borren su número, toca **Borrar celular**. La tarjeta y los sellos siguen.
 
-El cliente también puede guardarse solo el enlace: en **Mis premios** está el botón **Guardar mi código en WhatsApp**, que deja en el chat del negocio un enlace que recupera su tarjeta.
+El cliente también puede guardarse solo el enlace: en **Mis premios** está el botón **Guardar mi código en WhatsApp**, que abre WhatsApp para que el cliente se mande a sí mismo (su chat «Tú») un enlace que recupera su tarjeta.
 
 Es un sello por código al día. Diez claves equivocadas seguidas bloquean ese celular una hora. Si el negocio tiene `clave_panel`, su panel muestra un bloque **Mis premios** con los sellos del mes, los clientes nuevos, las tarjetas llenas y los obsequios entregados. Si la clave se filtra, cámbiala en la hoja y publica: el enlace viejo deja de funcionar y los sellos no se pierden. El botón va debajo de la reseña. El premio nunca depende de dejar una reseña (regla de Google).
+
+**Cumpleaños: regalo en el mes del cliente.** Un botón **Tu cumpleaños** abre una ventana con el regalo en grande. El cliente escribe su nombre, su celular y el **mes** (nunca la fecha completa) y marca la casilla de autorización, que enlaza a la política de privacidad. Al tocar **Inscribirme** ve "¡Listo!" con el regalo y el mes. Funciona aunque el celular no tenga JavaScript. Antes de activarlo en un cliente real: la política de privacidad debe hablar del cumpleaños (B34) y la regla de límite de Cloudflare debe incluir `/cumple/*` (S3, abajo). Columnas:
+
+| Columna | Qué poner | Ejemplo |
+|---|---|---|
+| `cumple` | El regalo, tal como lo verá el cliente (unas 60 letras). Con esta columna aparece el botón | `20% en el mes de tu cumpleaños` |
+| `cumple_condiciones` | Opcional. Letra pequeña bajo el regalo (unas 160 letras) | `Válido todo el mes, en cualquier servicio.` |
+| `cumple_texto` | Opcional. Texto del botón | `Tu cumpleaños` (por defecto) |
+| `detalle_cumple`, `etiqueta_cumple` | Opcionales, como en los demás botones. Si el regalo cabe (30 letras), sale solo como subtítulo | `Nuevo` |
+
+El negocio **necesita `clave_panel`**: la lista solo se ve en el panel. Sin ella, el robot avisa con ⚠ y no pone el botón. El botón va al final de las acciones; para moverlo, escribe `cumple` en `orden_botones`.
+
+En el panel aparece el bloque **Cumpleaños** (cuántos cumplen en el mes y cuántos regalos se entregaron) con **Ver la lista**. En la lista, por cada persona:
+1. **Saludar por WhatsApp:** abre WhatsApp con el saludo y el regalo ya escritos.
+2. **Marcar regalo entregado:** cuando lo cobra en caja. Vale por ese año; al siguiente vuelve a quedar pendiente.
+3. **Borrar sus datos:** solo si la persona lo pide. No se puede deshacer.
+
+Si alguien se inscribe dos veces con el mismo celular, se actualiza su nombre y su mes; no queda repetido. El número no se puede usar para otras promociones: la autorización es solo para el saludo y el regalo.
 
 No se guarda ningún dato de la persona: solo se suma 1 por hora, tarjeta y botón. Si no haces estos pasos, las tarjetas funcionan igual y no se cuenta nada. Las visitas que entran por la dirección vieja de GitHub (`github.io`) no se cuentan.
 
@@ -397,7 +415,7 @@ No se guarda ningún dato de la persona: solo se suma 1 por hora, tarjeta y bot�
    - Ojo: con *Fail open* y el cupo agotado, la caja, el panel y los sellos dejan de funcionar hasta que se renueve, y los archivos `panel.json` y `caja.json` quedan visibles ese día (normalmente los esconde una Function). Por eso las claves de panel y de caja deben ser largas y al azar (tarea S4).
 2. **Una regla de límite de pedidos.** En el dominio **fides-link.com**, ve a **Security → WAF → Rate limiting rules → Create rule** (el plan gratis permite una regla, contada cada 10 segundos):
    - Nombre: `Tarjetas: frenar abusos`.
-   - *If incoming requests match*: en el plan gratis solo se puede filtrar por **URI Path** (la ruta, sin el dominio). Arma cinco filas unidas con **Or**, todas con *Field* = **URI Path** y *Operator* = **wildcard**:
+   - *If incoming requests match*: en el plan gratis solo se puede filtrar por **URI Path** (la ruta, sin el dominio). Arma seis filas unidas con **Or**, todas con *Field* = **URI Path** y *Operator* = **wildcard**:
 
      | Value | Qué cubre |
      |---|---|
@@ -406,8 +424,9 @@ No se guarda ningún dato de la persona: solo se suma 1 por hora, tarjeta y bot�
      | `/premios/*` | Los sellos que consulta la tarjeta |
      | `/caja/*` | La página de caja |
      | `/panel/*` | El panel del dueño |
+     | `/cumple/*` | Las inscripciones de cumpleaños |
 
-     Si en *Operator* no aparece **wildcard**, usa **starts with** con `/ir/`, `/premios/`, `/caja/` y `/panel/`, y **ends with** con `/` para la primera fila.
+     Si en *Operator* no aparece **wildcard**, usa **starts with** con `/ir/`, `/premios/`, `/caja/`, `/panel/` y `/cumple/`, y **ends with** con `/` para la primera fila.
    - *With the same characteristics*: **IP** (viene puesto; en el plan gratis no se cambia).
    - *When rate exceeds*: **30** pedidos cada **10 segundos**.
    - *Then take action*: **Block**, durante **10 segundos** (en el plan gratis es fijo).

@@ -1015,7 +1015,7 @@ async function aplicarVinculos(todas, iEncabezados, fuente) {
 }
 
 // ---------- Construcción de cada negocio ----------
-const ORDEN_DEFECTO = ['resenas', 'catalogo', 'whatsapp', ...BOTONES_EXTRA.map((n) => 'boton' + n)];
+const ORDEN_DEFECTO = ['resenas', 'catalogo', 'whatsapp', ...BOTONES_EXTRA.map((n) => 'boton' + n), 'cumple'];
 const NOMBRES_CLAVE = {
   resenas: 'resenas',
   resena: 'resenas',
@@ -1024,6 +1024,8 @@ const NOMBRES_CLAVE = {
   menu: 'catalogo',
   whatsapp: 'whatsapp',
   wa: 'whatsapp',
+  cumple: 'cumple',
+  cumpleanos: 'cumple',
   extra: 'boton4',
   extra1: 'boton4',
   extra2: 'boton5',
@@ -1041,7 +1043,7 @@ function ordenarBotones(texto, etiqueta) {
     if (/^wifi/.test(n)) {
       avisar(`${etiqueta}: el Wi-Fi siempre va después de los botones; no hace falta ponerlo en orden_botones.`);
     } else if (!clave) {
-      avisar(`${etiqueta}: "${parte}" no es un botón válido en orden_botones. Usa: catalogo, whatsapp o boton4 a boton${ULTIMO_BOTON_EXTRA}.`);
+      avisar(`${etiqueta}: "${parte}" no es un botón válido en orden_botones. Usa: catalogo, whatsapp, boton4 a boton${ULTIMO_BOTON_EXTRA} o cumple.`);
     } else if (!pedidos.includes(clave)) pedidos.push(clave);
   }
   return [...pedidos, ...ORDEN_DEFECTO.filter((c) => !pedidos.includes(c))];
@@ -1056,7 +1058,7 @@ async function prepararNegocio(fila, num) {
     avisar(`${etiqueta}: el "id" debe usar solo letras minúsculas, números o guiones (ej: 001). Se omite.`);
     return null;
   }
-  if (['logos', 'fonts', 'ir', 'panel', 'caja', 'premios'].includes(id)) {
+  if (['logos', 'fonts', 'ir', 'panel', 'caja', 'premios', 'cumple'].includes(id)) {
     avisar(`${etiqueta}: "${id}" es un nombre reservado. Se omite.`);
     return null;
   }
@@ -1198,21 +1200,33 @@ async function prepararNegocio(fila, num) {
     }
   }
 
-  // Subtítulo y etiqueta opcionales: botonN_detalle / botonN_etiqueta, detalle_catalogo / etiqueta_catalogo…
-  for (const [clave, b] of Object.entries(disponibles)) {
-    if (clave === 'resenas') continue;
-    const [colDetalle, colEtiqueta] = clave.startsWith('boton') ? [`${clave}_detalle`, `${clave}_etiqueta`] : [`detalle_${clave}`, `etiqueta_${clave}`];
-    b.detalle = g(colDetalle);
-    b.etiqueta = g(colEtiqueta);
-    if (b.detalle.length > MAX_DETALLE) avisar(`${etiqueta}: el subtítulo "${b.detalle.slice(0, 24)}…" de ${colDetalle} tiene ${b.detalle.length} letras; caben unas ${MAX_DETALLE}. Acórtalo.`);
-    if (b.etiqueta.length > MAX_ETIQUETA) avisar(`${etiqueta}: la etiqueta "${b.etiqueta}" de ${colEtiqueta} tiene ${b.etiqueta.length} letras; caben unas ${MAX_ETIQUETA} (ej: Nuevo). Acórtala.`);
-  }
-
   // Clave del panel de resultados: la inventa el operador y se la da al cliente. Nunca se escribe en la consola.
   let clavePanel = g('clave_panel');
   if (clavePanel && (clavePanel.length < 12 || /\s/.test(clavePanel))) {
     avisar(`${etiqueta}: la clave_panel debe tener al menos 12 letras o números, sin espacios. No se crea el panel.`);
     clavePanel = '';
+  }
+
+  // Cumpleaños (B31): botón que abre la hoja de inscripción. La lista solo se ve en el panel, así que necesita clave_panel.
+  const cumple = leerCumple(g, etiqueta, clavePanel);
+  if (cumple) {
+    disponibles.cumple = {
+      icono: 'cumpleanos',
+      texto: texto('cumple_texto', 'Tu cumpleaños'),
+      url: '#cumple',
+      hoja: true,
+      detalleDefecto: cumple.premio.length <= MAX_DETALLE ? cumple.premio : '',
+    };
+  }
+
+  // Subtítulo y etiqueta opcionales: botonN_detalle / botonN_etiqueta, detalle_catalogo / etiqueta_catalogo…
+  for (const [clave, b] of Object.entries(disponibles)) {
+    if (clave === 'resenas') continue;
+    const [colDetalle, colEtiqueta] = clave.startsWith('boton') ? [`${clave}_detalle`, `${clave}_etiqueta`] : [`detalle_${clave}`, `etiqueta_${clave}`];
+    b.detalle = g(colDetalle) || b.detalleDefecto || '';
+    b.etiqueta = g(colEtiqueta);
+    if (b.detalle.length > MAX_DETALLE) avisar(`${etiqueta}: el subtítulo "${b.detalle.slice(0, 24)}…" de ${colDetalle} tiene ${b.detalle.length} letras; caben unas ${MAX_DETALLE}. Acórtalo.`);
+    if (b.etiqueta.length > MAX_ETIQUETA) avisar(`${etiqueta}: la etiqueta "${b.etiqueta}" de ${colEtiqueta} tiene ${b.etiqueta.length} letras; caben unas ${MAX_ETIQUETA} (ej: Nuevo). Acórtala.`);
   }
 
   const premios = leerPremios(g, etiqueta, clavePanel);
@@ -1312,6 +1326,7 @@ async function prepararNegocio(fila, num) {
     lienzo,
     clavePanel,
     premios,
+    cumple,
     whatsapp: tel || '',
     estilo: estilo || 'mostrador',
   };
@@ -1421,7 +1436,7 @@ function htmlPremiosHoja(n) {
       : `Un sello por visita. Al juntar ${p.meta}, <b>reclama tu obsequio</b> en caja.`;
   const fino = [p.vigencia && `Vence: ${esc(p.vigencia)}`, 'Un sello por día'].filter(Boolean).join(' · ');
   return (
-    `<div class="hoja hoja-premios" id="premios" role="dialog" aria-modal="true" aria-labelledby="premios-t" data-id="${n.id}" data-meta="${p.meta}" data-wa="${n.whatsapp}">` +
+    `<div class="hoja hoja-premios" id="premios" role="dialog" aria-modal="true" aria-labelledby="premios-t" data-id="${n.id}" data-meta="${p.meta}">` +
     `<a class="hoja-velo" href="#" tabindex="-1" aria-hidden="true"></a>` +
     `<div class="hoja-caja" tabindex="-1">` +
     `<a class="hoja-x" href="#" aria-label="Cerrar">${X_CERRAR}</a>` +
@@ -1434,10 +1449,67 @@ function htmlPremiosHoja(n) {
     `<div class="pr-codigo" hidden><span class="pr-et">Tu código</span><b data-codigo></b><span class="pr-ayuda">Muéstralo en caja para sumar tu sello</span></div>` +
     // B36: el enlace lo arma SCRIPT_PREMIOS con el código; en el chat queda el enlace que recupera la tarjeta
     `<a class="fm-enviar pr-guardar" href="#" target="_blank" rel="noopener" hidden>${svgIcono('whatsapp')}Guardar mi código en WhatsApp</a>` +
-    `<p class="pr-guardar-ayuda" hidden>Si borras el navegador o cambias de celular, abre el enlace de ese chat y recuperas tus sellos.</p>` +
+    `<p class="pr-guardar-ayuda" hidden>Mándatelo a ti: en WhatsApp elige tu propio chat (sale como «Tú»). Si borras el navegador o cambias de celular, abre ese enlace y recuperas tus sellos.</p>` +
     `<p class="pr-sin-js">Para ver tu código, abre esta tarjeta en el navegador del celular (Chrome o Safari).</p>` +
     `<p class="pr-fino">${fino}. Si pierdes tu código, en caja lo recuperan con tu celular.</p>` +
     `</div></div>`
+  );
+}
+
+// ---------- Cumpleaños (B31) ----------
+// El cliente se inscribe con nombre, celular y mes (nunca la fecha completa) y una casilla de autorización.
+// El formulario se envía normal (sin JavaScript) a /cumple/<id>, que lo guarda en la base y responde "Listo".
+// La lista solo la ve el dueño en su panel. Columnas: cumple (el regalo), cumple_condiciones y cumple_texto.
+const MAX_CUMPLE = 60;
+const MAX_CONDICIONES = 160;
+const MESES_CUMPLE = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+const POLITICA_URL = 'https://fides-link.com/privacidad';
+const TERMINOS_URL = 'https://fides-link.com/terminos';
+// B33: en todas las tarjetas, en letra pequeña al final, para que no compita con la reseña
+const LEGAL_HTML = `<p class="pie legal"><a href="${POLITICA_URL}" rel="noopener">Privacidad</a> · <a href="${TERMINOS_URL}" rel="noopener">Términos</a></p>`;
+// El mismo texto lo arma servidor/cumple.js y lo guarda junto a cada inscripción
+const textoAutorizacion = (nombre) =>
+  `Autorizo a ${nombre} a guardar mi nombre, celular y mes de cumpleaños para darme este beneficio y saludarme en mi mes, según la política de privacidad.`;
+
+function leerCumple(g, etiqueta, clavePanel) {
+  const premio = g('cumple');
+  const condiciones = g('cumple_condiciones');
+  if (!premio) {
+    if (condiciones || g('cumple_texto')) avisar(`${etiqueta}: hay datos de cumpleaños pero falta la columna cumple (el regalo, ej: 50% en el mes de tu cumpleaños). No se muestra el botón.`);
+    return null;
+  }
+  if (!clavePanel) {
+    avisar(`${etiqueta}: el cumpleaños necesita clave_panel, porque la lista de inscritos solo se ve en el panel. No se muestra el botón.`);
+    return null;
+  }
+  if (premio.length > MAX_CUMPLE) avisar(`${etiqueta}: el regalo de cumpleaños tiene ${premio.length} letras; caben unas ${MAX_CUMPLE}. Acórtalo.`);
+  if (condiciones.length > MAX_CONDICIONES) avisar(`${etiqueta}: cumple_condiciones tiene ${condiciones.length} letras; caben unas ${MAX_CONDICIONES}. Acórtalas.`);
+  return { premio, condiciones };
+}
+
+function htmlCumpleHoja(n) {
+  const c = n.cumple;
+  const b = n.botones.find((x) => x.clave === 'cumple');
+  if (!c || !b) return '';
+  const accion = (contadorListo() ? CONTADOR_URL : '') + `/cumple/${n.id}`;
+  const meses = MESES_CUMPLE.map((m, i) => `<option value="${i + 1}">${m}</option>`).join('');
+  const campo = (cid, et, control) => `<div class="fm-campo"><label class="fm-et" for="${cid}">${et}</label>${control}</div>`;
+  return (
+    `<div class="hoja hoja-cumple" id="cumple" role="dialog" aria-modal="true" aria-labelledby="cumple-t">` +
+    `<a class="hoja-velo" href="#" tabindex="-1" aria-hidden="true"></a>` +
+    `<form class="hoja-caja" action="${esc(accion)}" method="post" tabindex="-1">` +
+    `<a class="hoja-x" href="#" aria-label="Cerrar">${X_CERRAR}</a>` +
+    `<h2 class="hoja-tit" id="cumple-t">${esc(b.texto)}</h2>` +
+    `<p class="cu-premio"><span class="cu-ic">${svgIcono('cumpleanos')}</span><span>${esc(c.premio)}</span></p>` +
+    (c.condiciones ? `<p class="cu-cond">${esc(c.condiciones)}</p>` : '') +
+    campo('cumple-nombre', 'Tu nombre', `<input id="cumple-nombre" name="nombre" type="text" maxlength="40" autocomplete="given-name" required>`) +
+    campo('cumple-cel', 'Tu celular', `<input id="cumple-cel" name="celular" type="tel" inputmode="tel" maxlength="20" autocomplete="tel" placeholder="300 123 4567" required>`) +
+    campo('cumple-mes', 'Mes de tu cumpleaños', `<select id="cumple-mes" name="mes" required><option value="">Elige el mes</option>${meses}</select>`) +
+    `<label class="cu-casilla"><input type="checkbox" name="autorizo" value="si" required>` +
+    `<span>${esc(textoAutorizacion(n.nombre)).replace('política de privacidad', `<a href="${POLITICA_URL}" target="_blank" rel="noopener">política de privacidad</a>`)}</span></label>` +
+    `<button class="fm-enviar cu-enviar" type="submit">Inscribirme</button>` +
+    `<p class="fm-priv">Solo el mes, nunca la fecha completa. Puedes pedir en el negocio que borren tus datos.</p>` +
+    `</form></div>`
   );
 }
 
@@ -1458,7 +1530,7 @@ function htmlBotones(botones, id) {
     .map(
       // La primera acción va a todo el ancho, llena del color de la marca; las demás, en mosaico
       (b, i) =>
-        `<a class="tl${i === 0 ? ' pri' : ''}" href="${esc(enlace(id, b.clave, b.url))}"${b.formulario ? ' aria-haspopup="dialog"' : ' rel="noopener"'}>` +
+        `<a class="tl${i === 0 ? ' pri' : ''}" href="${esc(enlace(id, b.clave, b.url))}"${b.formulario || b.hoja ? ' aria-haspopup="dialog"' : ' rel="noopener"'}>` +
         `<span class="ic">${svgIcono(b.icono)}</span>` +
         (b.detalle
           ? `<span class="txs"><span class="tx">${esc(b.texto)}</span><span class="det">${esc(b.detalle)}</span></span>`
@@ -1614,7 +1686,7 @@ const SCRIPT_FORMULARIO = `<script>
   }
   var hojas = d.querySelectorAll('.hoja');
   for (var i = 0; i < hojas.length; i++) (function (h) {
-    var f = h.querySelector('form');
+    var f = h.querySelector('form[data-wa]');
     if (f) {
       var sin = f.querySelector('.fm-sin-js'), con = f.querySelector('.fm-con-js');
       sin.parentNode.removeChild(sin);
@@ -1624,7 +1696,7 @@ const SCRIPT_FORMULARIO = `<script>
     for (var j = 0; j < cierres.length; j++) cierres[j].addEventListener('click', function (e) { e.preventDefault(); cerrar(); });
     var botones = d.querySelectorAll('a[href="#' + h.id + '"]');
     for (var k = 0; k < botones.length; k++) botones[k].addEventListener('click', function (e) { e.preventDefault(); abrir(h, this); });
-    // La hoja de "Mis premios" no tiene formulario: solo abre y cierra
+    // "Mis premios" y el cumpleaños no tienen formulario a WhatsApp: solo abren y cierran (el cumpleaños se envía solo)
     if (f) f.addEventListener('submit', function (e) {
       e.preventDefault();
       var campos = f.querySelectorAll('.fm-campo'), lineas = [], primero = null;
@@ -1655,7 +1727,7 @@ const SCRIPT_FORMULARIO = `<script>
     if (e.key === 'Escape' || e.keyCode === 27) return cerrar();
     if (e.key !== 'Tab') return;
     // El foco no se sale de la hoja mientras está abierta
-    var foco = abierta.querySelectorAll('.hoja-x, .pr-guardar:not([hidden]), input:not([type=hidden]), select, textarea, button');
+    var foco = abierta.querySelectorAll('.hoja-x, .pr-guardar:not([hidden]), input:not([type=hidden]), select, textarea, label a, button');
     var ini = foco[0], fin = foco[foco.length - 1];
     if (e.shiftKey && (d.activeElement === ini || d.activeElement === abierta.querySelector('.hoja-caja'))) { e.preventDefault(); fin.focus(); }
     else if (!e.shiftKey && d.activeElement === fin) { e.preventDefault(); ini.focus(); }
@@ -1733,12 +1805,13 @@ const SCRIPT_PREMIOS = `<script>
     caja.querySelector('[data-codigo]').textContent = bonito;
     if (recuperada) caja.querySelector('.pr-ayuda').textContent = 'Tarjeta recuperada en este celular';
     caja.hidden = false;
-    // Guardar en WhatsApp: al chat del negocio si tiene número; si no, WhatsApp deja elegir el chat
-    var g = h.querySelector('.pr-guardar'), wa = h.getAttribute('data-wa');
+    // Guardar en WhatsApp: sin número, WhatsApp deja elegir el chat y el cliente se lo manda a sí mismo («Tú»).
+    // No va al negocio, para no llenarle el WhatsApp de códigos.
+    var g = h.querySelector('.pr-guardar');
     var url = location.protocol + '//' + location.host + location.pathname + '#premios-' + codigo;
     var msg = 'Mi tarjeta de premios de ' + h.querySelector('.pr-sub').textContent + ' (código ' + bonito + '). ' +
       'Si cambio de celular, la recupero con este enlace: ' + url;
-    g.href = 'https://wa.me/' + (wa ? wa : '') + '?text=' + encodeURIComponent(msg);
+    g.href = 'https://wa.me/?text=' + encodeURIComponent(msg);
     g.hidden = false;
     h.querySelector('.pr-guardar-ayuda').hidden = false;
   }
@@ -1755,6 +1828,7 @@ const SCRIPT_PREMIOS = `<script>
 function htmlFormularios(n) {
   const hojas = n.botones.filter((b) => b.formulario).map(htmlFormulario);
   if (n.premios) hojas.push(htmlPremiosHoja(n));
+  if (n.cumple) hojas.push(htmlCumpleHoja(n));
   if (!hojas.length) return '';
   return hojas.join('\n') + '\n' + SCRIPT_FORMULARIO + (n.premios ? '\n' + SCRIPT_PREMIOS : '');
 }
@@ -1839,7 +1913,7 @@ function htmlPagina(plantilla, n) {
     .replaceAll('{{N_BOTONES}}', String(n.botones.length))
     .replaceAll('{{BOTONES}}', htmlBotones(n.botones, n.id))
     .replaceAll('{{REDES_HTML}}', htmlRedes(n.redes, n.id))
-    .replaceAll('{{PIE_HTML}}', pie)
+    .replaceAll('{{PIE_HTML}}', pie + LEGAL_HTML)
     .replaceAll('{{LIENZO_CLASE}}', n.lienzo ? `lz lz-${n.lienzo}` : '')
     .replaceAll('{{FORMULARIOS_HTML}}', htmlFormularios(n));
 }
@@ -1949,7 +2023,7 @@ for (const n of negocios) {
     const huellaClave = pbkdf2Sync(n.clavePanel, sal, ITERACIONES_PANEL, 32, 'sha256').toString('hex');
     await writeFile(
       `${SALIDA}/${n.id}/panel.json`,
-      JSON.stringify({ nombre: n.nombre, alias: n.alias, marca: n.color, tinta: n.tinta, gris: n.gris, tinte: n.tinte, sal, iteraciones: ITERACIONES_PANEL, huella: huellaClave, botones: nombres, premios: n.premios ? { meta: n.premios.meta, tipo: n.premios.tipo } : null })
+      JSON.stringify({ nombre: n.nombre, alias: n.alias, marca: n.color, tinta: n.tinta, gris: n.gris, tinte: n.tinte, sal, iteraciones: ITERACIONES_PANEL, huella: huellaClave, botones: nombres, premios: n.premios ? { meta: n.premios.meta, tipo: n.premios.tipo } : null, cumple: n.cumple ? { premio: n.cumple.premio, condiciones: n.cumple.condiciones } : null })
     );
     paneles++;
   }

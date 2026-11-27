@@ -206,7 +206,7 @@ function navegacion(id, clave, elegido, hoy) {
   }</nav>`;
 }
 
-export function paginaPanel({ id, clave, datos, c, elegido, hoy, premios = null }) {
+export function paginaPanel({ id, clave, datos, c, elegido, hoy, premios = null, cumple = null }) {
   const nombre = datos.nombre || id;
   const nomMes = MESES[elegido.mes - 1];
   const subHero = c.visitas
@@ -220,6 +220,102 @@ export function paginaPanel({ id, clave, datos, c, elegido, hoy, premios = null 
   const cuerpo = c.visitas || c.toques ? bloqueToques(c, datos.botones) + bloqueOrigen(c) + bloqueMomento(c) : '';
   const actualizado = c.esActual ? `Datos hasta hoy, ${hora12(hoy.hora).replace(/^(\d+)/, `$1:${String(hoy.min).padStart(2, '0')}`)} (hora de Colombia).` : '';
 
+  return documento(`Tus resultados · ${nombre}`, `<header class="neg"><i aria-hidden="true">${esc(nombre.trim().charAt(0).toUpperCase())}</i><div><h1>${esc(nombre)}</h1><p class="suave">Tus resultados</p></div></header>
+${navegacion(id, clave, elegido, hoy)}
+<section class="card"><h2>Visitas en ${nomMes}${elegido.anio !== hoy.anio ? ` de ${elegido.anio}` : ''}</h2><p class="hero num">${miles(c.visitas)}</p>${subHero}${bloqueComparacion(c)}</section>
+${mini}
+${bloquePremios(premios)}
+${bloqueCumple(cumple, id, clave, elegido)}
+${cuerpo}
+<footer class="pie"><p>Contamos cuántas veces abrieron tu página y tocaron cada botón con enlace. Las llamadas, los correos, los formularios y el Wi-Fi no se cuentan. ${
+    datos.cumple
+      ? 'Los datos de cumpleaños los dejó cada cliente con su autorización: úsalos solo para saludarlo y darle su regalo.'
+      : datos.premios
+        ? 'Los sellos van con un código al azar, sin nombres.'
+        : 'No guardamos datos de quienes la visitan.'
+  }</p>${actualizado ? `<p>${actualizado}</p>` : ''}<p class="fl"><b>Fides</b><span>Link</span></p></footer>`);
+}
+
+// ---------- Cumpleaños (B31) ----------
+const enlaceCumple = (id, clave, mes) => `/panel/${esc(id)}?k=${esc(encodeURIComponent(clave))}&amp;ver=cumple&amp;cm=${mes}`;
+
+function bloqueCumple(r, id, clave, elegido) {
+  if (!r) return '';
+  const nomMes = MESES[elegido.mes - 1];
+  const texto = r.inscritos
+    ? `<div class="pr-cifras"><div><b class="num">${miles(r.delMes)}</b><span>Cumplen en ${nomMes}</span></div><div><b class="num">${miles(r.inscritos)}</b><span>Inscritos</span><p class="suave">en total</p></div></div>` +
+      (r.delMes ? `<p class="pr-hoy">Regalos entregados en ${nomMes}: <b>${miles(r.canjeados)}</b> de ${miles(r.delMes)}.</p>` : '')
+    : '<p class="suave">Todavía nadie se ha inscrito. Cuéntales a tus clientes que tienen un regalo en su mes.</p>';
+  return `<section class="card oro"><h2>Cumpleaños</h2>${texto}<a class="ir" href="${enlaceCumple(id, clave, elegido.mes)}">Ver la lista de ${nomMes} ›</a></section>`;
+}
+
+// "573001234567" → "300 ••• 4567"
+const celularOculto = (t) => {
+  const local = t.startsWith('57') && t.length === 12 ? t.slice(2) : t;
+  return `${local.slice(0, 3)} ••• ${local.slice(-4)}`;
+};
+
+// Lista de un mes: saludar por WhatsApp, marcar el regalo entregado (este año) y borrar a pedido. Sin JavaScript.
+export function paginaCumple({ id, clave, datos, mes, anio, lista, resultado }) {
+  const nombre = datos.nombre || id;
+  const nomMes = MESES[mes - 1];
+  const ant = mes === 1 ? 12 : mes - 1;
+  const sig = mes === 12 ? 1 : mes + 1;
+  const accion = enlaceCumple(id, clave, mes);
+  const nav = `<nav class="seg" aria-label="Elegir mes"><a href="${enlaceCumple(id, clave, ant)}">‹ ${mayuscula(MESES[ant - 1])}</a><span class="on" aria-current="page">${mayuscula(nomMes)}</span><a href="${enlaceCumple(id, clave, sig)}">${mayuscula(MESES[sig - 1])} ›</a></nav>`;
+  const regalo = datos.cumple?.premio ?? '';
+  const filas = lista
+    .map((p) => {
+      const pila = p.nombre.split(' ')[0];
+      const saludo = `¡Feliz cumpleaños, ${pila}! En ${nombre} te tenemos un regalo${regalo ? `: ${regalo}` : ''}. Te esperamos.`;
+      const entregado = p.canjeado === String(anio);
+      const oculto = `<input type="hidden" name="tel" value="${esc(p.telefono)}">`;
+      return (
+        `<li class="cu-fila${entregado ? ' hecho' : ''}"><div class="cu-quien"><b>${esc(p.nombre)}</b><span class="suave num">${celularOculto(p.telefono)}</span>` +
+        (entregado ? '<span class="cu-ok">Regalo entregado</span>' : '') +
+        `</div><div class="cu-acc"><a class="cu-b wa" href="https://wa.me/${esc(p.telefono)}?text=${esc(encodeURIComponent(saludo))}" target="_blank" rel="noopener">Saludar por WhatsApp</a>` +
+        `<form method="post" action="${accion}">${oculto}<input type="hidden" name="accion" value="${entregado ? 'quitar' : 'canjear'}"><button class="cu-b" type="submit">${entregado ? 'Deshacer entregado' : 'Marcar regalo entregado'}</button></form>` +
+        `<details class="cu-borrar"><summary>Borrar sus datos</summary><p class="suave">Solo si la persona lo pide. No se puede deshacer.</p><form method="post" action="${accion}">${oculto}<input type="hidden" name="accion" value="borrar"><button class="cu-b rojo" type="submit">Sí, borrar a ${esc(pila)}</button></form></details>` +
+        `</div></li>`
+      );
+    })
+    .join('');
+  const mensaje = resultado?.texto ? `<p class="cu-msg ${resultado.tipo}" role="status">${esc(resultado.texto)}</p>` : '';
+  const cuerpo = lista.length ? `<ul class="cu-lista">${filas}</ul>` : `<p class="suave">Nadie inscrito cumple años en ${nomMes}.</p>`;
+  return documento(
+    `Cumpleaños · ${nombre}`,
+    `<header class="neg"><i aria-hidden="true">${esc(nombre.trim().charAt(0).toUpperCase())}</i><div><h1>${esc(nombre)}</h1><p class="suave">Cumpleaños</p></div></header>
+${nav}
+${mensaje}
+<section class="card"><h2>Cumplen en ${nomMes} (${miles(lista.length)})</h2>${regalo ? `<p class="cu-regalo">Su regalo: <b>${esc(regalo)}</b></p>` : ''}${cuerpo}</section>
+<p class="volver"><a class="ir" href="/panel/${esc(id)}?k=${esc(encodeURIComponent(clave))}">‹ Volver a tus resultados</a></p>
+<footer class="pie"><p>Cada persona dejó su nombre, celular y mes con su autorización, solo para saludarla y darle su regalo. No los uses para otras promociones. Si alguien pide que borres sus datos, usa "Borrar sus datos".</p><p class="fl"><b>Fides</b><span>Link</span></p></footer>`
+  );
+}
+
+const CSS_CUMPLE = `.ir{display:inline-flex;align-items:center;min-height:44px;margin-top:10px;font-weight:700;color:var(--cian);text-decoration:none}
+.ir:focus-visible,.cu-b:focus-visible,.cu-borrar summary:focus-visible{outline:2px solid var(--cian);outline-offset:2px}
+.volver{margin-top:8px}
+.cu-regalo{margin-bottom:12px;font-size:14px;color:var(--suave)}.cu-regalo b{color:var(--oro)}
+.cu-lista{list-style:none;margin:0;padding:0}
+.cu-fila{padding:14px 0;border-top:1px solid rgba(255,255,255,.08)}
+.cu-fila:first-child{border-top:0;padding-top:4px}
+.cu-quien{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.cu-quien b{font-size:16px}
+.cu-ok{font-size:12.5px;font-weight:700;color:var(--oro)}
+.cu-acc{display:grid;gap:8px;margin-top:10px}
+.cu-acc form{margin:0}
+.cu-b{display:flex;align-items:center;justify-content:center;width:100%;min-height:46px;padding:8px 14px;border:0;border-radius:12px;background:#203560;color:var(--texto);font:inherit;font-weight:700;text-decoration:none;cursor:pointer}
+.cu-b.wa{background:#25d366;color:#0b3d1f}
+.cu-b.rojo{background:#7a1f1f;color:#fff}
+.hecho .cu-b:not(.wa){background:transparent;box-shadow:inset 0 0 0 1px rgba(255,255,255,.15);color:var(--suave)}
+.cu-borrar summary{min-height:40px;display:flex;align-items:center;font-size:13.5px;color:var(--suave);cursor:pointer}
+.cu-borrar p{margin:2px 0 8px;font-size:13px}
+.cu-msg{margin-top:12px;padding:10px 14px;border-radius:12px;font-size:14px;font-weight:700}
+.cu-msg.ok{background:rgba(37,211,102,.14);color:#7ee2a8}.cu-msg.aviso{background:rgba(255,143,128,.14);color:#ffb3a8}`;
+
+// Cabeza y estilos comunes del panel y de su lista de cumpleaños
+function documento(titulo, cuerpo) {
   return `<!doctype html>
 <html lang="es">
 <head>
@@ -229,7 +325,7 @@ export function paginaPanel({ id, clave, datos, c, elegido, hoy, premios = null 
 <meta name="referrer" content="no-referrer">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#09152D">
-<title>Tus resultados · ${esc(nombre)}</title>
+<title>${esc(titulo)}</title>
 <style>
 @font-face{font-family:Figtree;font-weight:500;font-display:swap;src:url(/fonts/figtree-500.woff2) format("woff2")}
 @font-face{font-family:Figtree;font-weight:700;font-display:swap;src:url(/fonts/figtree-700.woff2) format("woff2")}
@@ -292,17 +388,12 @@ h1,h2,p{margin:0}
 .pie .fl{margin-top:16px;font-size:14px;letter-spacing:-.01em}.fl b{font-weight:700;color:var(--azul)}.fl span{color:var(--oro)}
 @media (max-width:339px){.orig{flex-direction:column;align-items:stretch}.dona{align-self:center}}
 @media (prefers-reduced-motion:reduce){.seg a{transition:none}}
+${CSS_CUMPLE}
 </style>
 </head>
 <body>
 <main>
-<header class="neg"><i aria-hidden="true">${esc(nombre.trim().charAt(0).toUpperCase())}</i><div><h1>${esc(nombre)}</h1><p class="suave">Tus resultados</p></div></header>
-${navegacion(id, clave, elegido, hoy)}
-<section class="card"><h2>Visitas en ${nomMes}${elegido.anio !== hoy.anio ? ` de ${elegido.anio}` : ''}</h2><p class="hero num">${miles(c.visitas)}</p>${subHero}${bloqueComparacion(c)}</section>
-${mini}
-${bloquePremios(premios)}
 ${cuerpo}
-<footer class="pie"><p>Contamos cuántas veces abrieron tu página y tocaron cada botón con enlace. Las llamadas, los correos, los formularios y el Wi-Fi no se cuentan. No guardamos datos de quienes la visitan${datos.premios ? ': los sellos van con un código al azar, sin nombres' : ''}.</p>${actualizado ? `<p>${actualizado}</p>` : ''}<p class="fl"><b>Fides</b><span>Link</span></p></footer>
 </main>
 </body>
 </html>`;

@@ -32,7 +32,7 @@ export async function onRequest(context) {
   if (request.method !== 'GET' || (respuesta.status !== 200 && respuesta.status !== 304)) return respuesta;
   const url = new URL(request.url);
   const m = url.pathname.match(PAGINA);
-  if (m && m[1] !== 'ir' && m[1] !== 'panel' && m[1] !== 'caja' && m[1] !== 'premios' && slugValido(m[1]) && !esRobot(request)) {
+  if (m && m[1] !== 'ir' && m[1] !== 'panel' && m[1] !== 'caja' && m[1] !== 'premios' && m[1] !== 'cumple' && slugValido(m[1]) && !esRobot(request)) {
     const o = (url.searchParams.get('o') ?? '').toLowerCase();
     context.waitUntil(contar(env, { id: m[1], tipo: 'visita', origen: ORIGENES.includes(o) ? o : '' }));
   }

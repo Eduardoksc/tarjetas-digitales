@@ -237,6 +237,7 @@
   .base { margin-top: auto; }
   .pie { margin: 0; padding-top: 24px; font-size: .75rem; letter-spacing: .04em; color: var(--tenue); }
   .pie a { display: inline-block; min-height: 48px; padding: 15px 12px; text-decoration: underline; text-decoration-color: var(--linea); text-underline-offset: 4px; }
+  .pie + .legal { padding-top: 0; }
 
   /* ---------- Entrada breve y escalonada ---------- */
   .cab, h2, .res { animation: aparece .55s var(--entra) backwards; }
@@ -312,6 +313,14 @@
   .fm-enviar:active { transform: scale(.975); filter: brightness(.92); transition-duration: .08s; }
   .fm-enviar:focus-visible, .hoja-x:focus-visible { outline: 2px solid var(--oro); outline-offset: 3px; }
   .fm-priv { margin: 10px 0 0; font-size: .8rem; text-align: center; color: var(--suave); }
+  /* ---------- Cumpleaños (B31): hoja de inscripción, en oro; se envía sin JavaScript ---------- */
+  .cu-premio { display: flex; align-items: center; margin: 6px 0 0; padding: 14px; border: 1px solid var(--linea); border-radius: 14px; background: var(--sup); color: var(--texto); font-size: 1.1rem; font-weight: 600; line-height: 1.3; }
+  .cu-ic { flex: none; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; margin-right: 12px; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--linea); color: var(--oro); }
+  .cu-ic svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .cu-cond { margin: 10px 0 0; font-size: .85rem; line-height: 1.4; color: var(--suave); }
+  .cu-casilla { display: flex; align-items: flex-start; margin: 16px 0 0; font-size: .85rem; line-height: 1.4; color: var(--texto); cursor: pointer; }
+  .hoja .cu-casilla input { flex: none; width: 24px; height: 24px; min-height: 0; margin: 0 10px 0 0; padding: 0; -webkit-appearance: checkbox; appearance: auto; accent-color: var(--oro); }
+  .cu-casilla a { color: var(--oro); text-decoration: underline; }
   /* ---------- Mis premios (B25): pieza bajo la reseña y hoja con la tarjeta de sellos, en oro ---------- */
   .mp {
     position: relative; display: flex; align-items: center; margin: 0 0 12px; padding: 12px 44px 12px 14px; min-height: 64px;
