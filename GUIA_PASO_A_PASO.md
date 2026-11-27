@@ -345,7 +345,7 @@ git push -u origin main
 
 **Settings → Secrets and variables → Actions → pestaña Variables**: `SHEET_ID` y `SHEET_GID` (lectura directa) y/o `SHEET_CSV_URL` (respaldo). Opcional: `PIE_TEXTO` y `PIE_URL` para un pie en cada página (debajo siempre van, en letra pequeña, los enlaces a **Privacidad** y **Términos** de fides-link.com), y `SITIO_URL` solo cuando pases a un dominio propio (por ejemplo `https://t.tumarca.co`).
 
-**Medir visitas y toques (opcional).** Para saber cuántas personas abren cada tarjeta, qué botones tocan, a qué hora y si llegaron por el QR o por el NFC:
+**Medir visitas y toques (opcional).** Para saber cuántas veces abren cada tarjeta (cada apertura cuenta, aunque sea la misma persona), qué botones tocan, a qué hora y si llegaron por el QR o por el NFC:
 1. En Cloudflare, ve a **Storage & databases → D1 → Create database** y llámala `fides-contador`.
 2. Ve a **Workers & Pages → fides-tarjetas → Settings → Bindings → Add → D1 database**. En *Variable name* escribe `CONTADOR` y elige `fides-contador`. Guarda.
 3. En GitHub, crea la variable `CONTADOR_URL` con la dirección de las tarjetas en Cloudflare, por ejemplo `https://t.fides-link.com`.

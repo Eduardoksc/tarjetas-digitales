@@ -188,7 +188,7 @@ function bloqueMomento(c) {
     const [k] = Object.entries(c.porMomento).sort((a, b) => b[1] - a[1])[0];
     const dSem = Math.floor(k / 100);
     const franja = k % 100;
-    texto = `<p class="momento">${DIAS_PLURAL[dSem]}, de ${hora12(franja)} a ${hora12(franja + 2)}</p><p class="suave consejo">Es cuando más gente abre tu página. Ten a alguien pendiente a esa hora.</p>`;
+    texto = `<p class="momento">${DIAS_PLURAL[dSem]}, de ${hora12(franja)} a ${hora12(franja + 2)}</p><p class="suave consejo">Es cuando más abren tu página. Ten a alguien pendiente a esa hora.</p>`;
   }
   return `<section class="card oro"><h2>Tu mejor momento</h2>${texto}</section>`;
 }
@@ -210,12 +210,12 @@ export function paginaPanel({ id, clave, datos, c, elegido, hoy, premios = null,
   const nombre = datos.nombre || id;
   const nomMes = MESES[elegido.mes - 1];
   const subHero = c.visitas
-    ? `<p class="sub">${c.visitas === 1 ? 'persona abrió' : 'personas abrieron'} tu página.</p>`
+    ? `<p class="sub">${c.visitas === 1 ? 'vez se abrió' : 'veces se abrió'} tu página.</p><p class="sub nota">Cuenta cada vez que alguien la abre: si una misma persona entra varias veces, suma varias.</p>`
     : `<p class="sub">Todavía no hay visitas ${c.esActual ? 'este mes' : 'en ese mes'}.</p>`;
   const google = c.porBoton.resenas ?? 0;
   const mini =
     c.visitas || c.toques
-      ? `<div class="mini"><section class="card"><h2>Toques</h2><b class="num">${miles(c.toques)}</b><p class="suave">a tus botones</p></section><section class="card"><h2>A Google</h2><b class="num">${miles(google)}</b><p class="suave">quisieron calificarte</p></section></div>`
+      ? `<div class="mini"><section class="card"><h2>Toques</h2><b class="num">${miles(c.toques)}</b><p class="suave">a tus botones</p></section><section class="card"><h2>A Google</h2><b class="num">${miles(google)}</b><p class="suave">toques a «Calificar en Google»</p></section></div>`
       : '';
   const cuerpo = c.visitas || c.toques ? bloqueToques(c, datos.botones) + bloqueOrigen(c) + bloqueMomento(c) : '';
   const actualizado = c.esActual ? `Datos hasta hoy, ${hora12(hoy.hora).replace(/^(\d+)/, `$1:${String(hoy.min).padStart(2, '0')}`)} (hora de Colombia).` : '';
@@ -355,6 +355,7 @@ h1,h2,p{margin:0}
 .hero{margin-top:2px;font:800 clamp(44px,14vw,56px)/1 Unbounded,system-ui,sans-serif;letter-spacing:-.02em;color:#fff}
 @supports (-webkit-background-clip:text) or (background-clip:text){.hero{background:linear-gradient(90deg,#fff 35%,var(--cian));-webkit-background-clip:text;background-clip:text;color:transparent}}
 .sub{margin-top:8px;font-size:14px;color:var(--suave)}
+.sub.nota{margin-top:4px;font-size:12.5px}
 .chip{display:inline-flex;flex-wrap:wrap;gap:4px 6px;margin-top:12px;padding:6px 11px;border-radius:14px;background:rgba(209,188,151,.14);font-size:13px}
 .chip b{color:var(--oro)}.chip span{color:var(--suave)}
 .mini{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
