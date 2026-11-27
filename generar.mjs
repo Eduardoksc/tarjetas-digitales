@@ -1312,6 +1312,7 @@ async function prepararNegocio(fila, num) {
     lienzo,
     clavePanel,
     premios,
+    whatsapp: tel || '',
     estilo: estilo || 'mostrador',
   };
 }
@@ -1420,7 +1421,7 @@ function htmlPremiosHoja(n) {
       : `Un sello por visita. Al juntar ${p.meta}, <b>reclama tu obsequio</b> en caja.`;
   const fino = [p.vigencia && `Vence: ${esc(p.vigencia)}`, 'Un sello por día'].filter(Boolean).join(' · ');
   return (
-    `<div class="hoja hoja-premios" id="premios" role="dialog" aria-modal="true" aria-labelledby="premios-t" data-id="${n.id}" data-meta="${p.meta}">` +
+    `<div class="hoja hoja-premios" id="premios" role="dialog" aria-modal="true" aria-labelledby="premios-t" data-id="${n.id}" data-meta="${p.meta}" data-wa="${n.whatsapp}">` +
     `<a class="hoja-velo" href="#" tabindex="-1" aria-hidden="true"></a>` +
     `<div class="hoja-caja" tabindex="-1">` +
     `<a class="hoja-x" href="#" aria-label="Cerrar">${X_CERRAR}</a>` +
@@ -1431,8 +1432,11 @@ function htmlPremiosHoja(n) {
     `<ol class="pr-sellos pr-c${columnas}" data-meta="${p.meta}">${sellos}</ol>` +
     // El código lo crea y lo muestra SCRIPT_PREMIOS; sin JavaScript no hay código y se explica por qué
     `<div class="pr-codigo" hidden><span class="pr-et">Tu código</span><b data-codigo></b><span class="pr-ayuda">Muéstralo en caja para sumar tu sello</span></div>` +
+    // B36: el enlace lo arma SCRIPT_PREMIOS con el código; en el chat queda el enlace que recupera la tarjeta
+    `<a class="fm-enviar pr-guardar" href="#" target="_blank" rel="noopener" hidden>${svgIcono('whatsapp')}Guardar mi código en WhatsApp</a>` +
+    `<p class="pr-guardar-ayuda" hidden>Si borras el navegador o cambias de celular, abre el enlace de ese chat y recuperas tus sellos.</p>` +
     `<p class="pr-sin-js">Para ver tu código, abre esta tarjeta en el navegador del celular (Chrome o Safari).</p>` +
-    `<p class="pr-fino">${fino}. Tus sellos quedan en este celular, sin registrarte.</p>` +
+    `<p class="pr-fino">${fino}. Si pierdes tu código, en caja lo recuperan con tu celular.</p>` +
     `</div></div>`
   );
 }
@@ -1651,7 +1655,7 @@ const SCRIPT_FORMULARIO = `<script>
     if (e.key === 'Escape' || e.keyCode === 27) return cerrar();
     if (e.key !== 'Tab') return;
     // El foco no se sale de la hoja mientras está abierta
-    var foco = abierta.querySelectorAll('.hoja-x, input:not([type=hidden]), select, textarea, button');
+    var foco = abierta.querySelectorAll('.hoja-x, .pr-guardar:not([hidden]), input:not([type=hidden]), select, textarea, button');
     var ini = foco[0], fin = foco[foco.length - 1];
     if (e.shiftKey && (d.activeElement === ini || d.activeElement === abierta.querySelector('.hoja-caja'))) { e.preventDefault(); fin.focus(); }
     else if (!e.shiftKey && d.activeElement === fin) { e.preventDefault(); ini.focus(); }
@@ -1690,7 +1694,15 @@ const SCRIPT_PREMIOS = `<script>
     try { window.localStorage.setItem(llave, c); } catch (e) {}
     return c;
   }
-  var codigo = leer();
+  var codigo = leer(), recuperada = false;
+  // B36: el enlace guardado en WhatsApp (o enviado desde la caja) trae el código: #premios-K7QXRM
+  var enHash = /^#premios-([0-9a-z]{6})$/i.exec(location.hash || '');
+  enHash = enHash && enHash[1].toUpperCase();
+  if (enHash && /^[${ALFABETO_CODIGO}]{6}$/.test(enHash)) {
+    codigo = enHash; recuperada = true;
+    try { window.localStorage.setItem(llave, codigo); } catch (e) {}
+    if (history.replaceState) history.replaceState(null, '', location.pathname + location.search);
+  }
   function marcar(lista, s) {
     for (var i = 0; i < lista.length; i++) lista[i].classList[i < s ? 'add' : 'remove']('si');
   }
@@ -1717,13 +1729,25 @@ const SCRIPT_PREMIOS = `<script>
     if (!codigo) codigo = crear();
     if (!codigo) return; // celular sin azar seguro: se queda el aviso de .pr-sin-js
     var caja = h.querySelector('.pr-codigo');
-    caja.querySelector('[data-codigo]').innerHTML = codigo.slice(0, 3) + ' ' + codigo.slice(3);
+    var bonito = codigo.slice(0, 3) + ' ' + codigo.slice(3);
+    caja.querySelector('[data-codigo]').textContent = bonito;
+    if (recuperada) caja.querySelector('.pr-ayuda').textContent = 'Tarjeta recuperada en este celular';
     caja.hidden = false;
+    // Guardar en WhatsApp: al chat del negocio si tiene número; si no, WhatsApp deja elegir el chat
+    var g = h.querySelector('.pr-guardar'), wa = h.getAttribute('data-wa');
+    var url = location.protocol + '//' + location.host + location.pathname + '#premios-' + codigo;
+    var msg = 'Mi tarjeta de premios de ' + h.querySelector('.pr-sub').textContent + ' (código ' + bonito + '). ' +
+      'Si cambio de celular, la recupero con este enlace: ' + url;
+    g.href = 'https://wa.me/' + (wa ? wa : '') + '?text=' + encodeURIComponent(msg);
+    g.hidden = false;
+    h.querySelector('.pr-guardar-ayuda').hidden = false;
   }
   var botones = d.querySelectorAll('a[href="#premios"]');
   for (var i = 0; i < botones.length; i++) botones[i].addEventListener('click', function () { mostrar(); consultar(); });
   if (location.hash === '#premios') mostrar();
-  consultar();
+  // Con el enlace de recuperación, la hoja se abre sola (como si tocara "Mis premios")
+  if (recuperada && botones[0]) botones[0].click();
+  else consultar();
 })();
 </script>`;
 

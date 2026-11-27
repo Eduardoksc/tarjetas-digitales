@@ -62,7 +62,7 @@ Están en detalle en [CLAUDE.md](../CLAUDE.md). En resumen:
 1. La reseña manda: nada compite con ella.
 2. Funciona en el peor celular con la peor señal: cero JavaScript, salvo el formulario y, desde el 22 nov 2026, los dos programas de fidelización (premios y cumpleaños). Ese código solo se carga en las tarjetas que tienen el programa activo, y si falla o no carga, la tarjeta sigue abriendo con la reseña y los botones.
 3. Una fila de la hoja basta: nada exige diseño manual por negocio.
-4. No se guardan datos de las personas. **Única excepción (decidida el 22 nov 2026):** el módulo Beneficios del plan Cosecha (B31) guarda nombre, celular y mes de cumpleaños de quien se inscribe, solo con su autorización expresa, para que el negocio los vea en su panel. El negocio es el responsable de esos datos y FidesLink el encargado (Ley 1581 de 2012); hay aviso de privacidad y se borran a pedido.
+4. No se guardan datos de las personas. **Única excepción (decidida el 22 nov 2026):** el módulo Beneficios del plan Cosecha (B31) guarda nombre, celular y mes de cumpleaños de quien se inscribe, solo con su autorización expresa, para que el negocio los vea en su panel. El negocio es el responsable de esos datos y FidesLink el encargado (Ley 1581 de 2012); hay aviso de privacidad y se borran a pedido. **Segunda excepción (decidida el 27 nov 2026, B36):** en Mis premios, el empleado puede guardar en caja el celular del cliente, con su autorización (queda registrada la fecha y la hora), solo para recuperar su tarjeta de sellos si pierde el código. Nunca se publica, no se usa para promociones sin otra autorización y se borra a pedido.
 5. Las estrellas nunca se muestran llenas.
 
 ## 7. Seguridad y calidad web: lo que se exige

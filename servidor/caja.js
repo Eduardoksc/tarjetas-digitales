@@ -1,6 +1,7 @@
 // Página de caja de "Mis premios" (B25c): /caja/<id>?k=<clave_caja>.
 // El empleado escribe el código que le muestra el cliente y suma el sello, entrega el obsequio o deshace el sello de hoy.
-// Sin JavaScript, con formularios normales. Solo se guarda el código al azar y sus sellos, nunca datos de la persona.
+// Sin JavaScript, con formularios normales. Se guarda el código al azar y sus sellos y, solo con la autorización del
+// cliente, su celular para recuperar la tarjeta si pierde el código (B36). El celular nunca sale completo en pantalla.
 import { TABLA_PREMIOS } from './premios.js';
 
 const MAX_INTENTOS = 10; // claves equivocadas por hora, desde un mismo celular y para un mismo negocio
@@ -12,6 +13,9 @@ export const TABLAS_CAJA = [
   'CREATE TABLE IF NOT EXISTS premios_eventos (dia TEXT NOT NULL, id TEXT NOT NULL, tipo TEXT NOT NULL, n INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (dia, id, tipo))',
   // Claves equivocadas por hora. "quien" es una huella corta de la IP con el negocio y la hora: no se puede volver atrás a la IP.
   'CREATE TABLE IF NOT EXISTS caja_intentos (hora TEXT NOT NULL, id TEXT NOT NULL, quien TEXT NOT NULL, n INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (hora, id, quien))',
+  // B36: celular del cliente, solo para recuperar su tarjeta si pierde el código. Se guarda solo con su autorización
+  // ("autorizado": fecha y hora de Colombia en que el empleado marcó la casilla). Un celular por tarjeta y una tarjeta por celular.
+  'CREATE TABLE IF NOT EXISTS premios_clientes (id TEXT NOT NULL, telefono TEXT NOT NULL, codigo TEXT NOT NULL, autorizado TEXT NOT NULL, PRIMARY KEY (id, telefono), UNIQUE (id, codigo))',
 ];
 
 let tablasListas = false;
@@ -31,7 +35,7 @@ async function sha256(texto) {
   const bits = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(texto));
   return [...new Uint8Array(bits)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
-async function quien(request, id, hora) {
+export async function quien(request, id, hora) {
   let ip = request.headers.get('cf-connecting-ip') ?? 'sin-ip';
   // IPv6: una conexión tiene millones de direcciones en su bloque /64, así que se cuenta el bloque
   if (ip.includes(':')) {
@@ -86,6 +90,58 @@ export function pesos(valor) {
   return n > 0 && n <= MAX_COMPRA ? n : null;
 }
 
+// ---------- Celular del cliente (B36) ----------
+// Igual que la columna whatsapp del generador: celular de 10 dígitos que empieza por 3 → se le antepone 57.
+export function celularValido(valor) {
+  let d = String(valor ?? '').replace(/\D/g, '');
+  if (d.length === 10 && d.startsWith('3')) d = '57' + d;
+  return d.length >= 11 && d.length <= 15 ? d : null;
+}
+// ¿Lo que escribió el empleado es un celular y no un código? Solo números (y espacios, +, -) y 7 dígitos o más.
+export const pareceCelular = (valor) => /^[\d\s+()-]+$/.test(String(valor ?? '').trim()) && String(valor).replace(/\D/g, '').length >= 7;
+
+// "573001234567" → "300 ••• 4567": en pantalla nunca va el número completo
+export const celularOculto = (t) => {
+  const local = t.startsWith('57') && t.length === 12 ? t.slice(2) : t;
+  return `${local.slice(0, 3)} ••• ${local.slice(-4)}`;
+};
+
+export async function codigoDeCelular(db, id, telefono) {
+  await prepararTablas(db);
+  const fila = await db.prepare('SELECT codigo FROM premios_clientes WHERE id = ?1 AND telefono = ?2').bind(id, telefono).first();
+  return fila?.codigo ?? null;
+}
+
+export async function celularDe(db, id, codigo) {
+  const fila = await db.prepare('SELECT telefono FROM premios_clientes WHERE id = ?1 AND codigo = ?2').bind(id, codigo).first();
+  return fila?.telefono ?? null;
+}
+
+export async function guardarCelular(db, id, codigo, valor, autorizo) {
+  await prepararTablas(db);
+  const tarjeta = await leerTarjeta(db, id, codigo);
+  if (!tarjeta) return { tipo: 'aviso', texto: 'Primero suma el sello: el celular se guarda en una tarjeta que ya existe.', tarjeta };
+  const telefono = celularValido(valor);
+  if (!telefono) return { tipo: 'aviso', texto: 'Ese celular no parece válido. Escríbelo con sus 10 dígitos (ej: 300 123 4567).', tarjeta };
+  if (!autorizo) return { tipo: 'aviso', texto: 'Marca la casilla: sin la autorización del cliente no se guarda su número.', tarjeta };
+  const otro = await codigoDeCelular(db, id, telefono);
+  if (otro && otro !== codigo)
+    return { tipo: 'aviso', texto: `Ese celular ya tiene otra tarjeta (código ${conEspacio(otro)}). Búscala escribiendo el celular.`, tarjeta };
+  const momento = new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 16).replace('T', ' ');
+  await db.batch([
+    db.prepare('DELETE FROM premios_clientes WHERE id = ?1 AND codigo = ?2').bind(id, codigo),
+    db.prepare('INSERT INTO premios_clientes (id, telefono, codigo, autorizado) VALUES (?1, ?2, ?3, ?4)').bind(id, telefono, codigo, momento),
+  ]);
+  return { tipo: 'ok', texto: 'Celular guardado. Si el cliente pierde su código, búscalo por este número.', tarjeta };
+}
+
+// Borrar a pedido del cliente (Ley 1581): la tarjeta y sus sellos siguen, solo se olvida el número
+export async function borrarCelular(db, id, codigo) {
+  await prepararTablas(db);
+  await db.prepare('DELETE FROM premios_clientes WHERE id = ?1 AND codigo = ?2').bind(id, codigo).run();
+  return { tipo: 'ok', texto: 'Celular borrado. La tarjeta y sus sellos siguen igual.', tarjeta: await leerTarjeta(db, id, codigo) };
+}
+
 // Cada operación devuelve { tipo: 'ok' | 'aviso', texto, tarjeta }
 export async function consultar(db, id, codigo) {
   await prepararTablas(db);
@@ -131,7 +187,7 @@ export async function sumar(db, id, codigo, reglas, valorCompra) {
   await db.batch(eventos);
 
   const tarjeta = await leerTarjeta(db, id, codigo);
-  const nuevo = !antes ? ' Es el primer sello de este código: confirma con el cliente que lo escribiste bien.' : '';
+  const nuevo = !antes ? ' Es el primer sello de este código: confirma con el cliente que lo escribiste bien y pídele su celular.' : '';
   const texto = completa
     ? `¡Tarjeta llena! Entrega el obsequio${reglas.premio ? ` (${reglas.premio})` : ''}.`
     : `${sumados === 1 ? 'Sello sumado' : `${sumados} sellos sumados`}.${nuevo}`;
@@ -184,7 +240,30 @@ export const cabecerasCaja = () => ({
   'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; font-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
 });
 
-function htmlTarjeta(codigo, t, reglas, accion) {
+// B36: celular del cliente. Sin celular, el formulario para guardarlo con su autorización; con celular, el botón que le
+// envía por WhatsApp el enlace que recupera su tarjeta en el celular, y el de borrarlo a pedido.
+function htmlCelular(codigo, t, reglas, accion, celular, enlaceTarjeta) {
+  if (!t) return '';
+  const oculto = `<input type="hidden" name="codigo" value="${codigo}">`;
+  if (celular) {
+    const msg = `Hola, esta es tu tarjeta de premios de ${reglas.nombre}. Ábrela en tu celular para recuperar tus sellos: ${enlaceTarjeta}`;
+    return (
+      `<div class="cel"><p class="suave chico">Celular: <b class="num">${celularOculto(celular)}</b></p>` +
+      `<a class="b wa" href="https://wa.me/${celular}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">Enviarle su tarjeta por WhatsApp</a>` +
+      `<form method="post" action="${accion}">${oculto}<input type="hidden" name="accion" value="borrar_celular"><button class="b sec" type="submit">Borrar celular (si el cliente lo pide)</button></form></div>`
+    );
+  }
+  return (
+    `<form class="cel" method="post" action="${accion}">${oculto}<input type="hidden" name="accion" value="celular">` +
+    `<label for="celular">Celular del cliente</label>` +
+    `<p class="suave chico ayuda">Para que no pierda sus sellos si borra el navegador o cambia de celular.</p>` +
+    `<input id="celular" name="celular" type="tel" inputmode="numeric" autocomplete="off" required placeholder="300 123 4567">` +
+    `<label class="casilla"><input type="checkbox" name="autorizo" value="si" required> El cliente autorizó guardar su número solo para recuperar su tarjeta.</label>` +
+    `<button class="b sec" type="submit">Guardar celular</button></form>`
+  );
+}
+
+function htmlTarjeta(codigo, t, reglas, accion, celular, enlaceTarjeta) {
   const sellos = t?.sellos ?? 0;
   const llena = sellos >= reglas.meta;
   let puntos = '';
@@ -201,16 +280,18 @@ function htmlTarjeta(codigo, t, reglas, accion) {
     `<p class="cuenta num"><b>${sellos}</b> de ${reglas.meta} sellos</p><p class="pts" aria-hidden="true">${puntos}</p>` +
     (t ? `<p class="suave chico">Obsequios entregados: ${t.entregados}</p>` : '') +
     botones.join('') +
+    htmlCelular(codigo, t, reglas, accion, celular, enlaceTarjeta) +
     `</section>`
   );
 }
 
-export function paginaCaja({ id, clave, reglas, resultado, codigo }) {
+export function paginaCaja({ id, clave, reglas, resultado, codigo, celular, origen }) {
+  const enlaceTarjeta = `${origen ?? ''}/${encodeURIComponent(id)}/#premios-${codigo ?? ''}`;
   const accion = `/caja/${encodeURIComponent(id)}?k=${encodeURIComponent(clave)}`;
   const compras = reglas.tipo === 'compras';
   const regla = compras ? `Un sello por cada ${miles(reglas.valorSello)} en compras` : 'Un sello por visita';
   const mensaje = resultado?.texto ? `<p class="msg ${resultado.tipo}" role="status">${esc(resultado.texto)}</p>` : '';
-  const tarjeta = codigo && resultado ? htmlTarjeta(codigo, resultado.tarjeta, reglas, accion) : '';
+  const tarjeta = codigo && resultado ? htmlTarjeta(codigo, resultado.tarjeta, reglas, accion, celular, enlaceTarjeta) : '';
   return `<!doctype html>
 <html lang="es">
 <head>
@@ -263,6 +344,12 @@ input:focus{outline:2px solid var(--cian);outline-offset:1px;border-color:var(--
 .pts i.si{background:linear-gradient(135deg,var(--azul),var(--cian));box-shadow:none}
 .tarjeta.llena{box-shadow:inset 0 0 0 1.5px var(--oro),0 14px 30px -16px rgba(0,0,0,.75)}
 .tarjeta.llena .pts i.si{background:var(--oro)}
+.cel{margin-top:16px;padding-top:14px;border-top:1px solid #2a3c62}
+.ayuda{margin:-4px 0 10px}
+.cel input[type=tel]{margin-bottom:12px}
+.casilla{display:flex;gap:10px;align-items:flex-start;margin:0;font-size:14px;font-weight:500;line-height:1.35}
+.casilla input{flex:none;width:22px;height:22px;min-height:0;margin:0;accent-color:var(--cian)}
+.b.wa{background:#25d366;color:#0b3d1f;text-decoration:none}
 .reglas{margin-top:22px;font-size:13px;color:var(--suave);text-align:center}
 .reglas p+p{margin-top:4px}
 @media (prefers-reduced-motion:reduce){.b{transition:none}.b:active{transform:none}}
@@ -275,8 +362,8 @@ ${mensaje}
 ${tarjeta}
 <section class="card"><h2>${codigo ? 'Siguiente cliente' : 'Sumar un sello'}</h2>
 <form method="post" action="${accion}">
-<label for="codigo">Código del cliente</label>
-<input class="codigo" id="codigo" name="codigo" required maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="El que muestra en su celular"${codigo ? '' : ' autofocus'}>
+<label for="codigo">Código o celular del cliente</label>
+<input class="codigo" id="codigo" name="codigo" required maxlength="20" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="El código de su celular, o su número"${codigo ? '' : ' autofocus'}>
 ${compras ? '<label for="valor">Valor de la compra</label><input id="valor" name="valor" inputmode="numeric" autocomplete="off" placeholder="75000">' : ''}
 <div class="fila"><button class="b" type="submit" name="accion" value="sumar">${compras ? 'Sumar sellos' : 'Sumar sello'}</button><button class="b sec" type="submit" name="accion" value="consultar" formnovalidate>Consultar</button></div>
 </form></section>

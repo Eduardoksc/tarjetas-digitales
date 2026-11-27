@@ -3,7 +3,9 @@
 import { slugValido } from '../../servidor/contador.js';
 import { claveValida, paginaAviso } from '../../servidor/panel.js';
 import { codigoValido, reglasPremios } from '../../servidor/premios.js';
-import { anotarFallo, bloqueado, cabecerasCaja, consultar, deshacer, entregar, paginaCaja, sumar } from '../../servidor/caja.js';
+import {
+  anotarFallo, bloqueado, borrarCelular, cabecerasCaja, celularDe, celularValido, codigoDeCelular, consultar, deshacer, entregar, guardarCelular, paginaCaja, pareceCelular, sumar,
+} from '../../servidor/caja.js';
 
 const NO_VALIDO = ['Enlace no válido', 'Revisa que copiaste el enlace completo que te enviamos.', 404];
 const BLOQUEADO = ['Demasiados intentos', 'Espera una hora e intenta de nuevo con el enlace correcto.', 429];
@@ -50,9 +52,19 @@ export async function onRequestPost(context) {
     return pagina({ id: e.id, clave: e.clave, reglas: e.reglas }, 400);
   }
   const accion = String(form.get('accion') ?? 'sumar');
-  const codigo = codigoValido(form.get('codigo'));
+  const escrito = form.get('codigo');
+  let codigo = codigoValido(escrito);
+  // B36: si el empleado escribió un celular, se busca la tarjeta que tiene guardado ese número
+  if (!codigo && pareceCelular(escrito)) {
+    const telefono = celularValido(escrito);
+    codigo = telefono ? await codigoDeCelular(e.db, e.id, telefono).catch(() => null) : null;
+    if (!codigo) {
+      const resultado = { tipo: 'aviso', texto: 'Ese celular no tiene una tarjeta guardada. Pídele al cliente su código.' };
+      return pagina({ id: e.id, clave: e.clave, reglas: e.reglas, resultado }, 404);
+    }
+  }
   if (!codigo) {
-    const resultado = { tipo: 'aviso', texto: 'Ese código no es válido. Son 6 letras y números, como K7Q 42X (sin 0, O, 1, I ni L).' };
+    const resultado = { tipo: 'aviso', texto: 'Ese código no es válido. Son 6 letras y números, como K7Q 42X (sin 0, O, 1, I ni L), o escribe el celular del cliente.' };
     return pagina({ id: e.id, clave: e.clave, reglas: e.reglas, resultado }, 400);
   }
 
@@ -61,10 +73,13 @@ export async function onRequestPost(context) {
     if (accion === 'consultar') resultado = await consultar(e.db, e.id, codigo);
     else if (accion === 'entregar') resultado = await entregar(e.db, e.id, codigo, e.reglas);
     else if (accion === 'deshacer') resultado = await deshacer(e.db, e.id, codigo, e.reglas);
+    else if (accion === 'celular') resultado = await guardarCelular(e.db, e.id, codigo, form.get('celular'), form.get('autorizo') === 'si');
+    else if (accion === 'borrar_celular') resultado = await borrarCelular(e.db, e.id, codigo);
     else resultado = await sumar(e.db, e.id, codigo, e.reglas, form.get('valor'));
   } catch (err) {
     console.log('caja: ' + err.message);
     resultado = { tipo: 'aviso', texto: 'No se pudo guardar. Intenta de nuevo en un momento.' };
   }
-  return pagina({ id: e.id, clave: e.clave, reglas: e.reglas, resultado, codigo });
+  const celular = await celularDe(e.db, e.id, codigo).catch(() => null);
+  return pagina({ id: e.id, clave: e.clave, reglas: e.reglas, resultado, codigo, celular, origen: new URL(request.url).origin });
 }

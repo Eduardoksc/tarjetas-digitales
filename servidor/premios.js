@@ -1,5 +1,6 @@
 // Mis premios (B25): tarjeta de sellos por visitas o compras, en la base D1 del contador (variable CONTADOR).
-// No guarda datos de la persona: solo el código al azar que creó su celular y cuántos sellos lleva.
+// Aquí solo está el código al azar que creó su celular y cuántos sellos lleva. El celular del cliente (B36, con su
+// autorización) está aparte, en premios_clientes (servidor/caja.js).
 // El cliente solo lee su avance (/premios/<id>/<código>). Sumar sellos y entregar el obsequio es de la caja (servidor/caja.js), con clave.
 
 // Sin 0, O, 1, I ni L, para que el empleado no se equivoque al escribirlo. Igual que ALFABETO_CODIGO en generar.mjs.
@@ -38,12 +39,12 @@ export async function reglasPremios(env, request, id) {
 
 // Sellos de un código. Sin base, sin tabla o sin fila: 0 (todavía nadie le ha sumado).
 export async function avance(db, id, codigo) {
-  if (!db) return { sellos: 0, entregados: 0 };
+  if (!db) return { sellos: 0, entregados: 0, existe: true };
   try {
     const fila = await db.prepare('SELECT sellos, entregados FROM premios WHERE id = ?1 AND codigo = ?2').bind(id, codigo).first();
-    return { sellos: fila?.sellos ?? 0, entregados: fila?.entregados ?? 0 };
+    return { sellos: fila?.sellos ?? 0, entregados: fila?.entregados ?? 0, existe: Boolean(fila) };
   } catch (e) {
     if (!/no such table/i.test(e.message)) console.log('premios: ' + e.message);
-    return { sellos: 0, entregados: 0 };
+    return { sellos: 0, entregados: 0, existe: true };
   }
 }

@@ -362,7 +362,7 @@ git push -u origin main
 
 Quien tenga el enlace ve los números, así que solo dáselo al dueño. Si se filtra, cambia la clave en la hoja y publica: el enlace viejo deja de funcionar. Las llamadas, los correos, los formularios y el Wi-Fi no se cuentan.
 
-**Mis premios: tarjeta de sellos (en construcción).** Es la tarjeta de "cliente frecuente" de papel, pero en el celular. Antes de activarla en un cliente real, revisa en Cloudflare el límite de pedidos (tarea S3) y que la política de privacidad hable de los sellos (B34). El código queda guardado en el celular del cliente; si borra los datos del navegador o cambia de celular, empieza de cero. Columnas:
+**Mis premios: tarjeta de sellos (en construcción).** Es la tarjeta de "cliente frecuente" de papel, pero en el celular. Antes de activarla en un cliente real, revisa en Cloudflare el límite de pedidos (tarea S3) y que la política de privacidad hable de los sellos (B34). El código queda guardado en el navegador del celular del cliente. Para que no pierda sus sellos si borra el navegador o cambia de celular, la tarjeta tiene el botón **Guardar mi código en WhatsApp** y la caja puede guardar su celular (ver abajo). Columnas:
 
 | Columna | Qué poner | Ejemplo |
 |---|---|---|
@@ -381,6 +381,11 @@ Si falta `premio_meta` o `clave_caja`, o el número no está entre 3 y 12, el ro
 2. El empleado lo escribe y toca **Sumar sello**. En compras, escribe también el valor de la compra y se suman los sellos que alcancen.
 3. Cuando la tarjeta se llena, aparece **Entregar obsequio**. Al tocarlo, el cliente empieza una tarjeta nueva.
 4. Si se equivocó de código, **Deshacer el sello de hoy** lo quita.
+5. **Celular del cliente**, para que nunca pierda sus sellos: después del primer sello, pregúntale si quiere guardar su número para recuperar la tarjeta. Si dice que sí, escríbelo, marca **El cliente autorizó…** y toca **Guardar celular**. Sin la casilla no se guarda. Solo sirve para recuperar la tarjeta: no se usa para promociones.
+6. **Si el cliente perdió su código** (borró el navegador o cambió de celular): escribe su celular en lugar del código y toca **Consultar**. Aparece su tarjeta; toca **Enviarle su tarjeta por WhatsApp** y él abre el enlace en su celular para recuperarla con todos sus sellos.
+7. Si el cliente pide que borren su número, toca **Borrar celular**. La tarjeta y los sellos siguen.
+
+El cliente también puede guardarse solo el enlace: en **Mis premios** está el botón **Guardar mi código en WhatsApp**, que deja en el chat del negocio un enlace que recupera su tarjeta.
 
 Es un sello por código al día. Diez claves equivocadas seguidas bloquean ese celular una hora. Si el negocio tiene `clave_panel`, su panel muestra un bloque **Mis premios** con los sellos del mes, los clientes nuevos, las tarjetas llenas y los obsequios entregados. Si la clave se filtra, cámbiala en la hoja y publica: el enlace viejo deja de funcionar y los sellos no se pierden. El botón va debajo de la reseña. El premio nunca depende de dejar una reseña (regla de Google).
 
