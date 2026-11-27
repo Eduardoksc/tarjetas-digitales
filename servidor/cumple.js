@@ -63,7 +63,7 @@ export async function inscribir(db, request, id, datos, form) {
   if ((fila?.n ?? 0) >= MAX_ENVIOS) return { error: 'Hubo demasiadas inscripciones desde esta conexión. Intenta en una hora.', estado: 429 };
 
   const momento = new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 16).replace('T', ' ');
-  const [guardado] = await db.batch([
+  await db.batch([
     // Un celular ya inscrito no se cambia desde la tarjeta: cualquiera podría escribir el número de otra persona
     // y cambiarle el nombre o el mes. Para corregir, el negocio lo borra en el panel y la persona se inscribe otra vez.
     db
@@ -72,7 +72,7 @@ export async function inscribir(db, request, id, datos, form) {
     db.prepare('INSERT INTO cumple_envios (hora, id, quien, n) VALUES (?1, ?2, ?3, 1) ON CONFLICT (hora, id, quien) DO UPDATE SET n = n + 1').bind(hora, id, yo),
     db.prepare('DELETE FROM cumple_envios WHERE hora < ?1').bind(dia), // se borran los de días anteriores
   ]);
-  if (!guardado?.meta?.changes) return { error: 'Ese celular ya está inscrito. Si quieres cambiar tu nombre o tu mes, pídelo en el negocio.', estado: 409 };
+  // La respuesta es la misma si el celular ya estaba: así nadie puede averiguar quién está inscrito
   return { ok: true, nombre, mes };
 }
 
@@ -173,7 +173,7 @@ export function paginaListo({ id, datos, nombre, mes }) {
   const extra =
     `<p class="regalo">${esc(c.premio)}</p>` +
     (c.condiciones ? `<p class="fino">${esc(c.condiciones)}</p>` : '') +
-    `<p class="fino">Toma una captura de esta pantalla o di tu nombre en caja. Si quieres que borren tus datos, pídelo en el negocio.</p>`;
+    `<p class="fino">Toma una captura de esta pantalla o di tu nombre en caja. Si ya estabas inscrito, tus datos siguen como estaban: para cambiarlos o borrarlos, pídelo en el negocio.</p>`;
   return paginaCliente({ id, datos, titulo: `¡Listo, ${nombre}!`, texto: `Ya estás en la lista. En ${MESES[mes - 1]} muestra esto en caja y recibe tu regalo.`, extra });
 }
 
